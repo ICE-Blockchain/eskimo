@@ -20,12 +20,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/auth/getConfirmationStatus": {
+        "/auth/ResetEmailChange": {
             "post": {
-                "description": "Status of the auth process",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Resets previous email change",
                 "produces": [
                     "application/json"
                 ],
@@ -39,7 +36,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.StatusArg"
+                            "$ref": "#/definitions/main.MagicLinkPayload"
                         }
                     }
                 ],
@@ -47,17 +44,17 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.Auth"
+                            "type": "object"
                         }
                     },
-                    "403": {
-                        "description": "if invalid or expired login session provided",
+                    "400": {
+                        "description": "if invalid or expired payload provided",
                         "schema": {
                             "$ref": "#/definitions/server.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "if login session not found or confirmation code verifying failed",
+                        "description": "if email does not need to be confirmed by magic link",
                         "schema": {
                             "$ref": "#/definitions/server.ErrorResponse"
                         }
@@ -459,9 +456,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/auth/signInWithEmailLink": {
+        "/auth/signInWithConfirmationCode": {
             "post": {
-                "description": "Finishes login flow using magic link",
+                "description": "Finishes login flow using confirmation code",
                 "produces": [
                     "application/json"
                 ],
@@ -475,7 +472,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/main.MagicLinkPayload"
+                            "$ref": "#/definitions/main.LoginFlowPayload"
                         }
                     }
                 ],
@@ -1618,6 +1615,19 @@ const docTemplate = `{
                 }
             }
         },
+        "main.LoginFlowPayload": {
+            "type": "object",
+            "properties": {
+                "confirmationCode": {
+                    "type": "string",
+                    "example": "999"
+                },
+                "loginFlowToken": {
+                    "type": "string",
+                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"
+                }
+            }
+        },
         "main.MagicLinkPayload": {
             "type": "object",
             "properties": {
@@ -1964,15 +1974,6 @@ const docTemplate = `{
                 "language": {
                     "type": "string",
                     "example": "en"
-                }
-            }
-        },
-        "main.StatusArg": {
-            "type": "object",
-            "properties": {
-                "loginSession": {
-                    "type": "string",
-                    "example": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"
                 }
             }
         },

@@ -25,8 +25,8 @@ func (s *service) setupAuthRoutes(router *server.Router) {
 		Group("v1w").
 		POST("auth/sendSignInLinkToEmail", server.RootHandler(s.SendSignInLinkToEmail)).
 		POST("auth/refreshTokens", server.RootHandler(s.RegenerateTokens)).
-		POST("auth/signInWithEmailLink", server.RootHandler(s.SignIn)).
-		POST("auth/getConfirmationStatus", server.RootHandler(s.Status)).
+		POST("auth/signInWithConfirmationCode", server.RootHandler(s.SignIn)).
+		POST("auth/resetEmailChange", server.RootHandler(s.ResetEmailChange)).
 		POST("auth/getMetadata", server.RootHandler(s.Metadata)).
 		POST("auth/processFaceRecognitionResult", server.RootHandler(s.ProcessFaceRecognitionResult)).
 		POST("auth/getValidUserForPhoneNumberMigration", server.RootHandler(s.GetValidUserForPhoneNumberMigration))
@@ -88,7 +88,63 @@ func (s *service) SendSignInLinkToEmail( //nolint:gocritic,funlen // .
 // SignIn godoc
 //
 //	@Schemes
-//	@Description	Finishes login flow using magic link
+//	@Description	Finishes login flow using confirmation code
+//	@Tags			Auth
+//	@Produce		json
+//	@Param			request	body		LoginFlowPayload	true	"Request params"
+//	@Success		200		{object}	any
+//	@Failure		400		{object}	server.ErrorResponse	"if invalid or expired payload provided"
+//	@Failure		404		{object}	server.ErrorResponse	"if email does not need to be confirmed by magic link"
+//	@Failure		422		{object}	server.ErrorResponse	"if syntax fails"
+//	@Failure		500		{object}	server.ErrorResponse
+//	@Failure		504		{object}	server.ErrorResponse	"if request times out"
+//	@Router			/auth/signInWithConfirmationCode [POST].
+//
+//nolint:gocritic,funlen,dupl //.
+func (s *service) SignIn(
+	ctx context.Context,
+	req *server.Request[LoginFlowPayload, Status],
+) (*server.Response[Status], *server.Response[server.ErrorResponse]) {
+	tokens, emailConfirmed, err := s.authEmailLinkClient.SignIn(ctx, req.Data.LoginFlowToken, req.Data.ConfirmationCode)
+	if err != nil {
+		err = errors.Wrapf(err, "finish login using confirmation code %#v", req.Data)
+		switch {
+		case errors.Is(err, users.ErrRaceCondition):
+			return nil, server.BadRequest(err, raceConditionErrorCode)
+		case errors.Is(err, users.ErrNotFound):
+			return nil, server.NotFound(err, userNotFoundErrorCode)
+		case errors.Is(err, users.ErrDuplicate):
+			if tErr := terror.As(err); tErr != nil {
+				return nil, server.Conflict(err, duplicateUserErrorCode, tErr.Data)
+			}
+		case errors.Is(err, emaillink.ErrNoConfirmationRequired):
+			return nil, server.NotFound(err, confirmationCodeNotFoundErrorCode)
+		case errors.Is(err, emaillink.ErrExpiredToken):
+			return nil, server.BadRequest(err, linkExpiredErrorCode)
+		case errors.Is(err, emaillink.ErrInvalidToken):
+			return nil, server.BadRequest(err, invalidOTPCodeErrorCode)
+		case errors.Is(err, emaillink.ErrConfirmationCodeAttemptsExceeded):
+			return nil, server.BadRequest(err, confirmationCodeAttemptsExceededErrorCode)
+		case errors.Is(err, emaillink.ErrConfirmationCodeWrong):
+			return nil, server.BadRequest(err, confirmationCodeWrongErrorCode)
+		default:
+			return nil, server.Unexpected(err)
+		}
+	}
+	if emailConfirmed {
+		tokens = nil
+	}
+
+	return server.OK(&Status{
+		RefreshedToken: &RefreshedToken{Tokens: tokens},
+		EmailConfirmed: emailConfirmed,
+	}), nil
+}
+
+// ResetEmailChange godoc
+//
+//	@Schemes
+//	@Description	Resets previous email change
 //	@Tags			Auth
 //	@Produce		json
 //	@Param			request	body		MagicLinkPayload	true	"Request params"
@@ -98,12 +154,14 @@ func (s *service) SendSignInLinkToEmail( //nolint:gocritic,funlen // .
 //	@Failure		422		{object}	server.ErrorResponse	"if syntax fails"
 //	@Failure		500		{object}	server.ErrorResponse
 //	@Failure		504		{object}	server.ErrorResponse	"if request times out"
-//	@Router			/auth/signInWithEmailLink [POST].
-func (s *service) SignIn( //nolint:gocritic //.
+//	@Router			/auth/ResetEmailChange [POST].
+//
+//nolint:gocritic,dupl //.
+func (s *service) ResetEmailChange(
 	ctx context.Context,
 	req *server.Request[MagicLinkPayload, any],
 ) (*server.Response[any], *server.Response[server.ErrorResponse]) {
-	if err := s.authEmailLinkClient.SignIn(ctx, req.Data.EmailToken, req.Data.ConfirmationCode); err != nil {
+	if err := s.authEmailLinkClient.ResetEmailChange(ctx, req.Data.EmailToken, req.Data.ConfirmationCode); err != nil {
 		err = errors.Wrapf(err, "finish login using magic link failed for %#v", req.Data)
 		switch {
 		case errors.Is(err, users.ErrRaceCondition):
@@ -171,53 +229,6 @@ func (s *service) RegenerateTokens( //nolint:gocritic // .
 	}
 
 	return server.OK(&RefreshedToken{Tokens: tokens}), nil
-}
-
-// Status godoc
-//
-//	@Schemes
-//	@Description	Status of the auth process
-//	@Tags			Auth
-//	@Accept			json
-//	@Produce		json
-//	@Param			request	body		StatusArg	true	"Request params"
-//	@Success		200		{object}	Auth
-//	@Failure		422		{object}	server.ErrorResponse	"if syntax fails"
-//	@Failure		403		{object}	server.ErrorResponse	"if invalid or expired login session provided"
-//	@Failure		404		{object}	server.ErrorResponse	"if login session not found or confirmation code verifying failed"
-//	@Failure		500		{object}	server.ErrorResponse
-//	@Failure		504		{object}	server.ErrorResponse	"if request times out"
-//	@Router			/auth/getConfirmationStatus [POST].
-func (s *service) Status( //nolint:gocritic // .
-	ctx context.Context,
-	req *server.Request[StatusArg, Status],
-) (*server.Response[Status], *server.Response[server.ErrorResponse]) {
-	tokens, emailConfirmed, err := s.authEmailLinkClient.Status(ctx, req.Data.LoginSession)
-	if err != nil {
-		err = errors.Wrapf(err, "failed to get status for: %#v", req.Data)
-		if err != nil {
-			switch {
-			case errors.Is(err, emaillink.ErrNoPendingLoginSession):
-				return nil, server.NotFound(err, noPendingLoginSessionErrorCode)
-			case errors.Is(err, emaillink.ErrStatusNotVerified):
-				return server.OK(&Status{}), nil
-			case errors.Is(err, emaillink.ErrInvalidToken):
-				return nil, server.Forbidden(err)
-			case errors.Is(err, emaillink.ErrExpiredToken):
-				return nil, server.Forbidden(err)
-			default:
-				return nil, server.Unexpected(err)
-			}
-		}
-	}
-	if emailConfirmed {
-		tokens = nil
-	}
-
-	return server.OK(&Status{
-		RefreshedToken: &RefreshedToken{Tokens: tokens},
-		EmailConfirmed: emailConfirmed,
-	}), nil
 }
 
 // Metadata godoc

@@ -154,24 +154,6 @@ func (c *client) getUserByIDOrPk(ctx context.Context, userID string, id *loginID
 	return usr, nil
 }
 
-func (c *client) getConfirmedEmailLinkSignIn(ctx context.Context, id *loginID, confirmationCode string) (*emailLinkSignIn, error) {
-	if ctx.Err() != nil {
-		return nil, errors.Wrap(ctx.Err(), "get user by id or email failed because context failed")
-	}
-	sql := `SELECT email_link_sign_ins.*, account_metadata.metadata
-			FROM email_link_sign_ins
-			LEFT JOIN account_metadata ON email_link_sign_ins.user_id = account_metadata.user_id
-			WHERE confirmation_code = $1 
-	  			  AND email = $2
-				  AND device_unique_id = $3`
-	usr, err := storage.Get[emailLinkSignIn](ctx, c.db, sql, confirmationCode, id.Email, id.DeviceUniqueID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get user by confirmation code:%v and id:%#v", confirmationCode, id)
-	}
-
-	return usr, nil
-}
-
 //nolint:revive // .
 func (c *client) getEmailLinkSignIn(ctx context.Context, id *loginID, fromMaster bool) (*emailLinkSignIn, error) {
 	if ctx.Err() != nil {

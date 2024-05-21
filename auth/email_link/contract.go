@@ -29,9 +29,9 @@ type (
 	Client interface {
 		IceUserIDClient
 		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (loginSession string, err error)
-		SignIn(ctx context.Context, emailLinkPayload, confirmationCode string) error
+		SignIn(ctx context.Context, loginFlowToken, confirmationCode string) (tokens *Tokens, emailConfirmed bool, err error)
+		ResetEmailChange(ctx context.Context, emailLinkPayload, confirmationCode string) error
 		RegenerateTokens(ctx context.Context, prevToken string) (tokens *Tokens, err error)
-		Status(ctx context.Context, loginSession string) (tokens *Tokens, emailConfirmed bool, err error)
 		UpdateMetadata(ctx context.Context, userID string, metadata *users.JSON) (*users.JSON, error)
 	}
 	IceUserIDClient interface {
@@ -130,8 +130,9 @@ type (
 	loginFlowToken struct {
 		*jwt.RegisteredClaims
 		DeviceUniqueID     string `json:"deviceUniqueId,omitempty"`
-		ConfirmationCode   string `json:"confirmationCode,omitempty"`
 		ClientIP           string `json:"clientIP,omitempty"` //nolint:tagliatelle //.
+		OldEmail           string `json:"oldEmail,omitempty"`
+		NotifyEmail        string `json:"notifyEmail,omitempty"`
 		LoginSessionNumber int64  `json:"loginSessionNumber,omitempty"`
 	}
 	emailLinkSignIn struct {
