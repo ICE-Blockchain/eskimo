@@ -81,7 +81,7 @@ func loadEmailValidationConfiguration(cfg *config) {
 		// If specific one for emails for found - let's use the same one as wintr/auth/ice uses for token generation.
 		if cfg.EmailValidation.JwtSecret == "" {
 			module = strings.ToUpper(strings.ReplaceAll(strings.ReplaceAll(applicationYamlKey, "-", "_"), "/", "_"))
-			cfg.EmailValidation.JwtSecret = os.Getenv(module + "_JWT_SECRET") //nolint:goconst // .
+			cfg.EmailValidation.JwtSecret = os.Getenv(module + "_JWT_SECRET")
 			if cfg.EmailValidation.JwtSecret == "" {
 				cfg.EmailValidation.JwtSecret = os.Getenv("JWT_SECRET")
 			}
@@ -235,7 +235,7 @@ func (c *client) deleteOldLoginAttempts(ctx context.Context) error {
 }
 
 func (c *client) startOldLoginAttemptsCleaner(ctx context.Context) {
-	ticker := stdlibtime.NewTicker(stdlibtime.Duration(1+rand.Intn(24)) * stdlibtime.Minute) //nolint:gosec,gomnd // Not an  issue.
+	ticker := stdlibtime.NewTicker(stdlibtime.Duration(1+rand.Intn(24)) * stdlibtime.Minute) //nolint:gosec,gomnd,mnd // Not an  issue.
 	defer ticker.Stop()
 
 	for {
