@@ -33,12 +33,12 @@ func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode stri
 
 		return nil, false, errors.Wrapf(err, "failed to get user info by email:%v(old email:%v)", id.Email, token.OldEmail)
 	}
-	emailConfirmed, err = c.signIn(ctx, now, els, &id, token.OldEmail, token.NotifyEmail, confirmationCode)
+	emailConfirmed, issuedTokenSeq, err := c.signIn(ctx, now, els, &id, token.OldEmail, token.NotifyEmail, confirmationCode)
 	if err != nil {
 		return nil, false, errors.Wrapf(err, "can't sign in for email:%v, deviceUniqueID:%v", id.Email, id.DeviceUniqueID)
 	}
 	els.TokenIssuedAt = now
-	tokens, err = c.generateTokens(els.TokenIssuedAt, els, els.IssuedTokenSeq+1)
+	tokens, err = c.generateTokens(els.TokenIssuedAt, els, issuedTokenSeq)
 	if err != nil {
 		return nil, false, errors.Wrapf(err, "can't generate tokens for id:%#v", id)
 	}
@@ -52,21 +52,22 @@ func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode stri
 //nolint:funlen,revive // .
 func (c *client) signIn(
 	ctx context.Context, now *time.Time, els *emailLinkSignIn, id *loginID, oldEmail, notifyEmail, confirmationCode string,
-) (emailConfirmed bool, err error) {
+) (emailConfirmed bool, issuedTokenSeq int64, err error) {
 	if els.UserID != nil && els.ConfirmationCode == *els.UserID {
-		return false, errors.Wrapf(ErrNoPendingLoginSession, "tokens already provided for id:%#v", id)
+		return false, 0, errors.Wrapf(ErrNoPendingLoginSession, "tokens already provided for id:%#v", id)
 	}
 	if vErr := c.verifySignIn(ctx, els, id, confirmationCode); vErr != nil {
-		return false, errors.Wrapf(vErr, "can't verify sign in for id:%#v", id)
+		return false, 0, errors.Wrapf(vErr, "can't verify sign in for id:%#v", id)
 	}
 	if oldEmail != "" || (els.PhoneNumberToEmailMigrationUserID != nil && *els.PhoneNumberToEmailMigrationUserID != "") {
 		if err = c.handleEmailModification(ctx, els, id.Email, oldEmail, notifyEmail); err != nil {
-			return false, errors.Wrapf(err, "failed to handle email modification:%v", id.Email)
+			return false, 0, errors.Wrapf(err, "failed to handle email modification:%v", id.Email)
 		}
 		emailConfirmed = oldEmail != ""
 		els.Email = id.Email
 	}
-	if fErr := c.finishAuthProcess(ctx, now, id, *els.UserID, els.IssuedTokenSeq, emailConfirmed, els.Metadata); fErr != nil {
+	issuedTokenSeq, fErr := c.finishAuthProcess(ctx, now, id, *els.UserID, els.IssuedTokenSeq, emailConfirmed, els.Metadata)
+	if fErr != nil {
 		var mErr *multierror.Error
 		if oldEmail != "" {
 			mErr = multierror.Append(mErr,
@@ -78,10 +79,10 @@ func (c *client) signIn(
 		}
 		mErr = multierror.Append(mErr, errors.Wrapf(fErr, "can't finish auth process for userID:%v,email:%v", els.UserID, id.Email))
 
-		return false, mErr.ErrorOrNil() //nolint:wrapcheck // .
+		return false, 0, mErr.ErrorOrNil() //nolint:wrapcheck // .
 	}
 
-	return emailConfirmed, nil
+	return emailConfirmed, issuedTokenSeq, nil
 }
 
 func (c *client) verifySignIn(ctx context.Context, els *emailLinkSignIn, id *loginID, confirmationCode string) error {
@@ -137,7 +138,7 @@ func (c *client) finishAuthProcess(
 	ctx context.Context, now *time.Time,
 	id *loginID, userID string, issuedTokenSeq int64,
 	emailConfirmed bool, md *users.JSON,
-) error {
+) (int64, error) {
 	emailConfirmedAt := "null"
 	if emailConfirmed {
 		emailConfirmedAt = "$2"
@@ -155,9 +156,12 @@ func (c *client) finishAuthProcess(
 		}
 	}
 	if err := mergo.Merge(&mdToUpdate, md, mergo.WithOverride, mergo.WithTypeCheck); err != nil {
-		return errors.Wrapf(err, "failed to merge %#v and %v:%v", md, auth.IceIDClaim, userID)
+		return 0, errors.Wrapf(err, "failed to merge %#v and %v:%v", md, auth.IceIDClaim, userID)
 	}
 	params := []any{id.Email, now.Time, userID, id.DeviceUniqueID, issuedTokenSeq, mdToUpdate}
+	type resp struct {
+		IssuedTokenSeq int64
+	}
 	sql := fmt.Sprintf(`
 			with metadata_update as (
 				INSERT INTO account_metadata(user_id, metadata)
@@ -175,16 +179,17 @@ func (c *client) finishAuthProcess(
 			WHERE email_link_sign_ins.email = $1
 				  AND device_unique_id = $4
 				  AND issued_token_seq = $5
-			`, emailConfirmedAt)
-	rowsUpdated, err := storage.Exec(ctx, c.db, sql, params...)
+			RETURNING issued_token_seq`, emailConfirmedAt)
+	updatedValue, err := storage.ExecOne[resp](ctx, c.db, sql, params...)
 	if err != nil {
-		return errors.Wrapf(err, "failed to insert generated token data for:%#v", params...)
-	}
-	if rowsUpdated == 0 {
-		return errors.Wrapf(ErrNoConfirmationRequired, "[finishAuthProcess] No records were updated to finish: race condition")
+		if errors.Is(err, storage.ErrNotFound) {
+			return 0, errors.Wrapf(ErrNoConfirmationRequired, "[finishAuthProcess] No records were updated to finish: race condition")
+		}
+
+		return 0, errors.Wrapf(err, "failed to insert generated token data for:%#v", params...)
 	}
 
-	return nil
+	return updatedValue.IssuedTokenSeq, nil
 }
 
 //nolint:revive // .
