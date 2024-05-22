@@ -154,7 +154,7 @@ func (s *service) SignIn(
 //	@Failure		422		{object}	server.ErrorResponse	"if syntax fails"
 //	@Failure		500		{object}	server.ErrorResponse
 //	@Failure		504		{object}	server.ErrorResponse	"if request times out"
-//	@Router			/auth/ResetEmailChange [POST].
+//	@Router			/auth/resetEmailChange [POST].
 //
 //nolint:gocritic,dupl //.
 func (s *service) ResetEmailChange(
