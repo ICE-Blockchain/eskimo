@@ -48,16 +48,7 @@ definitions:
       confirmationCode:
         example: "999"
         type: string
-      loginFlowToken:
-        example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM
-        type: string
-    type: object
-  main.MagicLinkPayload:
-    properties:
-      confirmationCode:
-        example: "999"
-        type: string
-      emailToken:
+      loginSession:
         example: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM
         type: string
     type: object
@@ -751,45 +742,6 @@ paths:
             $ref: '#/definitions/server.ErrorResponse'
         "404":
           description: if user or confirmation not found
-          schema:
-            $ref: '#/definitions/server.ErrorResponse'
-        "422":
-          description: if syntax fails
-          schema:
-            $ref: '#/definitions/server.ErrorResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/server.ErrorResponse'
-        "504":
-          description: if request times out
-          schema:
-            $ref: '#/definitions/server.ErrorResponse'
-      tags:
-      - Auth
-  /auth/resetEmailChange:
-    post:
-      description: Resets previous email change
-      parameters:
-      - description: Request params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/main.MagicLinkPayload'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            type: object
-        "400":
-          description: if invalid or expired payload provided
-          schema:
-            $ref: '#/definitions/server.ErrorResponse'
-        "404":
-          description: if email does not need to be confirmed by magic link
           schema:
             $ref: '#/definitions/server.ErrorResponse'
         "422":

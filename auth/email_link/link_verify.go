@@ -17,36 +17,6 @@ import (
 	"github.com/ice-blockchain/wintr/time"
 )
 
-func (c *client) ResetEmailChange(ctx context.Context, emailLinkPayload, confirmationCode string) error {
-	now := time.Now()
-	var token magicLinkToken
-	if err := parseJwtToken(emailLinkPayload, c.cfg.EmailValidation.JwtSecret, &token); err != nil {
-		return errors.Wrapf(err, "invalid email link payload:%v", emailLinkPayload)
-	}
-	email := token.Subject
-	id := loginID{Email: email, DeviceUniqueID: token.DeviceUniqueID}
-	els, err := c.getEmailLinkSignInByPk(ctx, &id, token.OldEmail)
-	if err != nil {
-		if storage.IsErr(err, storage.ErrNotFound) {
-			return errors.Wrapf(ErrNoConfirmationRequired, "[getEmailLinkSignInByPk] no pending confirmation for email:%v", id.Email)
-		}
-
-		return errors.Wrapf(err, "failed to get user info by email:%v(old email:%v)", id.Email, token.OldEmail)
-	}
-	if els.OTP == *els.UserID || els.OTP != token.OTP {
-		return errors.Wrapf(ErrNoConfirmationRequired, "no pending confirmation for email:%v", id.Email)
-	}
-	_, err = c.signIn(ctx, now, els, &id, token.OldEmail, token.NotifyEmail, token.OTP, confirmationCode)
-	if err != nil {
-		return errors.Wrapf(err, "can't sign in for email:%v, deviceUniqueID:%v", id.Email, id.DeviceUniqueID)
-	}
-	if rErr := c.resetLoginSession(ctx, &id, els, confirmationCode, "", 0); rErr != nil {
-		return errors.Wrapf(rErr, "can't reset login session for id:%#v", id)
-	}
-
-	return nil
-}
-
 func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode string) (tokens *Tokens, emailConfirmed bool, err error) {
 	now := time.Now()
 	var token loginFlowToken
@@ -63,13 +33,12 @@ func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode stri
 
 		return nil, false, errors.Wrapf(err, "failed to get user info by email:%v(old email:%v)", id.Email, token.OldEmail)
 	}
-	var otp string
-	emailConfirmed, err = c.signIn(ctx, now, els, &id, token.OldEmail, token.NotifyEmail, otp, confirmationCode)
+	emailConfirmed, err = c.signIn(ctx, now, els, &id, token.OldEmail, token.NotifyEmail, confirmationCode)
 	if err != nil {
 		return nil, false, errors.Wrapf(err, "can't sign in for email:%v, deviceUniqueID:%v", id.Email, id.DeviceUniqueID)
 	}
 	els.TokenIssuedAt = now
-	tokens, err = c.generateTokens(els.TokenIssuedAt, els, els.IssuedTokenSeq)
+	tokens, err = c.generateTokens(els.TokenIssuedAt, els, els.IssuedTokenSeq+1)
 	if err != nil {
 		return nil, false, errors.Wrapf(err, "can't generate tokens for id:%#v", id)
 	}
@@ -82,7 +51,7 @@ func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode stri
 
 //nolint:funlen,revive // .
 func (c *client) signIn(
-	ctx context.Context, now *time.Time, els *emailLinkSignIn, id *loginID, oldEmail, notifyEmail, otp, confirmationCode string,
+	ctx context.Context, now *time.Time, els *emailLinkSignIn, id *loginID, oldEmail, notifyEmail, confirmationCode string,
 ) (emailConfirmed bool, err error) {
 	if els.UserID != nil && els.ConfirmationCode == *els.UserID {
 		return false, errors.Wrapf(ErrNoPendingLoginSession, "tokens already provided for id:%#v", id)
@@ -97,7 +66,7 @@ func (c *client) signIn(
 		emailConfirmed = oldEmail != ""
 		els.Email = id.Email
 	}
-	if fErr := c.finishAuthProcess(ctx, now, id, *els.UserID, otp, els.IssuedTokenSeq, emailConfirmed, els.Metadata); fErr != nil {
+	if fErr := c.finishAuthProcess(ctx, now, id, *els.UserID, els.IssuedTokenSeq, emailConfirmed, els.Metadata); fErr != nil {
 		var mErr *multierror.Error
 		if oldEmail != "" {
 			mErr = multierror.Append(mErr,
@@ -166,7 +135,7 @@ func (c *client) increaseWrongConfirmationCodeAttemptsCount(ctx context.Context,
 //nolint:revive,funlen // .
 func (c *client) finishAuthProcess(
 	ctx context.Context, now *time.Time,
-	id *loginID, userID, otp string, issuedTokenSeq int64,
+	id *loginID, userID string, issuedTokenSeq int64,
 	emailConfirmed bool, md *users.JSON,
 ) error {
 	emailConfirmedAt := "null"
@@ -189,12 +158,6 @@ func (c *client) finishAuthProcess(
 		return errors.Wrapf(err, "failed to merge %#v and %v:%v", md, auth.IceIDClaim, userID)
 	}
 	params := []any{id.Email, now.Time, userID, id.DeviceUniqueID, issuedTokenSeq, mdToUpdate}
-	var otpSet, otpWhere string
-	if otp != "" {
-		otpSet = "otp = $3,"
-		otpWhere = "AND otp = $7" //nolint:gosec // .
-		params = append(params, otp)
-	}
 	sql := fmt.Sprintf(`
 			with metadata_update as (
 				INSERT INTO account_metadata(user_id, metadata)
@@ -205,16 +168,14 @@ func (c *client) finishAuthProcess(
 			UPDATE email_link_sign_ins
 				SET token_issued_at = $2,
 					user_id = $3,
-					%[1]v
-					email_confirmed_at = %[2]v,
+					email_confirmed_at = %[1]v,
 					phone_number_to_email_migration_user_id = null,
 					issued_token_seq = COALESCE(issued_token_seq, 0) + 1,
 					previously_issued_token_seq = COALESCE(issued_token_seq, 0) + 1
 			WHERE email_link_sign_ins.email = $1
 				  AND device_unique_id = $4
 				  AND issued_token_seq = $5
-				  %[3]v
-			`, otpSet, emailConfirmedAt, otpWhere)
+			`, emailConfirmedAt)
 	rowsUpdated, err := storage.Exec(ctx, c.db, sql, params...)
 	if err != nil {
 		return errors.Wrapf(err, "failed to insert generated token data for:%#v", params...)

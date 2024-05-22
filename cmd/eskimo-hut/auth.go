@@ -26,7 +26,6 @@ func (s *service) setupAuthRoutes(router *server.Router) {
 		POST("auth/sendSignInLinkToEmail", server.RootHandler(s.SendSignInLinkToEmail)).
 		POST("auth/refreshTokens", server.RootHandler(s.RegenerateTokens)).
 		POST("auth/signInWithConfirmationCode", server.RootHandler(s.SignIn)).
-		POST("auth/resetEmailChange", server.RootHandler(s.ResetEmailChange)).
 		POST("auth/getMetadata", server.RootHandler(s.Metadata)).
 		POST("auth/processFaceRecognitionResult", server.RootHandler(s.ProcessFaceRecognitionResult)).
 		POST("auth/getValidUserForPhoneNumberMigration", server.RootHandler(s.GetValidUserForPhoneNumberMigration))
@@ -105,7 +104,7 @@ func (s *service) SignIn(
 	ctx context.Context,
 	req *server.Request[LoginFlowPayload, Status],
 ) (*server.Response[Status], *server.Response[server.ErrorResponse]) {
-	tokens, emailConfirmed, err := s.authEmailLinkClient.SignIn(ctx, req.Data.LoginFlowToken, req.Data.ConfirmationCode)
+	tokens, emailConfirmed, err := s.authEmailLinkClient.SignIn(ctx, req.Data.LoginSession, req.Data.ConfirmationCode)
 	if err != nil {
 		err = errors.Wrapf(err, "finish login using confirmation code %#v", req.Data)
 		switch {
@@ -120,9 +119,9 @@ func (s *service) SignIn(
 		case errors.Is(err, emaillink.ErrNoConfirmationRequired):
 			return nil, server.NotFound(err, confirmationCodeNotFoundErrorCode)
 		case errors.Is(err, emaillink.ErrExpiredToken):
-			return nil, server.BadRequest(err, linkExpiredErrorCode)
+			return nil, server.BadRequest(err, expiredLoginSessionErrorCode)
 		case errors.Is(err, emaillink.ErrInvalidToken):
-			return nil, server.BadRequest(err, invalidOTPCodeErrorCode)
+			return nil, server.BadRequest(err, invalidLoginSessionErrorCode)
 		case errors.Is(err, emaillink.ErrConfirmationCodeAttemptsExceeded):
 			return nil, server.BadRequest(err, confirmationCodeAttemptsExceededErrorCode)
 		case errors.Is(err, emaillink.ErrConfirmationCodeWrong):
@@ -139,55 +138,6 @@ func (s *service) SignIn(
 		RefreshedToken: &RefreshedToken{Tokens: tokens},
 		EmailConfirmed: emailConfirmed,
 	}), nil
-}
-
-// ResetEmailChange godoc
-//
-//	@Schemes
-//	@Description	Resets previous email change
-//	@Tags			Auth
-//	@Produce		json
-//	@Param			request	body		MagicLinkPayload	true	"Request params"
-//	@Success		200		{object}	any
-//	@Failure		400		{object}	server.ErrorResponse	"if invalid or expired payload provided"
-//	@Failure		404		{object}	server.ErrorResponse	"if email does not need to be confirmed by magic link"
-//	@Failure		422		{object}	server.ErrorResponse	"if syntax fails"
-//	@Failure		500		{object}	server.ErrorResponse
-//	@Failure		504		{object}	server.ErrorResponse	"if request times out"
-//	@Router			/auth/resetEmailChange [POST].
-//
-//nolint:gocritic,dupl //.
-func (s *service) ResetEmailChange(
-	ctx context.Context,
-	req *server.Request[MagicLinkPayload, any],
-) (*server.Response[any], *server.Response[server.ErrorResponse]) {
-	if err := s.authEmailLinkClient.ResetEmailChange(ctx, req.Data.EmailToken, req.Data.ConfirmationCode); err != nil {
-		err = errors.Wrapf(err, "finish login using magic link failed for %#v", req.Data)
-		switch {
-		case errors.Is(err, users.ErrRaceCondition):
-			return nil, server.BadRequest(err, raceConditionErrorCode)
-		case errors.Is(err, users.ErrNotFound):
-			return nil, server.NotFound(err, userNotFoundErrorCode)
-		case errors.Is(err, users.ErrDuplicate):
-			if tErr := terror.As(err); tErr != nil {
-				return nil, server.Conflict(err, duplicateUserErrorCode, tErr.Data)
-			}
-		case errors.Is(err, emaillink.ErrNoConfirmationRequired):
-			return nil, server.NotFound(err, confirmationCodeNotFoundErrorCode)
-		case errors.Is(err, emaillink.ErrExpiredToken):
-			return nil, server.BadRequest(err, linkExpiredErrorCode)
-		case errors.Is(err, emaillink.ErrInvalidToken):
-			return nil, server.BadRequest(err, invalidOTPCodeErrorCode)
-		case errors.Is(err, emaillink.ErrConfirmationCodeAttemptsExceeded):
-			return nil, server.BadRequest(err, confirmationCodeAttemptsExceededErrorCode)
-		case errors.Is(err, emaillink.ErrConfirmationCodeWrong):
-			return nil, server.BadRequest(err, confirmationCodeWrongErrorCode)
-		default:
-			return nil, server.Unexpected(err)
-		}
-	}
-
-	return server.OK[any](), nil
 }
 
 // RegenerateTokens godoc
