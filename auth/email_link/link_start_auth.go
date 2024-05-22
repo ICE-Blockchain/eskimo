@@ -189,7 +189,7 @@ func (c *client) sendEmailWithType(ctx context.Context, emailType, toEmail, lang
 	}), "failed to send email with type:%v for user with email:%v", emailType, toEmail)
 }
 
-//nolint:revive,lll // .
+//nolint:lll // .
 func (c *client) upsertEmailLinkSignIn(ctx context.Context, toEmail, deviceUniqueID, code string, now *time.Time) error {
 	confirmationCodeWrongAttempts := 0
 	params := []any{now.Time, toEmail, deviceUniqueID, code, confirmationCodeWrongAttempts, userIDForPhoneNumberToEmailMigration(ctx)}

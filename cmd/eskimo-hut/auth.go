@@ -99,7 +99,7 @@ func (s *service) SendSignInLinkToEmail( //nolint:gocritic,funlen // .
 //	@Failure		504		{object}	server.ErrorResponse	"if request times out"
 //	@Router			/auth/signInWithConfirmationCode [POST].
 //
-//nolint:gocritic,funlen,dupl //.
+//nolint:gocritic,funlen //.
 func (s *service) SignIn(
 	ctx context.Context,
 	req *server.Request[LoginFlowPayload, Status],
