@@ -13,7 +13,7 @@ require (
 	github.com/ice-blockchain/wintr v1.135.0
 	github.com/imroc/req/v3 v3.43.5
 	github.com/ip2location/ip2location-go/v9 v9.7.0
-	github.com/jackc/pgx/v5 v5.5.5
+	github.com/jackc/pgx/v5 v5.6.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.53.0
 	github.com/prometheus/prometheus v0.52.0
@@ -83,7 +83,7 @@ require (
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
-	github.com/google/pprof v0.0.0-20240521024322-9665fa269a30 // indirect
+	github.com/google/pprof v0.0.0-20240528025155-186aa0362fba // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.4 // indirect
@@ -110,7 +110,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/onsi/ginkgo/v2 v2.18.0 // indirect
+	github.com/onsi/ginkgo/v2 v2.19.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
 	github.com/opencontainers/runc v1.1.12 // indirect
@@ -138,8 +138,8 @@ require (
 	github.com/swaggo/files v1.0.1 // indirect
 	github.com/swaggo/gin-swagger v1.6.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
-	github.com/twmb/franz-go v1.16.1 // indirect
-	github.com/twmb/franz-go/pkg/kadm v1.11.0 // indirect
+	github.com/twmb/franz-go v1.17.0 // indirect
+	github.com/twmb/franz-go/pkg/kadm v1.12.0 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.8.0 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/vmihailenco/msgpack/v5 v5.4.1 // indirect
@@ -155,7 +155,7 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.23.0 // indirect
-	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842 // indirect
+	golang.org/x/exp v0.0.0-20240525044651-4c93da0ed11d // indirect
 	golang.org/x/oauth2 v0.20.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/sys v0.20.0 // indirect
