@@ -1,0 +1,3 @@
+{
+    "subject": "Sunwaves için giriş e-postanız değiştirildi"
+}
