@@ -1,3 +1,3 @@
 {
-    "subject": "Ihre Anmelde-E-Mail wurde für Sunwaves geändert"
+    "subject": "Ihre Anmelde-E-Mail wurde für {{.AppName}} geändert"
 }

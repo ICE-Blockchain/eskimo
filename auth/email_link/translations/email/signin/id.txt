@@ -1,3 +1,3 @@
 {
-    "subject": "Masuk ke Sunwaves"
+    "subject": "Masuk ke {{.AppName}}"
 }

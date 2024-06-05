@@ -1,3 +1,3 @@
 {
-    "subject": "Logg inn på Sunwaves"
+    "subject": "Logg inn på {{.AppName}}"
 }

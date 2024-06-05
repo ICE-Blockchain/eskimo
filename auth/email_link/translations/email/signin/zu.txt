@@ -1,3 +1,3 @@
 {
-    "subject": "Ngena ku-Sunwaves"
+    "subject": "Ngena ku-{{.AppName}}"
 }

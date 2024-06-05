@@ -1,3 +1,3 @@
 {
-    "subject": "ወደ Sunwaves ይግቡ"
+    "subject": "ወደ {{.AppName}} ይግቡ"
 }
