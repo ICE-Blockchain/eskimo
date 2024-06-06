@@ -3,7 +3,8 @@
 -->
 
 <p>Olá {{.PetName}},</p>
-    <p>Seu e-mail de login para o {{.AppName}} foi alterado para <a href="mailto:{{.NewEmail}}" target="_blank">{{.NewEmail}}</a>.</p>
-    <p>Se você não solicitou a alteração de seu e-mail, siga <a href="{{.Link}}" target="_blank">este link</a> para redefinir seu e-mail de login.</p>
+    <p>Recebemos um pedido para entrar no {{.AppName}} usando este endereço de e-mail. Se você deseja entrar com sua conta {{.Email}}, use este código de confirmação:</p>
+    <p style="font-size:22px"><b>{{.ConfirmationCode}}</b></p>
+    <p>Se você não solicitou este código, pode ignorar este e-mail com segurança.</p>
     <p>Obrigado,</p>
     <p>Equipe {{.TeamName}}</p>

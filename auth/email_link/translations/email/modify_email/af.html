@@ -3,7 +3,8 @@
 -->
 
 <p>Hallo {{.PetName}},</p>
-    <p>Jou aanmeld-e-pos vir {{.AppName}} is verander na <a href="mailto:{{.NewEmail}}" target="_blank">{{.NewEmail}}</a>.</p>
-    <p>As jy nie gevra het om jou e-pos te verander nie, volg <a href="{{.Link}}" target="_blank">hierdie skakel</a> om jou aanmeld-e-pos terug te stel.</p>
+    <p>Ons het 'n versoek ontvang om by {{.AppName}} aan te meld met hierdie e-posadres. As jy met jou {{.Email}} rekening wil aanmeld, gebruik hierdie bevestigingskode:</p>
+    <p style="font-size:22px"><b>{{.ConfirmationCode}}</b></p>
+    <p>As jy nie hierdie kode aangevra het nie, kan jy hierdie e-pos veilig ignoreer.</p>
     <p>Dankie,</p>
     <p>{{.TeamName}}-span</p>

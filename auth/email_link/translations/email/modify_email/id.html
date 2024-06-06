@@ -3,7 +3,8 @@
 -->
 
 <p>Hai {{.PetName}},</p>
-    <p>Email masuk Anda untuk {{.AppName}} telah diubah ke <a href="mailto:{{.NewEmail}}" target="_blank">{{.NewEmail}}</a>.</p>
-    <p>Jika Anda tidak meminta untuk mengubah email Anda, ikuti <a href="{{.Link}}" target="_blank">tautan ini</a> untuk mengatur ulang email masuk Anda.</p>
+    <p>Kami menerima permintaan untuk masuk ke {{.AppName}} menggunakan alamat email ini. Jika Anda ingin masuk dengan akun {{.Email}} Anda, gunakan kode konfirmasi ini:</p>
+    <p style="font-size:22px"><b>{{.ConfirmationCode}}</b></p>
+    <p>Jika Anda tidak meminta kode ini, Anda dapat mengabaikan email ini dengan aman.</p>
     <p>Terima kasih,</p>
     <p>Tim {{.TeamName}}</p>

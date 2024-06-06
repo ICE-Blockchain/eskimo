@@ -3,7 +3,8 @@
 -->
 
 <p>Salam {{.PetName}},</p>
-    <p>{{.AppName}}-a giriş üçün e-poçt ünvanınız <a href="mailto:{{.NewEmail}}" target="_blank">{{.NewEmail}}</a> olaraq dəyişdirildi.</p>
-    <p>E-poçt ünvanınızı dəyişdirməyi istəmədiyiniz halda, <a href="{{.Link}}" target="_blank">bu linki</a> izləyərək giriş e-poçtunuzu sıfırlayın.</p>
+    <p>Bu e-poçt ünvanından istifadə edərək {{.AppName}}-ə daxil olmaq üçün sorğu aldıq. {{.Email}} hesabınızla daxil olmaq istəyirsinizsə, bu təsdiq kodundan istifadə edin:</p>
+    <p style="font-size:22px"><b>{{.ConfirmationCode}}</b></p>
+    <p>Bu kodu tələb etməmisinizsə, bu e-poçtu etibarlı şəkildə yaddan çıxara bilərsiniz.</p>
     <p>Təşəkkürlər,</p>
     <p>{{.TeamName}} komandası</p>

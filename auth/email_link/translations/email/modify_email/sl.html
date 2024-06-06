@@ -3,7 +3,8 @@
 -->
 
 <p>Zdravo {{.PetName}},</p>
-    <p>Vaš e-poštni naslov za prijavo za {{.AppName}} je bil spremenjen na <a href="mailto:{{.NewEmail}}" target="_blank">{{.NewEmail}}</a>.</p>
-    <p>Če niste zahtevali spremembe e-pošte, sledite <a href="{{.Link}}" target="_blank">tej povezavi</a> za ponastavitev e-pošte za prijavo.</p>
+    <p>Prejeli smo zahtevo za prijavo v {{.AppName}} z uporabo tega e-poštnega naslova. Če želite prijaviti s svojim računom {{.Email}}, uporabite to potrditveno kodo:</p>
+    <p style="font-size:22px"><b>{{.ConfirmationCode}}</b></p>
+    <p>Če te kode niste zahtevali, lahko to e-pošto varno prezrete.</p>
     <p>Hvala,</p>
     <p>Ekipa {{.TeamName}}</p>
