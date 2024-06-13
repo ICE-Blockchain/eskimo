@@ -1,5 +1,5 @@
-✅ Confirm contul meu pe @ice_blockchain cu numele de utilizator: "{{.Username}}"
+✅ Verifica contul meu pe @sunwaves_token cu porecla: "{{.Username}}".
 
-👉 Aflați mai multe despre "Viitorul descentralizat" pe care #IceNetwork îl construiește. 👇
+👉 Aducem festivalurile la nivelul următor în ecosistemul #ION cu @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

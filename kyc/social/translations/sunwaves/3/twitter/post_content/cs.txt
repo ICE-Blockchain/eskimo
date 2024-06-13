@@ -1,5 +1,5 @@
-✅ Ověřuji svůj účet na @ice_blockchain pod přezdívkou: "{{.Username}}"
+✅ Ověřuji svůj účet na @sunwaves_token s přezdívkou: "{{.Username}}".
 
-👉 Dozvědět se více o "Decentralizované budoucnosti", kterou #IceNetwork staví. 👇
+👉 Posouváme festivaly na další úroveň v ekosystému #ION s @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

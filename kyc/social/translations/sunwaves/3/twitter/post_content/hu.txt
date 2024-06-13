@@ -1,5 +1,5 @@
-✅ Fiókom ellenőrzése a @ice_blockchain-on a becenévvel: "{{.Username}}"
+✅ Fiókom ellenőrzése a @sunwaves_token-nél a következő becenévvel: "{{.Username}}".
 
-👉 Tudj meg többet a "#Decentralizált Jövőről", amit a #IceNetwork épít. 👇
+👉 A fesztiválok következő szintre emelése a #ION ökoszisztémában az @ice_blockchain-nel.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

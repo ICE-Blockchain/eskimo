@@ -1,5 +1,5 @@
-✅ Mənim @ice_blockchain hesabım "{{.Username}}" ləqəbi ilə təsdiqlənir
+✅ @sunwaves_token hesabımı təxəllüslə təsdiq edirəm: "{{.Username}}".
 
-👉 #IceNetwork tərəfindən qurulan "Mərkəzi olmayan Gələcək" haqqında daha çox məlumat əldə edin. 👇
+👉 @ice_blockchain ilə #ION ekosistemində festivalları növbəti səviyyəyə çatdırır.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

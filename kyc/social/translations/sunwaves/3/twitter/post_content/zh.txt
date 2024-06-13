@@ -1,5 +1,5 @@
-✅ 使用昵称 "{{.Username}}" 验证我的 @ice_blockchain 帐户
+✅ 使用昵称在 @sunwaves_token 上验证我的账户: "{{.Username}}".
 
-👉 了解更多关于 #IceNetwork 正在构建的 "去中心化未来"。👇
+👉 在 @ice_blockchain 上将节日提升到下一个层次的 #ION 生态系统.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

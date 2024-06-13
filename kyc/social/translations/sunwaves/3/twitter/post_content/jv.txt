@@ -1,5 +1,5 @@
-✅ Verifikasi akunku ing @ice_blockchain nganggo jeneng panggonan: "{{.Username}}"
+✅ Verifikasi akun saya ing @sunwaves_token nganggo jeneng pangguna: "{{.Username}}".
 
-👉 Tandha mênu mawi "Masa Depan Decentralized" sing #IceNetwork bangun. 👇
+👉 Nggawe festival menyang tingkat sabanjure ing ekosistem #ION karo @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

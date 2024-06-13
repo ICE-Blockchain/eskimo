@@ -1,5 +1,5 @@
-✅ @ice_blockchain'de kullanıcı adı: "{{.Username}}" ile hesabımı doğruluyorum
+✅ @sunwaves_token'deki hesabımı takma adla doğruluyorum: "{{.Username}}".
 
-👉 #IceNetwork'ün inşa ettiği "Merkezi Olmayan Gelecek" hakkında daha fazla bilgi edinin. 👇
+👉 @ice_blockchain ile #ION ekosisteminde festivalleri bir sonraki seviyeye taşımak.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

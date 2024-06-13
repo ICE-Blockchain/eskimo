@@ -1,5 +1,5 @@
-✅ Po verifikoj llogarinë time në @ice_blockchain me emrin: "{{.Username}}"
+✅ Verifikimi i llogarisë sime në @sunwaves_token me pseudonimin: "{{.Username}}".
 
-👉 Mësoni më shumë për "E ardhmjen e zhdrejtëzuar" që #IceNetwork po ndërton. 👇
+👉 Duke çuar festivalet në nivelin tjetër në ekosistemin #ION me @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

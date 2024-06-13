@@ -1,5 +1,5 @@
-✅ My rekening op @ice_blockchain word geverifieer met die bynaam: "{{.Username}}"
+✅ Verifieer my rekening op @sunwaves_token met die bynaam: "{{.Username}}".
 
-👉 Kom meer te wete oor "Die Gedesentraliseerde Toekoms" wat #IceNetwork bou. 👇
+👉 Bring feeste na die volgende vlak in die #ION ekosisteem met @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

@@ -1,5 +1,5 @@
-✅ Επαληθεύω τον λογαριασμό μου στο @ice_blockchain με το ψευδώνυμο: "{{.Username}}"
+✅ Επαληθεύω τον λογαριασμό μου στο @sunwaves_token με το ψευδώνυμο: "{{.Username}}".
 
-👉 Μάθετε περισσότερα για "Το αποκεντρωμένο μέλλον" που χτίζει το #IceNetwork. 👇
+👉 Φέρνουμε τα φεστιβάλ στο επόμενο επίπεδο στο οικοσύστημα #ION με το @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

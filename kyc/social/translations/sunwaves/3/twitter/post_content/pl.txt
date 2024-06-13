@@ -1,5 +1,5 @@
-✅ Weryfikacja mojego konta na @ice_blockchain pod pseudonimem: "{{.Username}}"
+✅ Weryfikacja mojego konta na @sunwaves_token z pseudonimem: "{{.Username}}".
 
-👉 Dowiedz się więcej o "Zdecentralizowanej przyszłości", którą #IceNetwork buduje. 👇
+👉 Przenoszenie festiwali na wyższy poziom w ekosystemie #ION z @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

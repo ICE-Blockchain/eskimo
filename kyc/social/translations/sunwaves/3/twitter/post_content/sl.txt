@@ -1,5 +1,5 @@
-✅ Potrjujem svoj račun na @ice_blockchain z vzdevkom: "{{.Username}}"
+✅ Preverjam svoj račun na @sunwaves_token z vzdevkom: "{{.Username}}".
 
-👉 Več o "Decentralizirani prihodnosti", ki jo gradi #IceNetwork. 👇
+👉 Dvigovanje festivalov na naslednjo raven v ekosistemu #ION z @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

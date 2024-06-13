@@ -1,5 +1,5 @@
-✅ Vérification de mon compte sur @ice_blockchain avec le surnom : "{{.Username}}"
+✅ Vérification de mon compte sur @sunwaves_token avec le pseudo : "{{.Username}}".
 
-👉 En savoir plus sur "L'avenir décentralisé" que #IceNetwork construit. 👇
+👉 Porter les festivals au niveau supérieur dans l'écosystème #ION avec @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE

@@ -1,5 +1,5 @@
-✅ Verifierar mitt konto på @ice_blockchain med smeknamnet: "{{.Username}}"
+✅ Verifierar mitt konto på @sunwaves_token med smeknamnet: "{{.Username}}".
 
-👉 Lär dig mer om "Den decentraliserade framtiden" som #IceNetwork bygger. 👇
+👉 Tar festivaler till nästa nivå i #ION-ekosystemet med @ice_blockchain.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#SUNWAVES $SW $ICE
