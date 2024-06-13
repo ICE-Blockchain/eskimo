@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 	"text/template"
@@ -42,7 +43,7 @@ func loadTranslations() { //nolint:funlen,gocognit,revive // .
 						log.Panic(fErr) //nolint:revive // Nope.
 						language := strings.Split(file.Name(), ".")[0]
 						templName := fmt.Sprintf("translations_%v_%v_%v_%v_%v", tenantFile.Name(), kycStep, socialType, templateType, language)
-						tmpl := languageTemplate{Content: string(content)}
+						tmpl := languageTemplate{Content: fixTemplateParameters(string(content))}
 						tmpl.content = template.Must(template.New(templName).Parse(tmpl.Content))
 
 						if _, found := allTemplates[tenantName(tenantFile.Name())]; !found {
@@ -411,4 +412,19 @@ func (r *repository) expectedPostURL(metadata *VerificationMetadata) (url string
 	}
 
 	return url
+}
+
+func fixTemplateParameters(orig string) string {
+	result := orig
+	re := regexp.MustCompile(`{{[^{}]*}}`)
+	newStrs := re.FindAllString(result, -1)
+	for _, s := range newStrs {
+		if strings.HasSuffix(s, ".}}") {
+			textWithoutBrackets := s[0 : len(s)-3]
+			textWithoutBrackets = textWithoutBrackets[2:]
+			result = strings.ReplaceAll(result, s, fmt.Sprintf("{{.%v}}", textWithoutBrackets))
+		}
+	}
+
+	return result
 }
