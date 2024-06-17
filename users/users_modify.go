@@ -148,8 +148,8 @@ func (u *User) override(user *User) *User {
 	usr.PhoneNumberHash = mergeStringField(u.PhoneNumberHash, user.PhoneNumberHash)
 	usr.BlockchainAccountAddress = mergeStringField(u.BlockchainAccountAddress, user.BlockchainAccountAddress)
 	usr.MiningBlockchainAccountAddress = mergeStringField(u.MiningBlockchainAccountAddress, user.MiningBlockchainAccountAddress)
-	usr.TelegramUserID = mergePointerField(u.TelegramUserID, user.TelegramUserID)
-	usr.TelegramBotID = mergePointerField(u.TelegramBotID, user.TelegramBotID)
+	usr.TelegramUserID = mergeStringField(u.TelegramUserID, user.TelegramUserID)
+	usr.TelegramBotID = mergeStringField(u.TelegramBotID, user.TelegramBotID)
 
 	return usr
 }
@@ -300,12 +300,12 @@ func (u *User) genSQLUpdate(ctx context.Context, agendaUserIDs []UserID) (sql st
 		sql += fmt.Sprintf(", agenda_contact_user_ids = $%v", nextIndex)
 		nextIndex++
 	}
-	if u.TelegramUserID != nil && *u.TelegramUserID != "" {
+	if u.TelegramUserID != "" {
 		params = append(params, u.TelegramUserID)
 		sql += fmt.Sprintf(", telegram_user_id = $%v", nextIndex)
 		nextIndex++
 	}
-	if u.TelegramBotID != nil && *u.TelegramBotID != "" {
+	if u.TelegramBotID != "" {
 		params = append(params, u.TelegramBotID)
 		sql += fmt.Sprintf(", telegram_bot_id = $%v", nextIndex)
 		nextIndex++

@@ -1759,6 +1759,11 @@ const docTemplate = `{
                         "in": "formData"
                     },
                     {
+                        "type": "boolean",
+                        "name": "clearTelegramInfo",
+                        "in": "formData"
+                    },
+                    {
                         "type": "string",
                         "description": "Optional. Example: ` + "`" + `{\"key1\":{\"something\":\"somethingElse\"},\"key2\":\"value\"}` + "`" + `.",
                         "name": "clientData",

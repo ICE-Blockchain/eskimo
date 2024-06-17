@@ -312,8 +312,12 @@ func buildUserForModification(req *server.Request[ModifyUserRequestBody, ModifyU
 		log.Info(fmt.Sprintf("user(id:`%v`,email:`%v`) attempted to set username to `%v`",
 			req.AuthenticatedUser.UserID, req.AuthenticatedUser.Email, req.Data.Username))
 	}
-	usr.TelegramBotID = &req.Data.TelegramBotID
-	usr.TelegramUserID = &req.Data.TelegramUserID
+	usr.TelegramBotID = req.Data.TelegramBotID
+	usr.TelegramUserID = req.Data.TelegramUserID
+	if req.Data.ClearTelegramInfo != nil && *req.Data.ClearTelegramInfo {
+		usr.TelegramBotID = usr.ID
+		usr.TelegramUserID = usr.ID
+	}
 
 	return usr
 }
@@ -334,6 +338,7 @@ func (a *ModifyUserRequestBody) verifyIfAtLeastOnePropertyProvided() *server.Res
 		a.BlockchainAccountAddress == "" &&
 		a.MiningBlockchainAccountAddress == "" &&
 		a.ClearMiningBlockchainAccountAddress == nil &&
+		a.ClearTelegramInfo == nil &&
 		a.HiddenProfileElements == nil &&
 		a.ClearHiddenProfileElements == nil &&
 		a.ClientData == nil &&
