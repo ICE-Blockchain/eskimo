@@ -1842,6 +1842,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
+                        "name": "telegramBotId",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "name": "telegramUserId",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
                         "description": "Optional. Example:` + "`" + `jdoe` + "`" + `.",
                         "name": "username",
                         "in": "formData"
@@ -2332,6 +2342,14 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 100
                 },
+                "telegramBotId": {
+                    "type": "string",
+                    "example": "5678"
+                },
+                "telegramUserId": {
+                    "type": "string",
+                    "example": "1234"
+                },
                 "updatedAt": {
                     "type": "string",
                     "example": "2022-01-03T16:20:52.156534Z"
@@ -2656,6 +2674,14 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "telegramBotId": {
+                    "type": "string",
+                    "example": "5678"
+                },
+                "telegramUserId": {
+                    "type": "string",
+                    "example": "1234"
+                },
                 "updatedAt": {
                     "type": "string",
                     "example": "2022-01-03T16:20:52.156534Z"
@@ -2799,6 +2825,14 @@ const docTemplate = `{
                 "t2ReferralCount": {
                     "type": "integer",
                     "example": 100
+                },
+                "telegramBotId": {
+                    "type": "string",
+                    "example": "5678"
+                },
+                "telegramUserId": {
+                    "type": "string",
+                    "example": "1234"
                 },
                 "updatedAt": {
                     "type": "string",

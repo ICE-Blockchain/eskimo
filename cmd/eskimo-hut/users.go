@@ -312,6 +312,8 @@ func buildUserForModification(req *server.Request[ModifyUserRequestBody, ModifyU
 		log.Info(fmt.Sprintf("user(id:`%v`,email:`%v`) attempted to set username to `%v`",
 			req.AuthenticatedUser.UserID, req.AuthenticatedUser.Email, req.Data.Username))
 	}
+	usr.TelegramBotID = &req.Data.TelegramBotID
+	usr.TelegramUserID = &req.Data.TelegramUserID
 
 	return usr
 }
@@ -336,7 +338,9 @@ func (a *ModifyUserRequestBody) verifyIfAtLeastOnePropertyProvided() *server.Res
 		a.ClearHiddenProfileElements == nil &&
 		a.ClientData == nil &&
 		a.ProfilePicture == nil &&
-		a.ResetProfilePicture == nil {
+		a.ResetProfilePicture == nil &&
+		a.TelegramBotID == "" &&
+		a.TelegramUserID == "" {
 		return server.UnprocessableEntity(errors.New("modify request without values"), invalidPropertiesErrorCode)
 	}
 

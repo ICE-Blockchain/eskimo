@@ -89,7 +89,9 @@ type (
 		BlockchainAccountAddress       string `form:"blockchainAccountAddress" formMultipart:"blockchainAccountAddress"`
 		MiningBlockchainAccountAddress string `form:"miningBlockchainAccountAddress" formMultipart:"miningBlockchainAccountAddress"`
 		// Optional. Example:`en`.
-		Language string `form:"language" formMultipart:"language"`
+		Language       string `form:"language" formMultipart:"language"`
+		TelegramUserID string `form:"telegramUserId" formMultipart:"telegramUserId"`
+		TelegramBotID  string `form:"telegramBotId" formMultipart:"telegramBotId"`
 		// Optional. Example:`1232412415326543647657`.
 		Checksum string `form:"checksum" formMultipart:"checksum"`
 	}
