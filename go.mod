@@ -2,8 +2,6 @@ module github.com/ice-blockchain/eskimo
 
 go 1.22
 
-replace github.com/ice-blockchain/wintr => ../wintr
-
 require (
 	dario.cat/mergo v1.0.0
 	github.com/PuerkitoBio/goquery v1.9.2
