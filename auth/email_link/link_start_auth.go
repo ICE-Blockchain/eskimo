@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"sync/atomic"
 	stdlibtime "time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -184,16 +185,17 @@ func (c *client) sendEmailWithType(ctx context.Context, emailType, toEmail, lang
 	}{
 		AppName: c.cfg.AppName,
 	}
+	from := c.fromRecipients[atomic.AddUint64(&c.emailClientLBIndex, 1)%uint64(len(c.emailClients))]
 
-	return errors.Wrapf(c.emailClient.Send(ctx, &email.Parcel{
+	return errors.Wrapf(c.emailClients[atomic.AddUint64(&c.emailClientLBIndex, 1)%uint64(len(c.emailClients))].Send(ctx, &email.Parcel{
 		Body: &email.Body{
 			Type: email.TextHTML,
 			Data: tmpl.getBody(dataBody),
 		},
 		Subject: tmpl.getSubject(dataSubject),
 		From: email.Participant{
-			Name:  c.cfg.FromEmailName,
-			Email: c.cfg.FromEmailAddress,
+			Name:  from.FromEmailName,
+			Email: from.FromEmailAddress,
 		},
 	}, email.Participant{
 		Name:  "",
