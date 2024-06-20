@@ -185,7 +185,7 @@ func (c *client) sendEmailWithType(ctx context.Context, emailType, toEmail, lang
 	}{
 		AppName: c.cfg.AppName,
 	}
-	lbIdx := atomic.AddUint64(&c.emailClientLBIndex, 1) % uint64(c.cfg.ExtraLoadBalancersCount)
+	lbIdx := atomic.AddUint64(&c.emailClientLBIndex, 1) % uint64(c.cfg.ExtraLoadBalancersCount+1)
 
 	return errors.Wrapf(c.emailClients[lbIdx].Send(ctx, &email.Parcel{
 		Body: &email.Body{

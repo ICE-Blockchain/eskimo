@@ -40,8 +40,8 @@ func NewClient(ctx context.Context, userModifier UserModifier, authClient auth.C
 		db:             db,
 		authClient:     authClient,
 		userModifier:   userModifier,
-		emailClients:   make([]email.Client, 0, cfg.ExtraLoadBalancersCount),
-		fromRecipients: make([]fromRecipient, 0, cfg.ExtraLoadBalancersCount),
+		emailClients:   make([]email.Client, 0, cfg.ExtraLoadBalancersCount+1),
+		fromRecipients: make([]fromRecipient, 0, cfg.ExtraLoadBalancersCount+1),
 	}
 	if !cfg.DisableEmailSending {
 		cl.emailClients = append(cl.emailClients, email.New(applicationYamlKey))
