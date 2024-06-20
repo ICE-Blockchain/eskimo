@@ -185,9 +185,9 @@ func (c *client) sendEmailWithType(ctx context.Context, emailType, toEmail, lang
 	}{
 		AppName: c.cfg.AppName,
 	}
-	from := c.fromRecipients[atomic.AddUint64(&c.emailClientLBIndex, 1)%uint64(len(c.emailClients))]
+	from := c.fromRecipients[atomic.AddUint64(&c.emailClientLBIndex, 1)%uint64(c.cfg.ExtraLoadBalancersCount)]
 
-	return errors.Wrapf(c.emailClients[atomic.AddUint64(&c.emailClientLBIndex, 1)%uint64(len(c.emailClients))].Send(ctx, &email.Parcel{
+	return errors.Wrapf(c.emailClients[atomic.AddUint64(&c.emailClientLBIndex, 1)%uint64(c.cfg.ExtraLoadBalancersCount)].Send(ctx, &email.Parcel{
 		Body: &email.Body{
 			Type: email.TextHTML,
 			Data: tmpl.getBody(dataBody),

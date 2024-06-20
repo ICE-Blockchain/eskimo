@@ -94,10 +94,10 @@ type (
 		db                 *storage.DB
 		cfg                *config
 		shutdown           func() error
-		emailClients       []email.Client
-		fromRecipients     []fromRecipient
 		authClient         auth.Client
 		userModifier       UserModifier
+		emailClients       []email.Client
+		fromRecipients     []fromRecipient
 		emailClientLBIndex uint64
 	}
 	config struct {
