@@ -4,6 +4,7 @@ package internal
 
 import (
 	"context"
+	"github.com/pkg/errors"
 	"mime/multipart"
 
 	"github.com/ice-blockchain/eskimo/users"
@@ -18,4 +19,8 @@ type (
 	UserRepository interface {
 		ModifyUser(ctx context.Context, usr *users.User, profilePicture *multipart.FileHeader) (*users.UserProfile, error)
 	}
+)
+
+var (
+	ErrNotAvailable = errors.Errorf("not available")
 )
