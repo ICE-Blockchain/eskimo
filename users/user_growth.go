@@ -138,19 +138,36 @@ func (r *repository) getGlobalValues(ctx context.Context, keys ...string) ([]*Gl
 	return vals, errors.Wrapf(err, "failed to select global vals for keys:%#v", keys)
 }
 
-func (r *repository) updateTotalUsersCount(ctx context.Context, usr *UserSnapshot) error {
+func (r *repository) updateTotalUsersCount(ctx context.Context, usr *UserSnapshot, msgTimestamp stdlibtime.Time) error {
 	if (usr.Before == nil || usr.Before.ID == "") && usr.User != nil && usr.User.ID != "" {
+		if duplErr := r.checkForDuplicatedUserSnapshotProcessing(ctx, usr.User.ID, "", false, msgTimestamp); duplErr != nil {
+			return errors.Wrapf(duplErr, "cannot update total users count due to failed dupl check")
+		}
 		if true || usr.User.isFirstMiningAfterHumanVerification(r) { //nolint:revive // .
 			return r.incrementOrDecrementTotalUsers(ctx, time.Now(), true)
 		}
 	}
 
 	if (usr.User == nil || usr.User.ID == "") && usr.Before != nil && usr.Before.ID != "" {
+		if duplErr := r.checkForDuplicatedUserSnapshotProcessing(ctx, usr.Before.ID, "", true, msgTimestamp); duplErr != nil {
+			return errors.Wrapf(duplErr, "cannot update total users count due to failed dupl check")
+		}
 		if true || usr.Before.hadAtLeastAMiningAfterHumanVerification(r) { //nolint:revive // .
 			return r.incrementOrDecrementTotalUsers(ctx, time.Now(), false)
 		}
 	}
 
+	return nil
+}
+
+func (r *repository) checkForDuplicatedUserSnapshotProcessing(ctx context.Context, userID, country string, deleted bool, msgTimestamp stdlibtime.Time) error {
+	_, err := storage.Exec(ctx, r.db, `INSERT INTO processed_users(user_id, country, processed_at, deleted) VALUES ($1, $2, $3, $4)`,
+		userID, country, msgTimestamp, deleted)
+	if storage.IsErr(err, storage.ErrDuplicate) {
+		return ErrDuplicate
+	} else if err != nil {
+		return errors.Wrapf(err, "failed to verify uniqueness of user message")
+	}
 	return nil
 }
 

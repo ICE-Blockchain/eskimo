@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	stdlibtime "time"
 
 	"github.com/pkg/errors"
 
@@ -54,7 +55,7 @@ func (r *repository) getTopCountriesParams(countryKeyword string) (countriesSQLE
 }
 
 //nolint:funlen,gocyclo,revive,cyclop // .
-func (r *repository) updateTotalUsersPerCountryCount(ctx context.Context, usr *UserSnapshot) error {
+func (r *repository) updateTotalUsersPerCountryCount(ctx context.Context, usr *UserSnapshot, msgTimestamp stdlibtime.Time) error {
 	isFirstMiningAfterHumanVerification := (usr.Before == nil || usr.Before.ID == "") && usr.User != nil && usr.User.ID != "" &&
 		usr.User.isFirstMiningAfterHumanVerification(r)
 	isDeleteAfterHumanVerification := (usr.User == nil || usr.User.ID == "") && usr.Before != nil && usr.Before.ID != "" &&
@@ -71,7 +72,7 @@ func (r *repository) updateTotalUsersPerCountryCount(ctx context.Context, usr *U
 		}
 	}
 	countryChanged := usr.User != nil && usr.User.ID != "" && usr.Before != nil && usr.Before.ID != "" && usr.User.Country != usr.Before.Country
-	if !countryChanged {
+	if usr.Before != nil && usr.User != nil && !countryChanged {
 		return nil
 	}
 	nextIndex := 1
@@ -88,10 +89,18 @@ func (r *repository) updateTotalUsersPerCountryCount(ctx context.Context, usr *U
 		params = append(params, usr.User.Country)
 		incrementCondition = "users_per_country.country = $1"
 		nextIndex++
+		if duplErr := r.checkForDuplicatedUserSnapshotProcessing(ctx, usr.User.ID, usr.User.Country, false, msgTimestamp); duplErr != nil {
+			return errors.Wrapf(duplErr, "cannot update total users count due to failed dupl check")
+		}
+
 	}
 	if usr.Before != nil {
 		values = append(values, fmt.Sprintf("($%v,0)", nextIndex))
 		params = append(params, usr.Before.Country)
+		if duplErr := r.checkForDuplicatedUserSnapshotProcessing(ctx, usr.Before.ID, usr.Before.Country, true, msgTimestamp); duplErr != nil {
+			return errors.Wrapf(duplErr, "cannot update total users count due to failed dupl check")
+		}
+
 	}
 	sql := fmt.Sprintf(sqlTemplate, strings.Join(values, ","), incrementCondition)
 	_, err := storage.Exec(ctx, r.db, sql, params...)

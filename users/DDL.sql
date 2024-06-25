@@ -170,3 +170,13 @@ DO $$ BEGIN
             ADD CONSTRAINT processed_referrals_id_refby_deleted_pkey PRIMARY KEY(user_id, referred_by, deleted);
     end if;
 END $$;
+
+CREATE TABLE IF NOT EXISTS processed_users
+(
+    processed_at TIMESTAMP             NOT NULL,
+    deleted      BOOLEAN DEFAULT false NOT NULL,
+    user_id      TEXT                  NOT NULL,
+    country      TEXT                  NOT NULL,
+    primary key (user_id, country, deleted)
+);
+CREATE INDEX IF NOT EXISTS processed_users_processed_at_ix ON processed_users (processed_at);

@@ -31,8 +31,8 @@ func (s *miningSessionSource) Process(ctx context.Context, msg *messagebroker.Me
 
 	return errors.Wrapf(multierror.Append(nil,
 		errors.Wrap(s.incrementTotalActiveUsersCount(ctx, ses), "failed to incrementTotalActiveUsersCount"),
-		errors.Wrap(s.updateTotalUsersCount(ctx, &UserSnapshot{User: usr}), "failed to updateTotalUsersCount"),
-		errors.Wrap(s.updateTotalUsersPerCountryCount(ctx, &UserSnapshot{User: usr}), "failed to updateTotalUsersPerCountryCount"),
+		errors.Wrap(s.updateTotalUsersCount(ctx, &UserSnapshot{User: usr}, msg.Timestamp), "failed to updateTotalUsersCount"),
+		errors.Wrap(s.updateTotalUsersPerCountryCount(ctx, &UserSnapshot{User: usr}, msg.Timestamp), "failed to updateTotalUsersPerCountryCount"),
 	).ErrorOrNil(), "failed to process miningSession after LivenessDetectionKYCStep: %#v, user: %#v", ses, usr)
 }
 
