@@ -4,8 +4,9 @@ package internal
 
 import (
 	"context"
-	"github.com/pkg/errors"
 	"mime/multipart"
+
+	"github.com/pkg/errors"
 
 	"github.com/ice-blockchain/eskimo/users"
 )
@@ -21,6 +22,5 @@ type (
 	}
 )
 
-var (
-	ErrNotAvailable = errors.Errorf("not available")
-)
+//nolint:grouper // .
+var ErrNotAvailable = errors.Errorf("not available")

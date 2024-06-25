@@ -27,8 +27,8 @@ type (
 type (
 	client struct {
 		client           internalClient
-		unexpectedErrors atomic.Uint64
 		cfg              Config
+		unexpectedErrors atomic.Uint64
 	}
 	internalClient = internal.Client
 )

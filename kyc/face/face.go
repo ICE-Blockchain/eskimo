@@ -4,11 +4,11 @@ package face
 
 import (
 	"context"
-	"github.com/ice-blockchain/eskimo/kyc/face/internal"
 	"time"
 
 	"github.com/pkg/errors"
 
+	"github.com/ice-blockchain/eskimo/kyc/face/internal"
 	"github.com/ice-blockchain/eskimo/kyc/face/internal/threedivi"
 	"github.com/ice-blockchain/eskimo/users"
 	appcfg "github.com/ice-blockchain/wintr/config"
@@ -31,11 +31,14 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 	kycFaceAvailable := false
 	if errs := c.unexpectedErrors.Load(); errs >= c.cfg.UnexpectedErrorsAllowed {
 		log.Error(errors.Errorf("some unexpected error occurred recently"))
+
 		return false, nil
 	}
+	//nolint:nestif // .
 	if hasResult, err := c.client.CheckAndUpdateStatus(ctx, user); err != nil {
 		c.unexpectedErrors.Add(1)
 		log.Error(errors.Wrapf(err, "[unexpected]failed to update face auth status for user ID %s", user.ID))
+
 		return false, nil
 	} else if !hasResult || nextKYCStep == users.LivenessDetectionKYCStep {
 		availabilityErr := c.client.Available(ctx)
@@ -53,7 +56,7 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 }
 
 func (c *client) clearErrs(ctx context.Context) {
-	ticker := time.NewTicker(refreshTime) //nolint:gosec,gomnd // Not an  issue.
+	ticker := time.NewTicker(refreshTime)
 	defer ticker.Stop()
 
 	for {
