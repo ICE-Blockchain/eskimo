@@ -65,7 +65,7 @@ func (s *service) Close(ctx context.Context) error {
 	return multierror.Append( //nolint:wrapcheck // Not needed.
 		errors.Wrap(s.quizRepository.Close(), "could not close quiz repository"),
 		errors.Wrap(s.socialRepository.Close(), "could not close socialRepository"),
-		errors.Wrap(s.authEmailLinkClient.Close(), "could not close authEmailLinkClient"),
+		errors.Wrap(s.authEmailLinkClient.Close(ctx), "could not close authEmailLinkClient"),
 		errors.Wrap(s.usersProcessor.Close(), "could not close usersProcessor"),
 		errors.Wrap(s.faceKycClient.Close(), "could not close faceKycClient"),
 	).ErrorOrNil()
@@ -74,5 +74,8 @@ func (s *service) Close(ctx context.Context) error {
 func (s *service) CheckHealth(ctx context.Context) error {
 	log.Debug("checking health...", "package", "users")
 
-	return errors.Wrapf(s.usersProcessor.CheckHealth(ctx), "processor health check failed")
+	return multierror.Append( //nolint:wrapcheck // Not needed.
+		errors.Wrapf(s.usersProcessor.CheckHealth(ctx), "processor health check failed"),
+		errors.Wrapf(s.authEmailLinkClient.CheckHealth(ctx), "email client health check failed"),
+	).ErrorOrNil()
 }

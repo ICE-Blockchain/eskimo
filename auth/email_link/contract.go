@@ -5,7 +5,6 @@ package emaillinkiceauth
 import (
 	"context"
 	"embed"
-	"io"
 	"mime/multipart"
 	"text/template"
 	stdlibtime "time"
@@ -16,6 +15,7 @@ import (
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/auth"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
+	storagev3 "github.com/ice-blockchain/wintr/connectors/storage/v3"
 	"github.com/ice-blockchain/wintr/email"
 	"github.com/ice-blockchain/wintr/time"
 )
@@ -28,13 +28,15 @@ type (
 	}
 	Client interface {
 		IceUserIDClient
-		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (loginSession string, err error)
+		Close(ctx context.Context) error
+		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (queuePos int64, rateLimit, loginSession string, err error)
 		SignIn(ctx context.Context, loginFlowToken, confirmationCode string) (tokens *Tokens, emailConfirmed bool, err error)
 		RegenerateTokens(ctx context.Context, prevToken string) (tokens *Tokens, err error)
 		UpdateMetadata(ctx context.Context, userID string, metadata *users.JSON) (*users.JSON, error)
+		CheckHealth(ctx context.Context) error
 	}
 	IceUserIDClient interface {
-		io.Closer
+		Close(ctx context.Context) error
 		IceUserID(ctx context.Context, mail string) (iceID string, err error)
 		Metadata(ctx context.Context, userID, emailAddress string) (metadata string, metadataFields *users.JSON, err error)
 	}
@@ -86,14 +88,18 @@ const (
 	sameIPCheckRate = 24 * stdlibtime.Hour
 
 	duplicatedSignInRequestsInLessThan = 2 * stdlibtime.Second
+	loginQueueKey                      = "login_queue"
+	loginRateLimitKey                  = "login_rate_limit"
 )
 
 type (
 	languageCode = string
 	client       struct {
 		db                 *storage.DB
+		emailQueueLock     storage.Lock
+		queueDB            storagev3.DB
 		cfg                *config
-		shutdown           func() error
+		shutdown           func(ctx context.Context) error
 		authClient         auth.Client
 		userModifier       UserModifier
 		emailClients       []email.Client
@@ -101,12 +107,13 @@ type (
 		emailClientLBIndex uint64
 	}
 	config struct {
-		FromEmailName    string `yaml:"fromEmailName"`
-		FromEmailAddress string `yaml:"fromEmailAddress"`
-		PetName          string `yaml:"petName"`
-		AppName          string `yaml:"appName"`
-		TeamName         string `yaml:"teamName"`
-		LoginSession     struct {
+		FromEmailName      string `yaml:"fromEmailName"`
+		FromEmailAddress   string `yaml:"fromEmailAddress"`
+		PetName            string `yaml:"petName"`
+		AppName            string `yaml:"appName"`
+		TeamName           string `yaml:"teamName"`
+		InitEmailRateLimit string `yaml:"initEmailRateLimit"`
+		LoginSession       struct {
 			JwtSecret string `yaml:"jwtSecret"`
 		} `yaml:"loginSession"`
 		EmailValidation struct {
@@ -117,8 +124,9 @@ type (
 		ConfirmationCode struct {
 			MaxWrongAttemptsCount int64 `yaml:"maxWrongAttemptsCount"`
 		} `yaml:"confirmationCode"`
-		DisableEmailSending     bool `yaml:"disableEmailSending"`
-		ExtraLoadBalancersCount int  `yaml:"extraLoadBalancersCount"`
+		DisableEmailSending     bool  `yaml:"disableEmailSending"`
+		ExtraLoadBalancersCount int   `yaml:"extraLoadBalancersCount"`
+		EmailSendBatchSize      int64 `yaml:"emailSendBatchSize"`
 	}
 	loginID struct {
 		Email          string `json:"email,omitempty" example:"someone1@example.com"`
@@ -180,4 +188,5 @@ var (
 		modifyEmailType,
 		notifyEmailChangedType,
 	}
+	errAlreadyEnqueued = errors.New("already enqueued")
 )

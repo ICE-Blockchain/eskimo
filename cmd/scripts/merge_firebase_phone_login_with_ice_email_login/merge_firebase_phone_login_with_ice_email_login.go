@@ -51,7 +51,7 @@ func main() {
 	db := storage.MustConnect(context.Background(), ddl, applicationYamlEskimoKey)
 	defer db.Close()
 	defer usersProcessor.Close()
-	defer authEmailLinkClient.Close()
+	defer authEmailLinkClient.Close(context.Background())
 
 	offset := uint64(0)
 	concurrencyGuard := make(chan struct{}, concurrencyCount)

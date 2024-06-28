@@ -14,11 +14,13 @@ import (
 	stdlibtime "time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
 	"github.com/ice-blockchain/wintr/auth"
 	appcfg "github.com/ice-blockchain/wintr/config"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
+	storagev3 "github.com/ice-blockchain/wintr/connectors/storage/v3"
 	"github.com/ice-blockchain/wintr/email"
 	"github.com/ice-blockchain/wintr/log"
 	"github.com/ice-blockchain/wintr/time"
@@ -29,15 +31,25 @@ func init() {
 	loadEmailMagicLinkTranslationTemplates()
 }
 
+//nolint:funlen // .
 func NewClient(ctx context.Context, userModifier UserModifier, authClient auth.Client) Client {
 	cfg := loadConfiguration()
 	cfg.validate()
 	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
-
+	queueDB := storagev3.MustConnect(ctx, applicationYamlKey)
+	if initRateLimitErr := queueDB.SetNX(ctx, loginRateLimitKey, cfg.InitEmailRateLimit, 0).Err(); initRateLimitErr != nil {
+		log.Panic(errors.Wrapf(initRateLimitErr, "failed to init email sending rate limit"))
+	}
+	lock, err := storage.NewLock(ctx, db, loginQueueKey)
+	log.Panic(errors.Wrapf(err, "failed to initialize email queue lock")) //nolint:revive // .
 	cl := &client{
-		cfg:            cfg,
-		shutdown:       db.Close,
+		cfg: cfg,
+		shutdown: closeAll(
+			func(closeCtx context.Context) func() error { return func() error { return lock.Unlock(closeCtx) } },
+			closerFunc(db.Close), closerFunc(queueDB.Close)),
 		db:             db,
+		emailQueueLock: lock,
+		queueDB:        queueDB,
 		authClient:     authClient,
 		userModifier:   userModifier,
 		emailClients:   make([]email.Client, 0, cfg.ExtraLoadBalancersCount+1),
@@ -52,6 +64,7 @@ func NewClient(ctx context.Context, userModifier UserModifier, authClient auth.C
 			cl.emailClients = append(cl.emailClients, email.New(fmt.Sprintf("%v/%v", applicationYamlKey, i+1)))
 			cl.fromRecipients = append(cl.fromRecipients, fromRecipient{nestedCfg.FromEmailName, nestedCfg.FromEmailAddress})
 		}
+		go cl.processEmailQueue(ctx)
 	}
 	go cl.startOldLoginAttemptsCleaner(ctx)
 
@@ -62,13 +75,51 @@ func NewROClient(ctx context.Context) IceUserIDClient {
 	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
 
 	return &client{
-		shutdown: db.Close,
+		shutdown: closeAll(closerFunc(db.Close)),
 		db:       db,
 	}
 }
 
-func (c *client) Close() error {
-	return errors.Wrap(c.shutdown(), "closing auth/emaillink repository failed")
+func closerFunc(closeFunc func() error) func(closeCtx context.Context) func() error {
+	return func(_ context.Context) func() error {
+		return closeFunc
+	}
+}
+
+func closeAll(getclosers ...func(ctx context.Context) func() error) func(context.Context) error {
+	return func(ctx context.Context) error {
+		errs := make([]error, 0, len(getclosers))
+		for _, closer := range getclosers {
+			if err := closer(ctx)(); err != nil {
+				errs = append(errs, err)
+			}
+		}
+
+		return multierror.Append(nil, errs...).ErrorOrNil()
+	}
+}
+
+func (c *client) Close(ctx context.Context) error {
+	return errors.Wrap(c.shutdown(ctx), "closing auth/emaillink repository failed")
+}
+
+func (c *client) CheckHealth(ctx context.Context) error {
+	return errors.Wrapf(c.checkQueueDBHealth(ctx), "[health-check] failed to ping queueDB/dfly for email client")
+}
+
+func (c *client) checkQueueDBHealth(ctx context.Context) error {
+	if resp := c.queueDB.Ping(ctx); resp.Err() != nil || resp.Val() != "PONG" {
+		if resp.Err() == nil {
+			resp.SetErr(errors.Errorf("response `%v` is not `PONG`", resp.Val()))
+		}
+
+		return errors.Wrap(resp.Err(), "[health-check] failed to ping DB")
+	}
+	if !c.queueDB.IsRW(ctx) {
+		return errors.New("db is not writeable")
+	}
+
+	return nil
 }
 
 func loadConfiguration() *config {
@@ -97,6 +148,7 @@ func loadLoginSessionConfiguration(cfg *config) {
 	}
 }
 
+//nolint:funlen // .
 func (cfg *config) validate() {
 	if cfg.LoginSession.JwtSecret == "" {
 		log.Panic(errors.New("no login session jwt secret provided"))
@@ -124,6 +176,12 @@ func (cfg *config) validate() {
 	}
 	if cfg.TeamName == "" {
 		log.Panic("no team name specified")
+	}
+	if cfg.EmailSendBatchSize == 0 {
+		log.Panic("emailSendBatchSize not specified")
+	}
+	if cfg.InitEmailRateLimit == "" {
+		log.Panic("initEmailRateLimit not specified")
 	}
 }
 
