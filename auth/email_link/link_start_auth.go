@@ -157,13 +157,17 @@ func (c *client) sendEmailWithType(ctx context.Context, emailType, language stri
 		tmpl = allEmailLinkTemplates[emailType][defaultLanguage]
 	}
 	dataBody := struct {
-		PetName  string
-		AppName  string
-		TeamName string
+		Email            string
+		ConfirmationCode string
+		PetName          string
+		AppName          string
+		TeamName         string
 	}{
-		PetName:  c.cfg.PetName,
-		AppName:  c.cfg.AppName,
-		TeamName: c.cfg.TeamName,
+		PetName:          c.cfg.PetName,
+		AppName:          c.cfg.AppName,
+		TeamName:         c.cfg.TeamName,
+		Email:            "{{.Email}}",
+		ConfirmationCode: "{{.ConfirmationCode}}",
 	}
 	dataSubject := struct {
 		AppName string
@@ -175,7 +179,7 @@ func (c *client) sendEmailWithType(ctx context.Context, emailType, language stri
 		participants = append(participants, email.Participant{
 			Name:               "",
 			Email:              toEmails[i],
-			SubstitutionFields: map[string]string{"-conf_code-": confirmationCodes[i], "-email-": toEmails[i]},
+			SubstitutionFields: map[string]string{"{{.ConfirmationCode}}": confirmationCodes[i], "{{.Email}}": toEmails[i]},
 		})
 	}
 

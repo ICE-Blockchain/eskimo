@@ -5,6 +5,7 @@ package emaillinkiceauth
 import (
 	"context"
 	"fmt"
+	"math"
 	"math/rand/v2"
 	"strconv"
 	"strings"
@@ -15,21 +16,22 @@ import (
 	"github.com/redis/go-redis/v9"
 
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
+	"github.com/ice-blockchain/wintr/email"
 	"github.com/ice-blockchain/wintr/log"
 	"github.com/ice-blockchain/wintr/time"
 )
 
 //nolint:funlen // .
-func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, email string) (queuePosition int64, rateLimit string, err error) {
+func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, userEmail string) (queuePosition int64, rateLimit string, err error) {
 	var result []redis.Cmder
 	result, err = c.queueDB.TxPipelined(ctx, func(pipeliner redis.Pipeliner) error {
 		if zErr := pipeliner.ZAddNX(ctx, loginQueueKey, redis.Z{
 			Score:  float64(now.Nanosecond()),
-			Member: email,
+			Member: userEmail,
 		}).Err(); zErr != nil {
 			return zErr //nolint:wrapcheck // .
 		}
-		if zRankErr := pipeliner.ZRank(ctx, loginQueueKey, email).Err(); zRankErr != nil {
+		if zRankErr := pipeliner.ZRank(ctx, loginQueueKey, userEmail).Err(); zRankErr != nil {
 			return zRankErr //nolint:wrapcheck // .
 		}
 
@@ -52,7 +54,7 @@ func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, email 
 			rateLimit = strCmd.Val()
 		case 1:
 			intCmd := cmdRes.(*redis.IntCmd) //nolint:errcheck,forcetypeassert // .
-			queuePosition = intCmd.Val()
+			queuePosition = intCmd.Val() + 1
 		case 0:
 			intCmd := cmdRes.(*redis.IntCmd) //nolint:errcheck,forcetypeassert // .
 			if intCmd.Val() == 0 {
@@ -61,7 +63,7 @@ func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, email 
 		}
 	}
 	if cmdErr := multierror.Append(nil, errs...).ErrorOrNil(); cmdErr != nil {
-		return queuePosition, rateLimit, errors.Wrapf(cmdErr, "failed to enqueue email %v", email)
+		return queuePosition, rateLimit, errors.Wrapf(cmdErr, "failed to enqueue email %v", userEmail)
 	}
 
 	return queuePosition, rateLimit, nil
@@ -70,70 +72,100 @@ func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, email 
 //nolint:funlen,gocognit,revive,contextcheck // Keep processing in signle place.
 func (c *client) processEmailQueue(rootCtx context.Context) {
 	lastProcessed := time.Now()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	locked := false
-	defer func() {
-		if locked {
-			log.Error(errors.Wrapf(c.emailQueueLock.Unlock(ctx), "failed to unlock pg advisory emailQueueLock for email queue"))
-		}
-	}()
-	for rootCtx.Err() == nil {
-		var err error
-		locked, err = c.emailQueueLock.Obtain(ctx) //nolint:contextcheck // Background context.
-		if err != nil {
+
+	emailQueueLock := storage.NewMutex(c.db, loginQueueKey)
+	lockCtx, lockCancel := context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+	if err := emailQueueLock.Lock(lockCtx); err != nil {
+		if !errors.Is(err, storage.ErrMutexNotLocked) {
 			log.Panic(errors.Wrapf(err, "failed to obtain emailQueueLock for email queue"))
 		}
-		if !locked {
-			_ = wait(rootCtx, stdlibtime.Duration(1+rand.IntN(4))*stdlibtime.Second) //nolint:errcheck,gosec,gomnd // Nothing to rollback.
-
-			continue
-		}
+	}
+	lockCancel()
+	defer func() {
+		log.Error(errors.Wrapf(c.queueDB.Close(), "failed to close email queue db"))
+	}()
+	for rootCtx.Err() == nil {
 		now := time.Now()
-		emails, scores, rateLimit, err := c.dequeueNextEmails(ctx) //nolint:contextcheck // Background context.
-		if err != nil {
-			log.Error(errors.Wrapf(err, "failed to fetch next %v emails in queue", c.cfg.EmailSendBatchSize))
+		reqCtx, reqCancel := context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+		if lockErr := emailQueueLock.EnsureLocked(reqCtx); lockErr != nil {
+			reqCancel()
+			if errors.Is(lockErr, storage.ErrTxAborted) {
+				return
+			}
+			if errors.Is(lockErr, storage.ErrMutexNotLocked) {
+				_ = wait(rootCtx, stdlibtime.Duration(1+rand.IntN(4))*stdlibtime.Second) //nolint:errcheck,gosec,gomnd // Nothing to rollback.
 
-			continue
-		}
-		if len(emails) == 0 {
-			_ = wait(rootCtx, 10*stdlibtime.Second) //nolint:errcheck,gomnd // Nothing to rollback.
-			log.Info("No emails in queue for sending")
-
-			continue
-		}
-		loginInformation, err := c.fetchLoginInformationForEmailBatch(ctx, now, emails) //nolint:contextcheck // Background context.
-		if err != nil {
-			log.Error(errors.Wrapf(err, "failed to fetch login information for emails: %v", emails))
-
-			continue
-		}
-		rlCount, rlDuration, rlErr := parseRateLimit(rateLimit)
-		if rlErr != nil {
-			log.Panic(errors.Wrapf(rlErr, "failed to parse rate limit for email queue %v", rateLimit)) //nolint:revive // .
-
-			continue
-		}
-		lastTimeBatchProcessingDuration := time.Now().Sub(*lastProcessed.Time)
-		rateLimitEstimationDuration := lastTimeBatchProcessingDuration * stdlibtime.Duration(int64(rlCount)/c.cfg.EmailSendBatchSize)
-		if rateLimitEstimationDuration < rlDuration {
-			oneBatchProcessingTimeToRespectRateLimit := stdlibtime.Duration(c.cfg.EmailSendBatchSize/int64(rlCount)) * rlDuration
-			if wait(rootCtx, oneBatchProcessingTimeToRespectRateLimit) != nil {
-				//nolint:contextcheck // Background context.
-				log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(ctx, emails, scores), "failed to rollback fetched emails %#v back to queue", emails))
+				continue
 			}
 		}
+		reqCancel()
+		reqCtx, reqCancel = context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+		emails, scores, rateLimit, err := c.dequeueNextEmails(reqCtx)                       //nolint:contextcheck // Background context.
+		if err != nil {
+			log.Error(errors.Wrapf(err, "failed to fetch next %v emails in queue", email.MaxBatchSize))
+			reqCancel()
+			_ = wait(rootCtx, 1*stdlibtime.Second) //nolint:errcheck // Noting to rollback.
 
-		if failed, sErr := c.sendEmails(ctx, loginInformation); sErr != nil { //nolint:contextcheck // Background context.
-			log.Error(errors.Wrapf(sErr, "failed to send email batch for emails %#v", failed))
-			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(ctx, failed, scores), "failed to rollback failed emails %#v back to queue", failed))
+			continue
 		}
+		reqCancel()
+
+		if len(emails) == 0 {
+			log.Info("No emails in queue for sending")
+			_ = wait(rootCtx, 10*stdlibtime.Second) //nolint:errcheck,gomnd // Nothing to rollback.
+
+			continue
+		}
+
+		rlCount, rlDuration, rlErr := parseRateLimit(rateLimit)
+		if rlErr != nil {
+			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails, scores), "failed to rollback emails %#v back to queue", emails))
+			log.Panic(errors.Wrapf(rlErr, "failed to parse rate limit for email queue %v", rateLimit)) //nolint:revive // .
+		}
+		limit := int(math.Min(float64(rlCount), float64(len(emails))))
+		if rlCount < len(emails) {
+			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails[rlCount:], scores), "failed to rollback emails %#v back to queue cuz rate limit %v is less than batch %v", emails[rlCount:], rlCount, email.MaxBatchSize)) //nolint:lll // .
+			emails = emails[:rlCount]
+		}
+
+		reqCtx, reqCancel = context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+		loginInformation, err := c.fetchLoginInformationForEmailBatch(reqCtx, now, emails, limit)
+		if err != nil {
+			log.Error(errors.Wrapf(err, "failed to fetch login information for emails: %v", emails))
+			reqCancel()
+			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails, scores), "failed to rollback emails %#v back to queue", emails))
+			_ = wait(rootCtx, 1*stdlibtime.Second) //nolint:errcheck // Already rolled back.
+
+			continue
+		}
+		reqCancel()
+		lastTimeBatchProcessingDuration := time.Now().Sub(*lastProcessed.Time)
+		rateLimitEstimationDuration := lastTimeBatchProcessingDuration * stdlibtime.Duration(int64(rlCount)/int64(len(emails)))
+		if rateLimitEstimationDuration < rlDuration {
+			oneBatchProcessingTimeToRespectRateLimit := stdlibtime.Duration(int64(len(emails))/int64(rlCount)) * rlDuration
+			if wait(rootCtx, oneBatchProcessingTimeToRespectRateLimit) != nil {
+				log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails, scores), "failed to rollback fetched emails %#v back to queue", emails))
+
+				continue
+			}
+		}
+		reqCtx, reqCancel = context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+		if failed, sErr := c.sendEmails(reqCtx, loginInformation); sErr != nil {
+			reqCancel()
+			log.Error(errors.Wrapf(sErr, "failed to send email batch for emails %#v", failed))
+			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(failed, scores), "failed to rollback failed emails %#v back to queue", failed))
+			stdlibtime.Sleep(1 * stdlibtime.Second)
+
+			continue
+		}
+		reqCancel()
 		lastProcessed = time.Now()
-		stdlibtime.Sleep(1 * stdlibtime.Second)
 	}
 }
 
-func (c *client) rollbackEmailsBackToQueue(ctx context.Context, failed []string, scores map[string]int64) error {
+func (c *client) rollbackEmailsBackToQueue(failed []string, scores map[string]int64) error {
+	rollbackCtx, rollbackCancel := context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+	defer rollbackCancel()
 	failedZ := make([]redis.Z, 0, len(failed))
 	for _, failedEmail := range failed {
 		failedZ = append(failedZ, redis.Z{
@@ -142,14 +174,14 @@ func (c *client) rollbackEmailsBackToQueue(ctx context.Context, failed []string,
 		})
 	}
 
-	return errors.Wrapf(c.queueDB.ZAdd(ctx, loginQueueKey, failedZ...).Err(), "failed to rollback unsent emails %#v", failed)
+	return errors.Wrapf(c.queueDB.ZAddNX(rollbackCtx, loginQueueKey, failedZ...).Err(), "failed to rollback unsent emails %#v", failed)
 }
 
 //nolint:gocritic,revive // We need all the results from the pipeline
 func (c *client) dequeueNextEmails(ctx context.Context) (emailsBatch []string, scores map[string]int64, rateLimit string, err error) {
 	var pipeRes []redis.Cmder
 	pipeRes, err = c.queueDB.TxPipelined(ctx, func(pipeliner redis.Pipeliner) error {
-		if zpopErr := pipeliner.ZPopMin(ctx, loginQueueKey, c.cfg.EmailSendBatchSize).Err(); zpopErr != nil {
+		if zpopErr := pipeliner.ZPopMin(ctx, loginQueueKey, email.MaxBatchSize).Err(); zpopErr != nil {
 			return zpopErr //nolint:wrapcheck // .
 		}
 
@@ -178,12 +210,12 @@ func (c *client) dequeueNextEmails(ctx context.Context) (emailsBatch []string, s
 	return emailsBatch, scores, rate, nil
 }
 
-func (c *client) fetchLoginInformationForEmailBatch(ctx context.Context, now *time.Time, emails []string) ([]*emailLinkSignIn, error) {
+func (c *client) fetchLoginInformationForEmailBatch(ctx context.Context, now *time.Time, emails []string, limit int) ([]*emailLinkSignIn, error) {
 	sql := fmt.Sprintf(`
 		 SELECT * FROM public.email_link_sign_ins 
          WHERE email = ANY($1) AND created_at > ($2::TIMESTAMP - (%[2]v * interval '1 second'))
          ORDER BY created_at DESC
-         LIMIT %[1]v;`, c.cfg.EmailSendBatchSize, c.cfg.EmailValidation.ExpirationTime.Seconds())
+         LIMIT %[1]v;`, limit, c.cfg.EmailValidation.ExpirationTime.Seconds())
 	res, err := storage.Select[emailLinkSignIn](ctx, c.db, sql, emails, now.Time)
 
 	return res, err
@@ -206,9 +238,9 @@ func parseRateLimit(rateLimit string) (int, stdlibtime.Duration, error) {
 func (c *client) sendEmails(ctx context.Context, emails []*emailLinkSignIn) (failed []string, err error) {
 	emailsByLanguage := make(map[string][]string)
 	confCodesByLanguage := make(map[string][]string)
-	for _, email := range emails {
-		emailsByLanguage[email.Language] = append(emailsByLanguage[email.Language], email.Email)
-		confCodesByLanguage[email.Language] = append(confCodesByLanguage[email.Language], email.ConfirmationCode)
+	for _, userEmail := range emails {
+		emailsByLanguage[userEmail.Language] = append(emailsByLanguage[userEmail.Language], userEmail.Email)
+		confCodesByLanguage[userEmail.Language] = append(confCodesByLanguage[userEmail.Language], userEmail.ConfirmationCode)
 	}
 	var mErr *multierror.Error
 	for language := range emailsByLanguage {
@@ -226,6 +258,8 @@ func wait(ctx context.Context, d stdlibtime.Duration) error {
 	case <-stdlibtime.After(d):
 		return nil
 	case <-ctx.Done():
+		log.Info("cancelled")
+
 		return context.Canceled
 	}
 }

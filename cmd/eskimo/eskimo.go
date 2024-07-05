@@ -51,7 +51,7 @@ func (s *service) Close(ctx context.Context) error {
 	}
 
 	return multierror.Append( //nolint:wrapcheck //.
-		errors.Wrapf(s.iceClient.Close(ctx), "could not close iceClient"),
+		errors.Wrapf(s.iceClient.Close(), "could not close iceClient"),
 		errors.Wrapf(s.usersRepository.Close(), "could not close repository"),
 	).ErrorOrNil()
 }

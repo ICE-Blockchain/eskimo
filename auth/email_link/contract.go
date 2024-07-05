@@ -5,6 +5,7 @@ package emaillinkiceauth
 import (
 	"context"
 	"embed"
+	"io"
 	"mime/multipart"
 	"text/template"
 	stdlibtime "time"
@@ -28,7 +29,6 @@ type (
 	}
 	Client interface {
 		IceUserIDClient
-		Close(ctx context.Context) error
 		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (queuePos int64, rateLimit, loginSession string, err error)
 		SignIn(ctx context.Context, loginFlowToken, confirmationCode string) (tokens *Tokens, emailConfirmed bool, err error)
 		RegenerateTokens(ctx context.Context, prevToken string) (tokens *Tokens, err error)
@@ -36,7 +36,7 @@ type (
 		CheckHealth(ctx context.Context) error
 	}
 	IceUserIDClient interface {
-		Close(ctx context.Context) error
+		io.Closer
 		IceUserID(ctx context.Context, mail string) (iceID string, err error)
 		Metadata(ctx context.Context, userID, emailAddress string) (metadata string, metadataFields *users.JSON, err error)
 	}
@@ -90,16 +90,17 @@ const (
 	duplicatedSignInRequestsInLessThan = 2 * stdlibtime.Second
 	loginQueueKey                      = "login_queue"
 	loginRateLimitKey                  = "login_rate_limit"
+	initEmailRateLimit                 = "1000:1m"
 )
 
 type (
 	languageCode = string
 	client       struct {
 		db                 *storage.DB
-		emailQueueLock     storage.Lock
 		queueDB            storagev3.DB
 		cfg                *config
-		shutdown           func(ctx context.Context) error
+		shutdown           func() error
+		cancel             context.CancelFunc
 		authClient         auth.Client
 		userModifier       UserModifier
 		emailClients       []email.Client
@@ -107,13 +108,12 @@ type (
 		emailClientLBIndex uint64
 	}
 	config struct {
-		FromEmailName      string `yaml:"fromEmailName"`
-		FromEmailAddress   string `yaml:"fromEmailAddress"`
-		PetName            string `yaml:"petName"`
-		AppName            string `yaml:"appName"`
-		TeamName           string `yaml:"teamName"`
-		InitEmailRateLimit string `yaml:"initEmailRateLimit"`
-		LoginSession       struct {
+		FromEmailName    string `yaml:"fromEmailName"`
+		FromEmailAddress string `yaml:"fromEmailAddress"`
+		PetName          string `yaml:"petName"`
+		AppName          string `yaml:"appName"`
+		TeamName         string `yaml:"teamName"`
+		LoginSession     struct {
 			JwtSecret string `yaml:"jwtSecret"`
 		} `yaml:"loginSession"`
 		EmailValidation struct {
@@ -124,9 +124,8 @@ type (
 		ConfirmationCode struct {
 			MaxWrongAttemptsCount int64 `yaml:"maxWrongAttemptsCount"`
 		} `yaml:"confirmationCode"`
-		DisableEmailSending     bool  `yaml:"disableEmailSending"`
-		ExtraLoadBalancersCount int   `yaml:"extraLoadBalancersCount"`
-		EmailSendBatchSize      int64 `yaml:"emailSendBatchSize"`
+		DisableEmailSending     bool `yaml:"disableEmailSending"`
+		ExtraLoadBalancersCount int  `yaml:"extraLoadBalancersCount"`
 	}
 	loginID struct {
 		Email          string `json:"email,omitempty" example:"someone1@example.com"`

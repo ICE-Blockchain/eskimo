@@ -47,11 +47,11 @@ type (
 func main() {
 	usersProcessor := users.StartProcessor(context.Background(), func() {})
 	authClient := auth.New(context.Background(), applicationYamlAuthKey)
-	authEmailLinkClient := emaillink.NewClient(context.Background(), usersProcessor, authClient)
+	authEmailLinkClient := emaillink.NewClient(context.Background(), nil, usersProcessor, authClient)
 	db := storage.MustConnect(context.Background(), ddl, applicationYamlEskimoKey)
 	defer db.Close()
 	defer usersProcessor.Close()
-	defer authEmailLinkClient.Close(context.Background())
+	defer authEmailLinkClient.Close()
 
 	offset := uint64(0)
 	concurrencyGuard := make(chan struct{}, concurrencyCount)

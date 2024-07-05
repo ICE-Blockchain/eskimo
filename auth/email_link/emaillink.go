@@ -14,7 +14,6 @@ import (
 	stdlibtime "time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
 	"github.com/ice-blockchain/wintr/auth"
@@ -32,23 +31,18 @@ func init() {
 }
 
 //nolint:funlen // .
-func NewClient(ctx context.Context, userModifier UserModifier, authClient auth.Client) Client {
+func NewClient(ctx context.Context, cancel context.CancelFunc, userModifier UserModifier, authClient auth.Client) Client {
 	cfg := loadConfiguration()
 	cfg.validate()
 	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
-	queueDB := storagev3.MustConnect(ctx, applicationYamlKey)
-	if initRateLimitErr := queueDB.SetNX(ctx, loginRateLimitKey, cfg.InitEmailRateLimit, 0).Err(); initRateLimitErr != nil {
-		log.Panic(errors.Wrapf(initRateLimitErr, "failed to init email sending rate limit"))
-	}
-	lock, err := storage.NewLock(ctx, db, loginQueueKey)
-	log.Panic(errors.Wrapf(err, "failed to initialize email queue lock")) //nolint:revive // .
+	//nolint:contextcheck // Used in queue processing.
+	queueDB := storagev3.MustConnect(context.Background(), applicationYamlKey)
+	log.Panic(errors.Wrapf(queueDB.SetNX(ctx, loginRateLimitKey, initEmailRateLimit, 0).Err(), "failed to init email sending rate limit")) //nolint:revive // .
 	cl := &client{
-		cfg: cfg,
-		shutdown: closeAll(
-			func(closeCtx context.Context) func() error { return func() error { return lock.Unlock(closeCtx) } },
-			closerFunc(db.Close), closerFunc(queueDB.Close)),
+		cfg:            cfg,
+		shutdown:       db.Close,
 		db:             db,
-		emailQueueLock: lock,
+		cancel:         cancel,
 		queueDB:        queueDB,
 		authClient:     authClient,
 		userModifier:   userModifier,
@@ -75,32 +69,18 @@ func NewROClient(ctx context.Context) IceUserIDClient {
 	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
 
 	return &client{
-		shutdown: closeAll(closerFunc(db.Close)),
+		shutdown: db.Close,
 		db:       db,
 	}
 }
 
-func closerFunc(closeFunc func() error) func(closeCtx context.Context) func() error {
-	return func(_ context.Context) func() error {
-		return closeFunc
+func (c *client) Close() error {
+	retErr := errors.Wrap(c.shutdown(), "closing auth/emaillink repository failed")
+	if c.cancel != nil {
+		c.cancel()
 	}
-}
 
-func closeAll(getclosers ...func(ctx context.Context) func() error) func(context.Context) error {
-	return func(ctx context.Context) error {
-		errs := make([]error, 0, len(getclosers))
-		for _, closer := range getclosers {
-			if err := closer(ctx)(); err != nil {
-				errs = append(errs, err)
-			}
-		}
-
-		return multierror.Append(nil, errs...).ErrorOrNil()
-	}
-}
-
-func (c *client) Close(ctx context.Context) error {
-	return errors.Wrap(c.shutdown(ctx), "closing auth/emaillink repository failed")
+	return retErr
 }
 
 func (c *client) CheckHealth(ctx context.Context) error {
@@ -148,7 +128,6 @@ func loadLoginSessionConfiguration(cfg *config) {
 	}
 }
 
-//nolint:funlen // .
 func (cfg *config) validate() {
 	if cfg.LoginSession.JwtSecret == "" {
 		log.Panic(errors.New("no login session jwt secret provided"))
@@ -176,12 +155,6 @@ func (cfg *config) validate() {
 	}
 	if cfg.TeamName == "" {
 		log.Panic("no team name specified")
-	}
-	if cfg.EmailSendBatchSize == 0 {
-		log.Panic("emailSendBatchSize not specified")
-	}
-	if cfg.InitEmailRateLimit == "" {
-		log.Panic("initEmailRateLimit not specified")
 	}
 }
 
