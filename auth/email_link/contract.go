@@ -7,6 +7,7 @@ import (
 	"embed"
 	"io"
 	"mime/multipart"
+	"sync"
 	"text/template"
 	stdlibtime "time"
 
@@ -96,15 +97,16 @@ const (
 type (
 	languageCode = string
 	client       struct {
-		db                 *storage.DB
 		queueDB            storagev3.DB
+		authClient         auth.Client
+		userModifier       UserModifier
+		db                 *storage.DB
 		cfg                *config
 		shutdown           func() error
 		cancel             context.CancelFunc
-		authClient         auth.Client
-		userModifier       UserModifier
 		emailClients       []email.Client
 		fromRecipients     []fromRecipient
+		queueWg            sync.WaitGroup
 		emailClientLBIndex uint64
 	}
 	config struct {

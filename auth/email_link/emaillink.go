@@ -75,12 +75,12 @@ func NewROClient(ctx context.Context) IceUserIDClient {
 }
 
 func (c *client) Close() error {
-	retErr := errors.Wrap(c.shutdown(), "closing auth/emaillink repository failed")
 	if c.cancel != nil {
 		c.cancel()
 	}
+	c.queueWg.Wait()
 
-	return retErr
+	return errors.Wrap(c.shutdown(), "closing auth/emaillink repository failed")
 }
 
 func (c *client) CheckHealth(ctx context.Context) error {

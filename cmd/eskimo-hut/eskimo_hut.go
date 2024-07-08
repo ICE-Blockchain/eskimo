@@ -39,7 +39,6 @@ func main() {
 		log.Panic("'api-key' is missing")
 	}
 	server.New(new(service), applicationYamlKey, swaggerRoot).ListenAndServe(ctx, cancel)
-	log.Info("111")
 }
 
 func (s *service) RegisterRoutes(router *server.Router) {

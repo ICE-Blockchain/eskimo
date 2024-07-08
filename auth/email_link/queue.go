@@ -81,8 +81,10 @@ func (c *client) processEmailQueue(rootCtx context.Context) {
 		}
 	}
 	lockCancel()
+	c.queueWg.Add(1)
 	defer func() {
 		log.Error(errors.Wrapf(c.queueDB.Close(), "failed to close email queue db"))
+		c.queueWg.Done()
 	}()
 	for rootCtx.Err() == nil {
 		now := time.Now()
