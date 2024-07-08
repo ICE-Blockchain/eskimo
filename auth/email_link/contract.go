@@ -28,6 +28,9 @@ type (
 	UserModifier interface {
 		ModifyUser(ctx context.Context, usr *users.User, profilePicture *multipart.FileHeader) (*users.UserProfile, error)
 	}
+	FaceKYCEmailSyncer interface {
+		UpdateEmail(ctx context.Context, userID, newEmail string) error
+	}
 	Client interface {
 		IceUserIDClient
 		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (queuePos int64, rateLimit, loginSession string, err error)
@@ -100,6 +103,7 @@ type (
 		queueDB            storagev3.DB
 		authClient         auth.Client
 		userModifier       UserModifier
+		faceKYCEmail       FaceKYCEmailSyncer
 		db                 *storage.DB
 		cfg                *config
 		shutdown           func() error

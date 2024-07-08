@@ -51,10 +51,10 @@ func (s *service) RegisterRoutes(router *server.Router) {
 
 func (s *service) Init(ctx context.Context, cancel context.CancelFunc) {
 	s.usersProcessor = users.StartProcessor(ctx, cancel)
-	s.authEmailLinkClient = emaillink.NewClient(ctx, cancel, s.usersProcessor, server.Auth(ctx))
+	s.faceKycClient = facekyc.New(ctx, s.usersProcessor)
+	s.authEmailLinkClient = emaillink.NewClient(ctx, cancel, s.usersProcessor, server.Auth(ctx), s.faceKycClient)
 	s.socialRepository = social.New(ctx, s.usersProcessor)
 	s.quizRepository = kycquiz.NewRepository(ctx, s.usersProcessor)
-	s.faceKycClient = facekyc.New(ctx, s.usersProcessor)
 }
 
 func (s *service) Close(ctx context.Context) error {

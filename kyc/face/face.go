@@ -30,31 +30,34 @@ func New(ctx context.Context, usersRep UserRepository) Client {
 	return cl
 }
 
+func (c *client) UpdateEmail(ctx context.Context, userID, newEmail string) error {
+	return errors.Wrapf(c.client.UpdateEmail(ctx, userID, newEmail), "failed to update email to %v in face KYC for userID %v", newEmail, userID)
+}
+
 //nolint:funlen,gocognit,revive,gocyclo,cyclop // .
-func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (bool, error) {
-	kycFaceAvailable := false
+func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (kycFaceAvailable bool, originalAccount string, err error) {
 	if errs := c.unexpectedErrors.Load(); errs >= c.cfg.UnexpectedErrorsAllowed {
 		log.Error(errors.Errorf("some unexpected error occurred recently for user id %v", user.ID))
 
-		return false, nil
+		return false, "", nil
 	}
 	userWasPreviouslyForwardedToFaceKYC, err := c.checkIfUserWasForwardedToFaceKYC(ctx, user.ID)
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to check if user id %v was forwarded to face kyc before", user.ID)
+		return false, "", errors.Wrapf(err, "failed to check if user id %v was forwarded to face kyc before", user.ID)
 	}
 	hasResult := false
 	now := time.Now()
 	if userWasPreviouslyForwardedToFaceKYC && (user.LastMiningStartedAt.IsNil() || user.LastMiningStartedAt.Before(*now.Time)) {
-		if hasResult, err = c.client.CheckAndUpdateStatus(ctx, user); err != nil {
+		if hasResult, originalAccount, err = c.client.CheckAndUpdateStatus(ctx, user); err != nil {
 			c.unexpectedErrors.Add(1)
 			log.Error(errors.Wrapf(err, "[unexpected]failed to update face auth status for user ID %s", user.ID))
 
-			return false, nil
+			return false, "", nil
 		}
 	}
 	if hasResult {
 		if dErr := c.deleteUserForwarded(ctx, user.ID); dErr != nil {
-			return false, errors.Wrapf(err, "failed to delete user forwarded to face kyc for user id %v", user.ID)
+			return false, "", errors.Wrapf(err, "failed to delete user forwarded to face kyc for user id %v", user.ID)
 		}
 	}
 	if !hasResult || nextKYCStep == users.LivenessDetectionKYCStep {
@@ -62,7 +65,7 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 		if userWasPreviouslyForwardedToFaceKYC || availabilityErr == nil {
 			kycFaceAvailable = true
 			if fErr := c.saveUserForwarded(ctx, user.ID, now); fErr != nil {
-				return false, errors.Wrapf(fErr, "failed ")
+				return false, "", errors.Wrapf(fErr, "failed ")
 			}
 		} else if !errors.Is(availabilityErr, internal.ErrNotAvailable) {
 			c.unexpectedErrors.Add(1)
@@ -72,11 +75,11 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 	if !kycFaceAvailable && userWasPreviouslyForwardedToFaceKYC {
 		// User will bypass face (no slots) and mine, will recreate forward next time not to sync state next time.
 		if dErr := c.deleteUserForwarded(ctx, user.ID); dErr != nil {
-			return false, errors.Wrapf(err, "failed to delete user forwarded to face kyc for user id %v", user.ID)
+			return false, "", errors.Wrapf(err, "failed to delete user forwarded to face kyc for user id %v", user.ID)
 		}
 	}
 
-	return kycFaceAvailable, nil
+	return kycFaceAvailable, originalAccount, nil
 }
 
 func (c *client) deleteUserForwarded(ctx context.Context, userID string) error {

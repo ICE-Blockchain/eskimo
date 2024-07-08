@@ -24,7 +24,8 @@ type (
 	Client interface {
 		io.Closer
 		Reset(ctx context.Context, user *users.User, fetchState bool) error
-		CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (available bool, err error)
+		CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (available bool, originalAccount string, err error)
+		UpdateEmail(ctx context.Context, userID, newEmail string) error
 	}
 )
 
