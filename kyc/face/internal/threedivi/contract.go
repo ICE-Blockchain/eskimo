@@ -34,16 +34,29 @@ type (
 	applicant struct {
 		Code                   string              `json:"code"`
 		LastValidationResponse *validationResponse `json:"lastValidationResponse"`
+		Metadata               *metadata           `json:"metadata"`
 		ApplicantID            string              `json:"applicantId"`
+		Email                  string              `json:"email"`
 		Status                 int                 `json:"status"`
 		HasRiskEvents          bool                `json:"hasRiskEvents"`
 	}
 	validationResponse struct {
+		SimilarApplicants *struct {
+			IDs []string `json:"ids"` //nolint:tagliatelle // .
+		} `json:"similarApplicants"`
+		RiskEvents           *[]riskEvent `json:"riskEvents"`
 		CreatedAt            stdlibtime.Time
 		Created              string `json:"created"`
 		ResponseStatusName   string `json:"responseStatusName"`
-		ValidationResponseID int    `json:"validationResponseId"`
+		ValidationResponseID uint64 `json:"validationResponseId"`
 		ResponseStatus       int    `json:"responseStatus"`
+	}
+	riskEvent struct {
+		RiskName string `json:"riskName"`
+		IsActive bool   `json:"isActive"`
+	}
+	metadata struct {
+		Tenant string `json:"tenant"`
 	}
 )
 
@@ -55,6 +68,8 @@ const (
 	statusPassed                  = 1
 	statusFailed                  = 2
 	codeApplicantNotFound         = "120024"
+	duplicatedFaceRisk            = "DuplicateFace"
+	bafTimeFormat                 = "2006-01-02T15:04:05.999999"
 )
 
 var ( //nolint:gofumpt // .

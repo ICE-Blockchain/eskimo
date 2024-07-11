@@ -14,8 +14,9 @@ import (
 type (
 	Client interface {
 		Available(ctx context.Context, userWasPreviouslyForwardedToFaceKYC bool) error
-		CheckAndUpdateStatus(ctx context.Context, user *users.User) (hasFaceKYCResult bool, err error)
+		CheckAndUpdateStatus(ctx context.Context, user *users.User) (hasFaceKYCResult bool, originalAccount string, err error)
 		Reset(ctx context.Context, user *users.User, fetchState bool) error
+		UpdateEmail(ctx context.Context, userID, newEmail string) error
 	}
 	UserRepository interface {
 		ModifyUser(ctx context.Context, usr *users.User, profilePicture *multipart.FileHeader) (*users.UserProfile, error)

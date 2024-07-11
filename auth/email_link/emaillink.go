@@ -31,7 +31,7 @@ func init() {
 }
 
 //nolint:funlen // .
-func NewClient(ctx context.Context, cancel context.CancelFunc, userModifier UserModifier, authClient auth.Client) Client {
+func NewClient(ctx context.Context, cancel context.CancelFunc, userModifier UserModifier, authClient auth.Client, faceKycEmail FaceKYCEmailSyncer) Client {
 	cfg := loadConfiguration()
 	cfg.validate()
 	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
@@ -46,6 +46,7 @@ func NewClient(ctx context.Context, cancel context.CancelFunc, userModifier User
 		queueDB:        queueDB,
 		authClient:     authClient,
 		userModifier:   userModifier,
+		faceKYCEmail:   faceKycEmail,
 		emailClients:   make([]email.Client, 0, cfg.ExtraLoadBalancersCount+1),
 		fromRecipients: make([]fromRecipient, 0, cfg.ExtraLoadBalancersCount+1),
 	}

@@ -41,6 +41,12 @@ func (c *client) handleEmailModification(ctx context.Context, els *emailLinkSign
 			}
 		}
 	}
+	if fErr := c.faceKYCEmail.UpdateEmail(ctx, usr.ID, newEmail); fErr != nil {
+		return multierror.Append( //nolint:wrapcheck // .
+			errors.Wrapf(c.resetEmailModification(ctx, usr.ID, oldEmail), "[reset] resetEmailModification failed for email:%v", oldEmail),
+			errors.Wrapf(fErr, "failed to update email in face KYC to %v for userID %v", newEmail, usr.ID),
+		).ErrorOrNil()
+	}
 	if notifyEmail != "" {
 		now := time.Now()
 		resetConfirmationCode := generateConfirmationCode()

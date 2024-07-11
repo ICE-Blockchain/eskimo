@@ -134,8 +134,9 @@ type (
 	User struct {
 		*users.User
 		*kycquiz.QuizStatus
-		Checksum         string `json:"checksum,omitempty" example:"1232412415326543647657"`
-		KycFaceAvailable bool   `json:"kycFaceAvailable,omitempty" example:"true"`
+		Checksum               string `json:"checksum,omitempty" example:"1232412415326543647657"`
+		KycFaceOriginalAccount string `json:"kycFaceOriginalAccount,omitempty" example:"true"`
+		KycFaceAvailable       bool   `json:"kycFaceAvailable,omitempty" example:"true"`
 	}
 	Auth struct {
 		RateLimit       string `json:"rateLimit" example:"1000:24h"`
