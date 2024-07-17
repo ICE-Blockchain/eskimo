@@ -8,7 +8,9 @@ import (
 
 	"github.com/pkg/errors"
 
+	"github.com/ice-blockchain/eskimo/auth"
 	emaillink "github.com/ice-blockchain/eskimo/auth/email_link"
+	telegramauth "github.com/ice-blockchain/eskimo/auth/telegram"
 	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	kycsocial "github.com/ice-blockchain/eskimo/kyc/social"
@@ -141,7 +143,7 @@ type (
 		LoginSession string `json:"loginSession" example:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"` //nolint:lll // .
 	}
 	RefreshedToken struct {
-		*emaillink.Tokens
+		*auth.Tokens
 	}
 	MagicLinkPayload struct {
 		EmailToken       string `json:"emailToken" required:"true" allowUnauthorized:"true" example:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"` //nolint:lll // .
@@ -152,6 +154,9 @@ type (
 		ConfirmationCode string `json:"confirmationCode" required:"true" example:"999"`
 	}
 	RefreshToken struct {
+		Authorization string `header:"Authorization" swaggerignore:"true" required:"true" allowForbiddenWriteOperation:"true" allowUnauthorized:"true"`
+	}
+	TelegramSignIn struct {
 		Authorization string `header:"Authorization" swaggerignore:"true" required:"true" allowForbiddenWriteOperation:"true" allowUnauthorized:"true"`
 	}
 	StartOrContinueKYCStep4SessionRequestBody struct {
@@ -227,6 +232,8 @@ type (
 		usersProcessor      users.Processor
 		quizRepository      kycquiz.Repository
 		authEmailLinkClient emaillink.Client
+		telegramAuthClient  telegramauth.Client
+		tokenRefresher      auth.TokenRefresher
 		socialRepository    kycsocial.Repository
 		faceKycClient       facekyc.Client
 	}

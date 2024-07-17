@@ -1074,6 +1074,56 @@ const docTemplate = `{
                 }
             }
         },
+        "/v1w/auth/signInWithTelegram": {
+            "post": {
+                "description": "Issues new access token based on telegram token",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Auth"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "tma \u003cAdd telegram token here\u003e",
+                        "description": "Insert your TMA token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.RefreshedToken"
+                        }
+                    },
+                    "403": {
+                        "description": "if invalid or expired telegram token provided",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "504": {
+                        "description": "if request times out",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1w/kyc/checkKYCStep4Status/users/{userId}": {
             "post": {
                 "description": "Checks the status of the quiz kyc step (4).",
