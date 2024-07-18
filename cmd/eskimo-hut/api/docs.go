@@ -2247,6 +2247,11 @@ const docTemplate = `{
                     "description": "Optional.",
                     "type": "string",
                     "example": "did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"
+                },
+                "username": {
+                    "description": "Optional.",
+                    "type": "string",
+                    "example": "john.doe"
                 }
             }
         },
