@@ -37,10 +37,7 @@ func (r *repository) CreateUser(ctx context.Context, usr *User, clientIP net.IP)
 		usr.City, usr.Language, usr.CreatedAt.Time, usr.UpdatedAt.Time, usr.TelegramUserID, usr.TelegramBotID, usr.lookup(),
 	}
 	if _, err := storage.Exec(ctx, r.db, sql, args...); err != nil {
-		field, tErr := detectAndParseDuplicateDatabaseError(err)
-		if field == usernameDBColumnName {
-			return r.CreateUser(ctx, usr, clientIP)
-		}
+		_, tErr := detectAndParseDuplicateDatabaseError(err)
 
 		return errors.Wrapf(tErr, "failed to insert user %#v", usr)
 	}
@@ -65,7 +62,9 @@ func (r *repository) setCreateUserDefaults(ctx context.Context, usr *User, clien
 	usr.UpdatedAt = usr.CreatedAt
 	usr.DeviceLocation = *r.GetDeviceMetadataLocation(ctx, &device.ID{UserID: usr.ID}, clientIP)
 	usr.ProfilePictureURL = RandomDefaultProfilePictureName()
-	usr.Username = usr.ID
+	if usr.Username == "" {
+		usr.Username = usr.ID
+	}
 	if usr.ReferredBy == "" {
 		usr.ReferredBy = usr.ID
 	}
@@ -94,7 +93,7 @@ func (r *repository) setCreateUserDefaults(ctx context.Context, usr *User, clien
 	usr.RandomReferredBy = &randomReferredBy
 }
 
-func detectAndParseDuplicateDatabaseError(err error) (field string, newErr error) { //nolint:revive // need to check all fields in this way.
+func detectAndParseDuplicateDatabaseError(err error) (field string, newErr error) { //nolint:revive,unparam // need to check all fields in this way.
 	if storage.IsErr(err, storage.ErrDuplicate) { //nolint:nestif // .
 		if storage.IsErr(err, storage.ErrDuplicate, "pk") { //nolint:gocritic // .
 			field = "id"

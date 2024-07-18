@@ -99,12 +99,13 @@ func buildUserForCreation(req *server.Request[CreateUserRequestBody, User]) *use
 	usr.ClientData = req.Data.ClientData
 	usr.Language = req.Data.Language
 	usr.ReferredBy = req.Data.ReferredBy
+	usr.Username = req.Data.Username
 
 	return usr
 }
 
 func validateCreateUser(req *server.Request[CreateUserRequestBody, User]) *server.Response[server.ErrorResponse] {
-	if err := verifyPhoneNumberAndUsername(req.Data.PhoneNumber, req.Data.PhoneNumberHash, ""); err != nil {
+	if err := verifyPhoneNumberAndUsername(req.Data.PhoneNumber, req.Data.PhoneNumberHash, req.Data.Username); err != nil {
 		return err
 	}
 	if strings.EqualFold(req.AuthenticatedUser.UserID, req.Data.ReferredBy) {

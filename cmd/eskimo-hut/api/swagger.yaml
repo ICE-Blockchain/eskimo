@@ -41,6 +41,10 @@ definitions:
         description: Optional.
         example: did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2
         type: string
+      username:
+        description: Optional.
+        example: john.doe
+        type: string
     type: object
   main.LoginFlowPayload:
     properties:
