@@ -13,8 +13,9 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/pkg/errors"
 
+	"github.com/ice-blockchain/eskimo/auth"
 	"github.com/ice-blockchain/eskimo/users"
-	"github.com/ice-blockchain/wintr/auth"
+	wintrauth "github.com/ice-blockchain/wintr/auth"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
 	"github.com/ice-blockchain/wintr/email"
 	"github.com/ice-blockchain/wintr/time"
@@ -29,18 +30,14 @@ type (
 	Client interface {
 		IceUserIDClient
 		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (loginSession string, err error)
-		SignIn(ctx context.Context, loginFlowToken, confirmationCode string) (tokens *Tokens, emailConfirmed bool, err error)
-		RegenerateTokens(ctx context.Context, prevToken string) (tokens *Tokens, err error)
+		SignIn(ctx context.Context, loginFlowToken, confirmationCode string) (tokens *auth.Tokens, emailConfirmed bool, err error)
 		UpdateMetadata(ctx context.Context, userID string, metadata *users.JSON) (*users.JSON, error)
+		RefreshToken(ctx context.Context, token *wintrauth.IceToken) (tokens *auth.Tokens, err error)
 	}
 	IceUserIDClient interface {
 		io.Closer
 		IceUserID(ctx context.Context, mail string) (iceID string, err error)
 		Metadata(ctx context.Context, userID, emailAddress string) (metadata string, metadataFields *users.JSON, err error)
-	}
-	Tokens struct {
-		RefreshToken string `json:"refreshToken,omitempty" example:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"` //nolint:lll // .
-		AccessToken  string `json:"accessToken,omitempty"  example:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"` //nolint:lll // .
 	}
 	Metadata struct {
 		UserID   string `json:"userId" example:"1c0b9801-cfb2-4c4e-b48a-db18ce0894f9"`
@@ -49,8 +46,8 @@ type (
 )
 
 var (
-	ErrInvalidToken           = errors.New("invalid token")
-	ErrExpiredToken           = errors.New("expired token")
+	ErrInvalidToken           = auth.ErrInvalidToken
+	ErrExpiredToken           = auth.ErrExpiredToken
 	ErrNoConfirmationRequired = errors.New("no pending confirmation")
 
 	ErrUserDataMismatch = errors.New("parameters were not equal to user data in db")
@@ -94,7 +91,7 @@ type (
 		db                 *storage.DB
 		cfg                *config
 		shutdown           func() error
-		authClient         auth.Client
+		authClient         wintrauth.Client
 		userModifier       UserModifier
 		emailClients       []email.Client
 		fromRecipients     []fromRecipient

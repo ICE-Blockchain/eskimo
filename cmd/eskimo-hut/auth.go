@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 
 	emaillink "github.com/ice-blockchain/eskimo/auth/email_link"
+	telegramauth "github.com/ice-blockchain/eskimo/auth/telegram"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/auth"
 	"github.com/ice-blockchain/wintr/log"
@@ -28,7 +29,8 @@ func (s *service) setupAuthRoutes(router *server.Router) {
 		POST("auth/signInWithConfirmationCode", server.RootHandler(s.SignIn)).
 		POST("auth/getMetadata", server.RootHandler(s.Metadata)).
 		POST("auth/processFaceRecognitionResult", server.RootHandler(s.ProcessFaceRecognitionResult)).
-		POST("auth/getValidUserForPhoneNumberMigration", server.RootHandler(s.GetValidUserForPhoneNumberMigration))
+		POST("auth/getValidUserForPhoneNumberMigration", server.RootHandler(s.GetValidUserForPhoneNumberMigration)).
+		POST("auth/signInWithTelegram", server.RootHandler(s.SignInWithTelegram))
 }
 
 // SendSignInLinkToEmail godoc
@@ -162,7 +164,7 @@ func (s *service) RegenerateTokens( //nolint:gocritic // .
 	req *server.Request[RefreshToken, RefreshedToken],
 ) (*server.Response[RefreshedToken], *server.Response[server.ErrorResponse]) {
 	tokenPayload := strings.TrimPrefix(req.Data.Authorization, "Bearer ")
-	tokens, err := s.authEmailLinkClient.RegenerateTokens(ctx, tokenPayload)
+	tokens, err := s.tokenRefresher.RegenerateTokens(ctx, tokenPayload)
 	if err != nil {
 		switch {
 		case errors.Is(err, emaillink.ErrUserNotFound):
@@ -484,4 +486,37 @@ func (s *service) GetValidUserForPhoneNumberMigration( //nolint:funlen,revive //
 	minimalUsr.ID = usr.ID
 
 	return server.OK(minimalUsr), nil
+}
+
+// SignInWithTelegram godoc
+//
+//	@Schemes
+//	@Description	Issues new access token based on telegram token
+//	@Tags			Auth
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization	header		string	true	"Insert your TMA token"	default(tma <Add telegram token here>)
+//	@Success		200				{object}	RefreshedToken
+//	@Failure		403				{object}	server.ErrorResponse	"if invalid or expired telegram token provided"
+//	@Failure		500				{object}	server.ErrorResponse
+//	@Failure		504				{object}	server.ErrorResponse	"if request times out"
+//	@Router			/v1w/auth/signInWithTelegram [POST].
+func (s *service) SignInWithTelegram( //nolint:gocritic // .
+	ctx context.Context,
+	req *server.Request[TelegramSignIn, RefreshedToken],
+) (*server.Response[RefreshedToken], *server.Response[server.ErrorResponse]) {
+	tokenPayload := strings.TrimPrefix(req.Data.Authorization, "tma ")
+	tokens, err := s.telegramAuthClient.SignIn(ctx, tokenPayload)
+	if err != nil {
+		switch {
+		case errors.Is(err, telegramauth.ErrExpiredToken):
+			return nil, server.Forbidden(err)
+		case errors.Is(err, telegramauth.ErrInvalidToken):
+			return nil, server.Forbidden(err)
+		default:
+			return nil, server.Unexpected(err)
+		}
+	}
+
+	return server.OK(&RefreshedToken{Tokens: tokens}), nil
 }

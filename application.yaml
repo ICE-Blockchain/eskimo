@@ -82,6 +82,12 @@ kyc/quiz:
   maxAttemptsAllowed: 3
   availabilityWindowSeconds: 600
   globalStartDate: '2024-02-03T16:20:52.156534Z'
+auth/telegram:
+  wintr/connectors/storage/v2: *db
+  telegramTokenExpiration: 1h
+  telegramBots:
+    bogusBot:
+      botToken: bogus
 auth/email-link:
   extraLoadBalancersCount: 2
   wintr/connectors/storage/v2: *db

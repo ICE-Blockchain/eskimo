@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"dario.cat/mergo"
-	"github.com/google/uuid"
 	"github.com/pkg/errors"
 
+	"github.com/ice-blockchain/eskimo/auth"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
 	"github.com/ice-blockchain/wintr/terror"
@@ -30,41 +30,15 @@ func (c *client) getEmailLinkSignInByPk(ctx context.Context, id *loginID, oldEma
 }
 
 func (c *client) findOrGenerateUserID(ctx context.Context, email, oldEmail string) (userID string, err error) {
-	if ctx.Err() != nil {
-		return "", errors.Wrap(ctx.Err(), "find or generate user by id or email context failed")
-	}
-	randomID := iceIDPrefix + uuid.NewString()
 	searchEmail := email
 	if oldEmail != "" {
 		searchEmail = oldEmail
 	}
-
-	return c.getUserIDFromEmail(ctx, searchEmail, randomID)
-}
-
-func (c *client) getUserIDFromEmail(ctx context.Context, searchEmail, idIfNotFound string) (userID string, err error) {
-	type dbUserID struct {
-		ID string
-	}
-	sql := `SELECT id FROM (
-				SELECT users.id, 1 as idx
-					FROM users 
-						WHERE email = $1
-				UNION ALL
-				(SELECT COALESCE(user_id, phone_number_to_email_migration_user_id, $2) AS id, 2 as idx
-					FROM email_link_sign_ins
-						WHERE email = $1)
-			) t ORDER BY idx LIMIT 1`
-	ids, err := storage.Select[dbUserID](ctx, c.db, sql, searchEmail, idIfNotFound)
-	if err != nil || len(ids) == 0 {
-		if storage.IsErr(err, storage.ErrNotFound) || (err == nil && len(ids) == 0) {
-			return idIfNotFound, nil
-		}
-
-		return "", errors.Wrapf(err, "failed to find user by email:%v", searchEmail)
+	if userID, err = auth.FindOrGenerateUserID(ctx, c.db, "email_link_sign_ins", "email", searchEmail); err != nil {
+		return "", errors.Wrapf(err, "failed to match userID with email %v,%v", email, oldEmail)
 	}
 
-	return ids[0].ID, nil
+	return userID, nil
 }
 
 func (c *client) isUserExist(ctx context.Context, email string) error {
@@ -180,7 +154,7 @@ func (c *client) IceUserID(ctx context.Context, email string) (string, error) {
 	if email == "" {
 		return "", nil
 	}
-	userID, err := c.getUserIDFromEmail(ctx, email, "")
+	userID, err := auth.GetUserIDFromSearch(ctx, c.db, "email_link_sign_ins", "email", email, "")
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to fetch userID by email:%v", email)
 	}

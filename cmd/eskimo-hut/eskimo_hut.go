@@ -9,7 +9,9 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	"github.com/ice-blockchain/eskimo/auth"
 	emaillink "github.com/ice-blockchain/eskimo/auth/email_link"
+	telegramauth "github.com/ice-blockchain/eskimo/auth/telegram"
 	"github.com/ice-blockchain/eskimo/cmd/eskimo-hut/api"
 	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
@@ -52,6 +54,8 @@ func (s *service) RegisterRoutes(router *server.Router) {
 func (s *service) Init(ctx context.Context, cancel context.CancelFunc) {
 	s.usersProcessor = users.StartProcessor(ctx, cancel)
 	s.authEmailLinkClient = emaillink.NewClient(ctx, s.usersProcessor, server.Auth(ctx))
+	s.telegramAuthClient = telegramauth.NewClient(ctx, server.Auth(ctx))
+	s.tokenRefresher = auth.NewRefresher(server.Auth(ctx), s.authEmailLinkClient, s.telegramAuthClient)
 	s.socialRepository = social.New(ctx, s.usersProcessor)
 	s.quizRepository = kycquiz.NewRepository(ctx, s.usersProcessor)
 	s.faceKycClient = facekyc.New(ctx, s.usersProcessor)

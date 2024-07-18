@@ -11,13 +11,14 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 
+	"github.com/ice-blockchain/eskimo/auth"
 	"github.com/ice-blockchain/eskimo/users"
-	"github.com/ice-blockchain/wintr/auth"
+	wintrauth "github.com/ice-blockchain/wintr/auth"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
 	"github.com/ice-blockchain/wintr/time"
 )
 
-func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode string) (tokens *Tokens, emailConfirmed bool, err error) {
+func (c *client) SignIn(ctx context.Context, loginSession, confirmationCode string) (tokens *auth.Tokens, emailConfirmed bool, err error) {
 	now := time.Now()
 	var token loginFlowToken
 	if err = parseJwtToken(loginSession, c.cfg.LoginSession.JwtSecret, &token); err != nil {
@@ -143,20 +144,20 @@ func (c *client) finishAuthProcess(
 	if emailConfirmed {
 		emailConfirmedAt = "$2"
 	}
-	mdToUpdate := users.JSON(map[string]any{auth.IceIDClaim: userID})
+	mdToUpdate := users.JSON(map[string]any{wintrauth.IceIDClaim: userID})
 	if md == nil {
 		empty := users.JSON(map[string]any{})
 		md = &empty
 	}
-	if _, hasRegisteredWith := (*md)[auth.RegisteredWithProviderClaim]; !hasRegisteredWith {
-		if firebaseID, hasFirebaseID := (*md)[auth.FirebaseIDClaim]; hasFirebaseID {
+	if _, hasRegisteredWith := (*md)[wintrauth.RegisteredWithProviderClaim]; !hasRegisteredWith {
+		if firebaseID, hasFirebaseID := (*md)[wintrauth.FirebaseIDClaim]; hasFirebaseID {
 			if !strings.HasPrefix(firebaseID.(string), iceIDPrefix) && !strings.HasPrefix(userID, iceIDPrefix) { //nolint:forcetypeassert // .
-				mdToUpdate[auth.RegisteredWithProviderClaim] = auth.ProviderFirebase
+				mdToUpdate[wintrauth.RegisteredWithProviderClaim] = wintrauth.ProviderFirebase
 			}
 		}
 	}
 	if err := mergo.Merge(&mdToUpdate, md, mergo.WithOverride, mergo.WithTypeCheck); err != nil {
-		return 0, errors.Wrapf(err, "failed to merge %#v and %v:%v", md, auth.IceIDClaim, userID)
+		return 0, errors.Wrapf(err, "failed to merge %#v and %v:%v", md, wintrauth.IceIDClaim, userID)
 	}
 	params := []any{id.Email, now.Time, userID, id.DeviceUniqueID, issuedTokenSeq, mdToUpdate}
 	type resp struct {
