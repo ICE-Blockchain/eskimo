@@ -86,7 +86,7 @@ auth/telegram:
   wintr/connectors/storage/v2: *db
   telegramTokenExpiration: 1h
   telegramBots:
-    bogusBot:
+    1:
       botToken: bogus
 auth/email-link:
   extraLoadBalancersCount: 2

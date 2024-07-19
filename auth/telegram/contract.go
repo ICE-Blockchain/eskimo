@@ -7,6 +7,8 @@ import (
 	_ "embed"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/ice-blockchain/eskimo/auth"
 	"github.com/ice-blockchain/eskimo/users"
 	wintrauth "github.com/ice-blockchain/wintr/auth"
@@ -15,7 +17,7 @@ import (
 
 type (
 	Client interface {
-		SignIn(ctx context.Context, tmaToken string) (tokens *auth.Tokens, err error)
+		SignIn(ctx context.Context, tmaToken string, telegramBotID *telegramBotID) (tokens *auth.Tokens, err error)
 		RefreshToken(ctx context.Context, token *wintrauth.IceToken) (tokens *auth.Tokens, err error)
 	}
 )
@@ -24,6 +26,7 @@ var (
 	ErrInvalidToken = auth.ErrInvalidToken
 	ErrExpiredToken = auth.ErrExpiredToken
 	ErrUserNotFound = storage.ErrNotFound
+	ErrInvalidBotID = errors.Errorf("invalid bot ID")
 )
 
 // Private API.
@@ -48,6 +51,7 @@ type (
 		Metadata                 *users.JSON `json:"metadata,omitempty"`
 		UserID                   *string     `json:"userId" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"`
 		TelegramUserID           string      `json:"telegramUserId,omitempty" example:"12345678990" db:"telegram_user_id"`
+		TelegramBotID            string      `json:"telegramBotId,omitempty" example:"1" db:"telegram_bot_id"`
 		Email                    string      `json:"email,omitempty" example:"someone1@example.com"`
 		IssuedTokenSeq           int64       `json:"issuedTokenSeq,omitempty" example:"1"`
 		PreviouslyIssuedTokenSeq int64       `json:"previouslyIssuedTokenSeq,omitempty" example:"1"`

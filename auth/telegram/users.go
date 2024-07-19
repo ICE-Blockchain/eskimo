@@ -22,6 +22,7 @@ func (c *client) getUserByIDOrTelegram(ctx context.Context, userID, telegramID s
 					COALESCE(issued_token_seq, 0) 			 			AS issued_token_seq,
 					user_id,
 					telegram_user_id,
+					telegram_bot_id,
 					email,
 		    		hash_code,
 		    		metadata
@@ -34,6 +35,7 @@ func (c *client) getUserByIDOrTelegram(ctx context.Context, userID, telegramID s
 					issued_token_seq,
 					$1 												   AS user_id,
 					telegram_user_id,
+					telegram_bot_id,
 					''                                                 as email,
 					COALESCE((account_metadata.metadata -> 'hash_code')::BIGINT,0) AS hash_code,
 					account_metadata.metadata,
@@ -49,6 +51,7 @@ func (c *client) getUserByIDOrTelegram(ctx context.Context, userID, telegramID s
 					telegrams.issued_token_seq       			 	  	   AS issued_token_seq,
 					u.id 									 	  	       AS user_id,
 					NULLIF(u.telegram_user_id, u.id)                       AS telegram_user_id,
+					u.telegram_bot_id,
 					COALESCE(NULLIF(u.email, u.id)  ,'')                   AS email,
 					u.hash_code,
 					account_metadata.metadata    				 	   AS metadata,
