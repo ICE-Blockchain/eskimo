@@ -5,6 +5,7 @@ package telegram
 import (
 	"context"
 	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 	initdata "github.com/telegram-mini-apps/init-data-golang"
@@ -50,7 +51,7 @@ func (c *client) verifyTelegramTMAToken(tmaToken string, telegramBotID *telegram
 			}
 		}
 	} else {
-		bot, found := c.cfg.TelegramBots[*telegramBotID]
+		bot, found := c.cfg.TelegramBots[strings.ToLower(*telegramBotID)]
 		if !found {
 			return "", ErrInvalidBotID
 		}
