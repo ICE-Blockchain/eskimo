@@ -495,7 +495,8 @@ func (s *service) GetValidUserForPhoneNumberMigration( //nolint:funlen,revive //
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			Authorization	header		string	true	"Insert your TMA token"	default(tma <Add telegram token here>)
+//	@Param			Authorization	header		string			true	"Insert your TMA token"	default(tma <Add telegram token here>)
+//	@Param			request			body		TelegramSignIn	true	"Body containing botID"
 //	@Success		200				{object}	RefreshedToken
 //	@Failure		403				{object}	server.ErrorResponse	"if invalid or expired telegram token provided"
 //	@Failure		500				{object}	server.ErrorResponse
@@ -506,12 +507,14 @@ func (s *service) SignInWithTelegram( //nolint:gocritic // .
 	req *server.Request[TelegramSignIn, RefreshedToken],
 ) (*server.Response[RefreshedToken], *server.Response[server.ErrorResponse]) {
 	tokenPayload := strings.TrimPrefix(req.Data.Authorization, "tma ")
-	tokens, err := s.telegramAuthClient.SignIn(ctx, tokenPayload)
+	tokens, err := s.telegramAuthClient.SignIn(ctx, tokenPayload, req.Data.TelegramBotID)
 	if err != nil {
 		switch {
 		case errors.Is(err, telegramauth.ErrExpiredToken):
 			return nil, server.Forbidden(err)
 		case errors.Is(err, telegramauth.ErrInvalidToken):
+			return nil, server.Forbidden(err)
+		case errors.Is(err, telegramauth.ErrInvalidBotID):
 			return nil, server.Forbidden(err)
 		default:
 			return nil, server.Unexpected(err)

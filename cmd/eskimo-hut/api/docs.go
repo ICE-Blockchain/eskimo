@@ -1094,6 +1094,15 @@ const docTemplate = `{
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "description": "Body containing botID",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/main.TelegramSignIn"
+                        }
                     }
                 ],
                 "responses": {
@@ -2601,6 +2610,14 @@ const docTemplate = `{
                 "language": {
                     "type": "string",
                     "example": "en"
+                }
+            }
+        },
+        "main.TelegramSignIn": {
+            "type": "object",
+            "properties": {
+                "telegramBotId": {
+                    "type": "string"
                 }
             }
         },

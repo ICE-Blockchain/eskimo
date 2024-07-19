@@ -287,6 +287,11 @@ definitions:
         example: en
         type: string
     type: object
+  main.TelegramSignIn:
+    properties:
+      telegramBotId:
+        type: string
+    type: object
   main.User:
     properties:
       agendaPhoneNumberHashes:
@@ -1529,6 +1534,12 @@ paths:
         name: Authorization
         required: true
         type: string
+      - description: Body containing botID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/main.TelegramSignIn'
       produces:
       - application/json
       responses:
