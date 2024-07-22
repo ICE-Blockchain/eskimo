@@ -112,6 +112,11 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_step_blocked smallint NOT NULL DE
 ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_steps_last_updated_at timestamp[];
 ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_steps_created_at timestamp[];
 ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_user_id text;
+DO $$ BEGIN
+    if NOT exists (select constraint_name from information_schema.table_constraints where table_name = 'users' and constraint_name = 'users_telegram_user_id_key') then
+        ALTER TABLE users ADD CONSTRAINT users_telegram_user_id_key UNIQUE (telegram_user_id);
+    end if;
+END $$;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_bot_id text;
 ALTER TABLE users ALTER COLUMN telegram_bot_id SET NOT NULL;
 INSERT INTO users (created_at,updated_at,phone_number,phone_number_hash,email,id,username,profile_picture_name,referred_by,city,country,mining_blockchain_account_address,blockchain_account_address, telegram_user_id, telegram_bot_id, lookup)
