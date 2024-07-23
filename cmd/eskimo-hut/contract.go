@@ -205,6 +205,7 @@ const (
 	expiredLoginSessionErrorCode = "EXPIRED_LOGIN_SESSION"
 	invalidLoginSessionErrorCode = "INVALID_LOGIN_SESSION"
 	dataMismatchErrorCode        = "DATA_MISMATCH"
+	seqMismatchErrorCode         = "TOKEN_SEQUENCE_MISMATCH"
 
 	confirmationCodeNotFoundErrorCode         = "CONFIRMATION_CODE_NOT_FOUND"
 	confirmationCodeAttemptsExceededErrorCode = "CONFIRMATION_CODE_ATTEMPTS_EXCEEDED"

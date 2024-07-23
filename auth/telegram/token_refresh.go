@@ -33,9 +33,12 @@ func (c *client) RefreshToken(ctx context.Context, token *wintrauth.IceToken) (t
 	}
 	now := time.Now()
 	refreshTokenSeq, err := auth.IncrementRefreshTokenSeq(ctx, c.db, "telegram_sign_ins",
-		"telegram_sign_ins.telegram_user_id = $4",
-		[]any{telegramUserID}, token.Subject, token.Seq, now)
+		"telegram_sign_ins.telegram_user_id = $4", []any{telegramUserID}, token.Subject, token.Seq, now)
 	if err != nil {
+		if errors.Is(err, ErrInvalidToken) {
+			return nil, errors.Wrapf(ErrInvalidSeq, "failed to update telegram sign ins for:%v,%v due to invalid seq %v", telegramUserID, token.Subject, token.Seq)
+		}
+
 		return nil, errors.Wrapf(err, "failed to update telegram sign ins for:%v,%v", telegramUserID, token.Subject)
 	}
 	tokens, err = c.generateTokens(now, usr, refreshTokenSeq)

@@ -173,6 +173,8 @@ func (s *service) RegenerateTokens( //nolint:gocritic // .
 			return nil, server.Forbidden(err)
 		case errors.Is(err, emaillink.ErrInvalidToken):
 			return nil, server.Forbidden(err)
+		case errors.Is(err, telegramauth.ErrInvalidSeq):
+			return nil, server.ForbiddenWithCode(err, seqMismatchErrorCode)
 		case errors.Is(err, emaillink.ErrUserDataMismatch):
 			return nil, server.BadRequest(err, dataMismatchErrorCode)
 		default:
