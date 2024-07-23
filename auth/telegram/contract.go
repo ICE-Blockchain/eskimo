@@ -27,6 +27,7 @@ var (
 	ErrExpiredToken = auth.ErrExpiredToken
 	ErrUserNotFound = storage.ErrNotFound
 	ErrInvalidBotID = errors.Errorf("invalid bot ID")
+	ErrInvalidSeq   = errors.Errorf("invalid sequence")
 )
 
 // Private API.
