@@ -265,6 +265,11 @@ func (s *service) findMetadataUsingIceID(ctx context.Context, loggedInUser *serv
 
 		return server.OK(&Metadata{Metadata: md, UserID: iceID}), nil
 	}
+	if loggedInUser.Claims != nil {
+		if _, hasTelegram := loggedInUser.Claims["telegramUserID"]; hasTelegram {
+			return server.OK(&Metadata{UserID: iceID}), nil
+		}
+	}
 
 	return nil, server.NotFound(errors.Wrapf(err, "metadata for user with id `%v` was not found", loggedInUser.UserID), metadataNotFoundErrorCode)
 }
