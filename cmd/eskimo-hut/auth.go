@@ -267,7 +267,7 @@ func (s *service) findMetadataUsingIceID(ctx context.Context, loggedInUser *serv
 	}
 	if loggedInUser.Claims != nil {
 		if _, hasTelegram := loggedInUser.Claims["telegramUserID"]; hasTelegram {
-			return server.OK(&Metadata{UserID: iceID}), nil
+			return server.OK(&Metadata{UserID: loggedInUser.UserID}), nil
 		}
 	}
 
