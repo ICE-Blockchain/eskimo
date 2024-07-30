@@ -1,7 +1,7 @@
-✅ Xác minh tài khoản của tôi trên @sunwaves_token với biệt danh: "{{.Username}}".
+🌟 One of the biggest and oldest electronic music festivals in the WORLD is launching its token on #IceOpenNetwork
 
-👉 Đưa các lễ hội lên cấp độ tiếp theo trên hệ sinh thái #ION với @ice_blockchain.
+Join @sunwaves_token and receive {{.WelcomeBonus}} SW coins when you sign up.
 
-https://sunwavestoken.com/@{{.Username}}
+🎶 Music is the anSWer
 
-#SUNWAVES $SW $ICE
+https://t.me/sunwaves_token_bot/app?startapp=r_{{.Username}}

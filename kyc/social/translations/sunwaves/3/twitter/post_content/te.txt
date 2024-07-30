@@ -1,7 +1,7 @@
-✅ @sunwaves_token లో నా ఖాతాను అనుపాతముగా నిర్ధారిస్తున్నాను: "{{.Username}}".
+🌟 One of the biggest and oldest electronic music festivals in the WORLD is launching its token on #IceOpenNetwork
 
-👉 @ice_blockchain తో #ION పర్యావరణ వ్యవస్థలో పండుగలను తదుపరి స్థాయికి తీసుకెళ్తుంది.
+Join @sunwaves_token and receive {{.WelcomeBonus}} SW coins when you sign up.
 
-https://sunwavestoken.com/@{{.Username}}
+🎶 Music is the anSWer
 
-#SUNWAVES $SW $ICE
+https://t.me/sunwaves_token_bot/app?startapp=r_{{.Username}}
