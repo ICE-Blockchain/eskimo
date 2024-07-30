@@ -1,7 +1,7 @@
-✅ Verifieer my rekening op @sunwaves_token met die bynaam: "{{.Username}}".
+🌟 One of the biggest and oldest electronic music festivals in the WORLD is launching its token on #IceOpenNetwork
 
-👉 Bring feeste na die volgende vlak in die #ION ekosisteem met @ice_blockchain.
+Join @sunwaves_token and receive {{.WelcomeBonus}} SW coins when you sign up.
 
-https://sunwavestoken.com/@{{.Username}}
+🎶 Music is the anSWer
 
-#SUNWAVES $SW $ICE
+https://t.me/sunwaves_token_bot/app?startapp=r_{{.Username}}

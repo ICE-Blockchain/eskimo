@@ -1,5 +1,7 @@
-✅ መለያዬን @ice_blockchain ላይ በቅፅል ስም በማረጋገጥ ላይ፡ "{{.Username}}"
+🌟 One of the biggest and oldest electronic music festivals in the WORLD is launching its token on #IceOpenNetwork
 
-👉 #IceNetwork እየገነባ ስላለው "ያልተማከለ የወደፊት" የበለጠ ተማር። 👇
+Join @sunwaves_token and receive {{.WelcomeBonus}} SW coins when you sign up.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+🎶 Music is the anSWer
+
+https://t.me/sunwaves_token_bot/app?startapp=r_{{.Username}}

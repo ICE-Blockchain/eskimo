@@ -1,5 +1,7 @@
-✅ Pinapatunayan ang aking account sa @ice_blockchain gamit ang palayaw: "{{.Username}}"
+🌟 One of the biggest and oldest electronic music festivals in the WORLD is launching its token on #IceOpenNetwork
 
-👉 Alamin ang higit pa tungkol sa "Ang Decentralized na Kinabukasan" na binubuo ng #IceNetwork. 👇
+Join @sunwaves_token and receive {{.WelcomeBonus}} SW coins when you sign up.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+🎶 Music is the anSWer
+
+https://t.me/sunwaves_token_bot/app?startapp=r_{{.Username}}
