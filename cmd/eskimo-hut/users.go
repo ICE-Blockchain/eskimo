@@ -100,6 +100,8 @@ func buildUserForCreation(req *server.Request[CreateUserRequestBody, User]) *use
 	usr.Language = req.Data.Language
 	usr.ReferredBy = req.Data.ReferredBy
 	usr.Username = req.Data.Username
+	usr.TelegramUserID = req.Data.TelegramUserID
+	usr.TelegramBotID = req.Data.TelegramBotID
 
 	return usr
 }

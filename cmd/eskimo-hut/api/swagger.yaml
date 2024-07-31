@@ -41,6 +41,14 @@ definitions:
         description: Optional.
         example: did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2
         type: string
+      telegramBotId:
+        description: Optional.
+        example: "1234566787"
+        type: string
+      telegramUserId:
+        description: Optional.
+        example: "1234566787"
+        type: string
       username:
         description: Optional.
         example: john.doe
