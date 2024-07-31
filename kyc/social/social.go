@@ -399,7 +399,7 @@ func (r *repository) expectedPostText(user *users.User, vm *VerificationMetadata
 		templ = allTemplates[tname][vm.KYCStep][vm.Social][postContentLanguageTemplateType]["en"][randVal]
 	}
 	bf := new(bytes.Buffer)
-	data := map[string]any{"Username": user.Username, "WelcomeBonus": tokenomics.WelcomeBonusV2Amount}
+	data := map[string]any{"Username": strings.ReplaceAll(user.Username, ".", "-"), "WelcomeBonus": tokenomics.WelcomeBonusV2Amount}
 	log.Panic(errors.Wrapf(templ.content.Execute(bf, data), "failed to execute postContentLanguageTemplateType template for data:%#v", data))
 
 	return bf.String()
@@ -446,7 +446,9 @@ func (r *repository) expectedPostSubtext(user *users.User, metadata *Verificatio
 		}
 		if tmpl != nil {
 			bf := new(bytes.Buffer)
-			log.Panic(errors.Wrapf(tmpl.Execute(bf, user), "failed to execute expectedPostSubtext template for metadata:%+v user:%+v", metadata, user))
+			cpy := *user
+			cpy.Username = strings.ReplaceAll(cpy.Username, ".", "-")
+			log.Panic(errors.Wrapf(tmpl.Execute(bf, cpy), "failed to execute expectedPostSubtext template for metadata:%+v user:%+v", metadata, user))
 
 			return bf.String()
 		}
