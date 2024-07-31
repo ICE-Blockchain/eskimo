@@ -2257,6 +2257,16 @@ const docTemplate = `{
                     "type": "string",
                     "example": "did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"
                 },
+                "telegramBotId": {
+                    "description": "Optional.",
+                    "type": "string",
+                    "example": "1234566787"
+                },
+                "telegramUserId": {
+                    "description": "Optional.",
+                    "type": "string",
+                    "example": "1234566787"
+                },
                 "username": {
                     "description": "Optional.",
                     "type": "string",

@@ -55,6 +55,10 @@ type (
 		ReferredBy string `json:"referredBy" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"`
 		// Optional.
 		Username string `json:"username" example:"john.doe"`
+		// Optional.
+		TelegramUserID string `json:"telegramUserId" example:"1234566787"`
+		// Optional.
+		TelegramBotID string `json:"telegramBotId" example:"1234566787"`
 	}
 	ModifyUserRequestBody struct {
 		UserID string `uri:"userId" swaggerignore:"true" required:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"`
