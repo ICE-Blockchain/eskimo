@@ -1,7 +1,5 @@
-✅ @sunwaves_token లో నా ఖాతాను అనుపాతముగా నిర్ధారిస్తున్నాను: "{{.Username}}".
+☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
 
-👉 @ice_blockchain తో #ION పర్యావరణ వ్యవస్థలో పండుగలను తదుపరి స్థాయికి తీసుకెళ్తుంది.
+🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
 
-https://sunwavestoken.com/@{{.Username}}
-
-#SUNWAVES $SW $ICE
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}

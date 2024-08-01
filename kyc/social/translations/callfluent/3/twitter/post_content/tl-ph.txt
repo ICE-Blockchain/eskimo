@@ -1,5 +1,5 @@
-✅ Pinapatunayan ang aking account sa @ice_blockchain gamit ang palayaw: "{{.Username}}"
+☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
 
-👉 Alamin ang higit pa tungkol sa "Ang Decentralized na Kinabukasan" na binubuo ng #IceNetwork. 👇
+🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}
