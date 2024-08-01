@@ -9,7 +9,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/ice-blockchain/freezer v1.500.0
+	github.com/ice-blockchain/freezer v1.501.0
 	github.com/ice-blockchain/go-tarantool-client v0.0.0-20230327200757-4fc71fa3f7bb
 	github.com/ice-blockchain/wintr v1.150.0
 	github.com/imroc/req/v3 v3.43.7
