@@ -1,7 +1,5 @@
-🌟 One of the biggest and oldest electronic music festivals in the WORLD is launching its token on #IceOpenNetwork
+🎶 Taking music festivals to new heights with @sunwaves_token
 
-Join @sunwaves_token and receive {{.WelcomeBonus}} SW coins when you sign up.
+🪙 Join #SUNWAVES and receive {{.WelcomeBonus}} SW coins when you sign up.
 
-🎶 Music is the anSWer
-
-https://t.me/sunwaves_token_bot/app?startapp=r_{{.Username}}
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}
