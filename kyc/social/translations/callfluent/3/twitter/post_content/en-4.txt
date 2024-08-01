@@ -1,7 +1,5 @@
-🔑 You can now find me on @sunwaves_token under the name "{{.Username}}".
+☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
 
-🌟 Redefining festival experiences in the #ION ecosystem thanks to @ice_blockchain.
+🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
 
-https://sunwavestoken.com/@{{.Username}}
-
-#SUNWAVES $SW $ICE
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}

@@ -1,7 +1,5 @@
-✅ 별명으로 @sunwaves_token에서 내 계정 확인: "{{.Username}}".
+☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
 
-👉 @ice_blockchain과 함께 #ION 생태계에서 축제를 다음 수준으로 끌어올리기.
+🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
 
-https://sunwavestoken.com/@{{.Username}}
-
-#SUNWAVES $SW $ICE
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}

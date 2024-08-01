@@ -1,5 +1,5 @@
-✅ መለያዬን @ice_blockchain ላይ በቅፅል ስም በማረጋገጥ ላይ፡ "{{.Username}}"
+☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
 
-👉 #IceNetwork እየገነባ ስላለው "ያልተማከለ የወደፊት" የበለጠ ተማር። 👇
+🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
 
-#Binance #HTX #KuCoin #OKX #Bybit #Gateio #Upbit #Crypto #Blockchain #Web3 #Altcoin #Bitcoin #Ethereum #BNB
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}
