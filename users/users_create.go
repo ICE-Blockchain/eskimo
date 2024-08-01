@@ -138,7 +138,7 @@ func (r *repository) replaceReferredByWithARandomOneIfT1ReferralsSharingEnabled(
 					  LIMIT 1) new_random_referral
 				WHERE input_referral.id = $2
 				  AND input_referral.verified = TRUE
-				  AND input_referral.verified_t1_referrals >= 25`
+				  AND input_referral.verified_t1_referrals >= 100000`
 	res, err := storage.Get[struct{ NewReferredBy string }](ctx, r.db, sql, []string{usr.ReferredBy, usr.ID}, usr.ReferredBy)
 	if err != nil && !errors.Is(err, storage.ErrNotFound) {
 		return errors.Wrapf(err, "failed to get new referred by if the provided one has t1 sharing enabled, id:%v, referredBy:%v", usr.ID, usr.ReferredBy)
