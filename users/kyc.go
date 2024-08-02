@@ -15,23 +15,32 @@ import (
 	"github.com/ice-blockchain/wintr/log"
 )
 
-func (r *repository) TryResetKYCSteps(ctx context.Context, resetClient ResetKycClient, userID string) (*User, error) {
+func (r *repository) TryResetKYCSteps(ctx context.Context, resetClient ResetKycClient, userID string) (*UserProfile, error) {
 	sql := `SELECT r.kyc_steps_to_reset,
-				   u.*
+				   u.*,
+				   COALESCE(refs.t1, 0) 	  as t1_referral_count,
+		   		   COALESCE(refs.t2, 0)		  as t2_referral_count
 			FROM users u
 				LEFT JOIN kyc_steps_reset_requests r
 					   ON r.user_id = u.id
+				LEFT JOIN referral_acquisition_history refs ON refs.user_id = u.id
 			WHERE u.id = $1`
 	if resp, err := storage.ExecOne[struct {
 		KYCStepsToReset []KYCStep `db:"kyc_steps_to_reset"`
 		User
+		T1ReferralCount uint64 `db:"t1_referral_count"`
+		T2ReferralCount uint64 `db:"t2_referral_count"`
 	}](ctx, r.db, sql, userID); err != nil {
 		return nil, errors.Wrapf(err, "failed to get kyc_steps_reset_requests for userID:%v", userID)
 	} else if len(resp.KYCStepsToReset) == 0 {
 		r.sanitizeUser(&resp.User)
 		r.sanitizeUserForUI(&resp.User)
 
-		return &resp.User, nil
+		return &UserProfile{
+			User:            &resp.User,
+			T1ReferralCount: &resp.T1ReferralCount,
+			T2ReferralCount: &resp.T2ReferralCount,
+		}, nil
 	} else if err = r.resetKYCSteps(ctx, resetClient, &resp.User, resp.KYCStepsToReset); err != nil {
 		return nil, errors.Wrapf(err, "failed to resetKYCSteps for userID:%v", userID)
 	}

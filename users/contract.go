@@ -210,7 +210,7 @@ type (
 		DeleteUser(ctx context.Context, userID UserID) error
 		ModifyUser(ctx context.Context, usr *User, profilePicture *multipart.FileHeader) (*UserProfile, error)
 
-		TryResetKYCSteps(ctx context.Context, resetClient ResetKycClient, userID string) (*User, error)
+		TryResetKYCSteps(ctx context.Context, resetClient ResetKycClient, userID string) (*UserProfile, error)
 	}
 	// Repository main API exposed that handles all the features of this package.
 	Repository interface {

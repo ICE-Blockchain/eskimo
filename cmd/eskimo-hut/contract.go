@@ -140,7 +140,7 @@ type (
 		LoginSession string `json:"loginSession,omitempty" example:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"` //nolint:lll // .
 	}
 	User struct {
-		*users.User
+		*users.UserProfile
 		*kycquiz.QuizStatus
 		Checksum         string `json:"checksum,omitempty" example:"1232412415326543647657"`
 		KycFaceAvailable bool   `json:"kycFaceAvailable,omitempty" example:"true"`
