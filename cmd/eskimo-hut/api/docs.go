@@ -2781,9 +2781,17 @@ const docTemplate = `{
                         "type": "string"
                     }
                 },
+                "t1ReferralCount": {
+                    "type": "integer",
+                    "example": 100
+                },
                 "t1ReferralsSharingEnabled": {
                     "type": "boolean",
                     "example": true
+                },
+                "t2ReferralCount": {
+                    "type": "integer",
+                    "example": 100
                 },
                 "telegramBotId": {
                     "type": "string",
