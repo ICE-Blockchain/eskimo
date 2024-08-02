@@ -305,11 +305,11 @@ func (s *service) TryResetKYCSteps( //nolint:gocritic,funlen,gocognit,revive,cyc
 	kycFaceAvailable := false
 	if req.Data.NextKYCStep != nil &&
 		(*req.Data.NextKYCStep == users.FacialRecognitionKYCStep || *req.Data.NextKYCStep == users.LivenessDetectionKYCStep) {
-		kycFaceAvailable, err = s.faceKycClient.CheckStatus(ctx, resp, *req.Data.NextKYCStep)
+		kycFaceAvailable, err = s.faceKycClient.CheckStatus(ctx, resp.User, *req.Data.NextKYCStep)
 		if err != nil {
 			return nil, server.Unexpected(err)
 		}
 	}
 
-	return server.OK(&User{User: resp, QuizStatus: quizStatus, KycFaceAvailable: kycFaceAvailable, Checksum: resp.Checksum()}), nil
+	return server.OK(&User{UserProfile: resp, QuizStatus: quizStatus, KycFaceAvailable: kycFaceAvailable, Checksum: resp.Checksum()}), nil
 }

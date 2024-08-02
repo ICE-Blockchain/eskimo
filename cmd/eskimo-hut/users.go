@@ -85,7 +85,7 @@ func (s *service) CreateUser( //nolint:funlen,gocritic // .
 	}
 	usr.HashCode = 0
 
-	return server.Created(&User{User: usr, Checksum: usr.Checksum()}), nil
+	return server.Created(&User{UserProfile: &users.UserProfile{User: usr}, Checksum: usr.Checksum()}), nil
 }
 
 func buildUserForCreation(req *server.Request[CreateUserRequestBody, User]) *users.User {
