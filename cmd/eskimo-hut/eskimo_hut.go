@@ -53,7 +53,7 @@ func (s *service) RegisterRoutes(router *server.Router) {
 
 func (s *service) Init(ctx context.Context, cancel context.CancelFunc) {
 	s.usersProcessor = users.StartProcessor(ctx, cancel)
-	s.authEmailLinkClient = emaillink.NewClient(ctx, s.usersProcessor, server.Auth(ctx))
+	s.authEmailLinkClient = emaillink.NewClient(ctx, cancel, s.usersProcessor, server.Auth(ctx))
 	s.telegramAuthClient = telegramauth.NewClient(ctx, server.Auth(ctx))
 	s.tokenRefresher = auth.NewRefresher(server.Auth(ctx), s.authEmailLinkClient, s.telegramAuthClient)
 	s.socialRepository = social.New(ctx, s.usersProcessor)
@@ -78,5 +78,8 @@ func (s *service) Close(ctx context.Context) error {
 func (s *service) CheckHealth(ctx context.Context) error {
 	log.Debug("checking health...", "package", "users")
 
-	return errors.Wrapf(s.usersProcessor.CheckHealth(ctx), "processor health check failed")
+	return multierror.Append( //nolint:wrapcheck // Not needed.
+		errors.Wrapf(s.usersProcessor.CheckHealth(ctx), "processor health check failed"),
+		errors.Wrapf(s.authEmailLinkClient.CheckHealth(ctx), "email client health check failed"),
+	).ErrorOrNil()
 }

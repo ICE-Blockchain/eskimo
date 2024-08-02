@@ -7,6 +7,7 @@ import (
 	"embed"
 	"io"
 	"mime/multipart"
+	"sync"
 	"text/template"
 	stdlibtime "time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/ice-blockchain/eskimo/users"
 	wintrauth "github.com/ice-blockchain/wintr/auth"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
+	storagev3 "github.com/ice-blockchain/wintr/connectors/storage/v3"
 	"github.com/ice-blockchain/wintr/email"
 	"github.com/ice-blockchain/wintr/time"
 )
@@ -29,9 +31,10 @@ type (
 	}
 	Client interface {
 		IceUserIDClient
-		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (loginSession string, err error)
+		SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUniqueID, language, clientIP string) (queuePos int64, rateLimit, loginSession string, err error)
 		SignIn(ctx context.Context, loginFlowToken, confirmationCode string) (tokens *auth.Tokens, emailConfirmed bool, err error)
 		UpdateMetadata(ctx context.Context, userID string, metadata *users.JSON) (*users.JSON, error)
+		CheckHealth(ctx context.Context) error
 		RefreshToken(ctx context.Context, token *wintrauth.IceToken) (tokens *auth.Tokens, err error)
 	}
 	IceUserIDClient interface {
@@ -83,18 +86,24 @@ const (
 	sameIPCheckRate = 24 * stdlibtime.Hour
 
 	duplicatedSignInRequestsInLessThan = 2 * stdlibtime.Second
+	loginQueueKey                      = "login_queue"
+	loginRateLimitKey                  = "login_rate_limit"
+	initEmailRateLimit                 = "1000:1m"
 )
 
 type (
 	languageCode = string
 	client       struct {
+		queueDB            storagev3.DB
 		db                 *storage.DB
 		cfg                *config
 		shutdown           func() error
 		authClient         wintrauth.Client
 		userModifier       UserModifier
+		cancel             context.CancelFunc
 		emailClients       []email.Client
 		fromRecipients     []fromRecipient
+		queueWg            sync.WaitGroup
 		emailClientLBIndex uint64
 	}
 	config struct {
@@ -177,4 +186,5 @@ var (
 		modifyEmailType,
 		notifyEmailChangedType,
 	}
+	errAlreadyEnqueued = errors.New("already enqueued")
 )
