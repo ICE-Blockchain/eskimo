@@ -18,6 +18,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.55.0
 	github.com/prometheus/prometheus v0.53.1
+	github.com/redis/go-redis/v9 v9.6.1
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.3
 	github.com/telegram-mini-apps/init-data-golang v1.1.5
@@ -147,7 +148,6 @@ require (
 	github.com/prometheus/procfs v0.15.1 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/quic-go v0.45.2 // indirect
-	github.com/redis/go-redis/v9 v9.6.1 // indirect
 	github.com/refraction-networking/utls v1.6.7 // indirect
 	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/sagikazarmark/locafero v0.6.0 // indirect
