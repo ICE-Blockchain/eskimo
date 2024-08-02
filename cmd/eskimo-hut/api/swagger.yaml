@@ -404,9 +404,15 @@ definitions:
         additionalProperties:
           type: string
         type: object
+      t1ReferralCount:
+        example: 100
+        type: integer
       t1ReferralsSharingEnabled:
         example: true
         type: boolean
+      t2ReferralCount:
+        example: 100
+        type: integer
       telegramBotId:
         example: "5678"
         type: string
