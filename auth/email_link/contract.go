@@ -88,7 +88,7 @@ const (
 	duplicatedSignInRequestsInLessThan = 2 * stdlibtime.Second
 	loginQueueKey                      = "login_queue"
 	loginRateLimitKey                  = "login_rate_limit"
-	initEmailRateLimit                 = "2:1m"
+	initEmailRateLimit                 = "1000:1m"
 )
 
 type (
