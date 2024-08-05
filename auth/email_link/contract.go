@@ -124,6 +124,7 @@ type (
 			MaxWrongAttemptsCount int64 `yaml:"maxWrongAttemptsCount"`
 		} `yaml:"confirmationCode"`
 		DisableEmailSending     bool `yaml:"disableEmailSending"`
+		QueueProcessing         bool `yaml:"queueProcessing"`
 		ExtraLoadBalancersCount int  `yaml:"extraLoadBalancersCount"`
 	}
 	loginID struct {

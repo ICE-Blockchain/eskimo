@@ -58,7 +58,9 @@ func NewClient(ctx context.Context, cancel context.CancelFunc, userModifier User
 			cl.emailClients = append(cl.emailClients, email.New(fmt.Sprintf("%v/%v", applicationYamlKey, i+1)))
 			cl.fromRecipients = append(cl.fromRecipients, fromRecipient{nestedCfg.FromEmailName, nestedCfg.FromEmailAddress})
 		}
-		go cl.processEmailQueue(ctx)
+		if cfg.QueueProcessing {
+			go cl.processEmailQueue(ctx)
+		}
 	}
 	go cl.startOldLoginAttemptsCleaner(ctx)
 
