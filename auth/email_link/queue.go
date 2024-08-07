@@ -215,7 +215,7 @@ func (c *client) dequeueNextEmails(ctx context.Context) (emailsBatch []string, s
 func (c *client) fetchLoginInformationForEmailBatch(ctx context.Context, now *time.Time, emails []string, limit int) ([]*emailLinkSignIn, error) {
 	sql := fmt.Sprintf(`
 		 SELECT * FROM public.email_link_sign_ins 
-         WHERE email = ANY($1) AND created_at > ($2::TIMESTAMP - (%[2]v * interval '1 second'))
+         WHERE email = ANY($1) AND created_at > ($2::TIMESTAMP - (%[2]v * interval '1 second')) AND (user_id is null or confirmation_code != user_id)
          ORDER BY created_at DESC
          LIMIT %[1]v;`, limit, c.cfg.EmailValidation.ExpirationTime.Seconds())
 	res, err := storage.Select[emailLinkSignIn](ctx, c.db, sql, emails, now.Time)
