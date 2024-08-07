@@ -2,6 +2,6 @@
 
 🪙 به #SUNWAVES بپیوندید و {{.WelcomeBonus}} سکه SW هنگام ثبت نام دریافت کنید.
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

@@ -2,6 +2,6 @@
 
 🪙 加入 #SUNWAVES 并在注册时获得 {{.WelcomeBonus}} SW 币。
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

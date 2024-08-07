@@ -2,6 +2,6 @@
 
 🪙 Bashkohuni me #SUNWAVES dhe merrni {{.WelcomeBonus}} monedha SW kur të regjistroheni.
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

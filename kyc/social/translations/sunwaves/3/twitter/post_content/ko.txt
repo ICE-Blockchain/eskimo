@@ -2,6 +2,6 @@
 
 🪙 #SUNWAVES에 가입하고 가입 시 {{.WelcomeBonus}} SW 코인을 받으세요.
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

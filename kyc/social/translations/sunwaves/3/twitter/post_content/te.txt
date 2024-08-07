@@ -2,6 +2,6 @@
 
 🪙 #SUNWAVESలో చేరి, సైన్ అప్ చేసినప్పుడు {{.WelcomeBonus}} SW నాణేలను పొందండి.
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

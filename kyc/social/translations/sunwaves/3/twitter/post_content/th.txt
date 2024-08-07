@@ -2,6 +2,6 @@
 
 🪙 เข้าร่วม #SUNWAVES และรับ {{.WelcomeBonus}} เหรียญ SW เมื่อคุณลงทะเบียน
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
