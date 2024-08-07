@@ -2,6 +2,6 @@
 
 🪙 #SUNWAVES માં જોડાઓ અને સાઇન અપ કરતી વખતે {{.WelcomeBonus}} SW નાણાં મેળવો.
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

@@ -2,6 +2,6 @@
 
 🪙 Sluit aan by #SUNWAVES en ontvang {{.WelcomeBonus}} SW-muntstukke wanneer jy aanmeld.
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
-
 https://sunwavestoken.com/@{{.Username}}
+
+#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
