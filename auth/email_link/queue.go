@@ -23,6 +23,7 @@ import (
 
 //nolint:funlen,gocognit,revive // .
 func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, userEmail string) (queuePosition int64, rateLimit string, err error) {
+	aliveTTLEnabled := c.cfg.QueueAliveTTL > 0
 	var result []redis.Cmder
 	result, err = c.queueDB.TxPipelined(ctx, func(pipeliner redis.Pipeliner) error {
 		if zErr := pipeliner.ZAddNX(ctx, loginQueueKey, redis.Z{
@@ -34,11 +35,13 @@ func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, userEm
 		if zRankErr := pipeliner.ZRank(ctx, loginQueueKey, userEmail).Err(); zRankErr != nil {
 			return zRankErr //nolint:wrapcheck // .
 		}
-		if zErr := pipeliner.ZAdd(ctx, loginQueueTTLKey, redis.Z{
-			Score:  float64(now.UnixNano()),
-			Member: userEmail,
-		}).Err(); zErr != nil {
-			return zErr //nolint:wrapcheck // .
+		if aliveTTLEnabled {
+			if zErr := pipeliner.ZAdd(ctx, loginQueueTTLKey, redis.Z{
+				Score:  float64(now.UnixNano()),
+				Member: userEmail,
+			}).Err(); zErr != nil {
+				return zErr //nolint:wrapcheck // .
+			}
 		}
 
 		return pipeliner.Get(ctx, loginRateLimitKey).Err()
@@ -47,7 +50,11 @@ func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, userEm
 		return 0, "", errors.Wrapf(err, "failed to enqueue email")
 	}
 	errs := make([]error, 0, len(result))
-	for idx := 3; idx >= 0; idx-- {
+	rateLimitIdx := 3
+	if !aliveTTLEnabled {
+		rateLimitIdx = 2
+	}
+	for idx := rateLimitIdx; idx >= 0; idx-- {
 		cmdRes := result[idx]
 		if cmdRes.Err() != nil {
 			errs = append(errs, errors.Wrapf(cmdRes.Err(), "failed to enqueue email because of failed %v", cmdRes.String()))
@@ -55,7 +62,7 @@ func (c *client) enqueueLoginAttempt(ctx context.Context, now *time.Time, userEm
 			continue
 		}
 		switch idx {
-		case 3: //nolint:gomnd // Index in pipeline.
+		case rateLimitIdx:
 			strCmd := cmdRes.(*redis.StringCmd) //nolint:errcheck,forcetypeassert // .
 			rateLimit = strCmd.Val()
 		case 1:
@@ -135,25 +142,26 @@ func (c *client) processEmailQueue(rootCtx context.Context) {
 			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails[rlCount:], scores, nil), "failed to rollback emails %#v back to queue cuz rate limit %v is less than batch %v", emails[rlCount:], rlCount, email.MaxBatchSize)) //nolint:lll // .
 			emails = emails[:rlCount]
 		}
+		var ttls map[string]int64
+		if c.cfg.QueueAliveTTL > 0 {
+			reqCtx, reqCancel = context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
+			ttls, err = c.filterEmailsWithAliveTTL(reqCtx, now, &emails, scores)                //nolint:contextcheck // Background context.
+			if err != nil {
+				log.Error(errors.Wrapf(err, "failed to fetch TTLs for emails"))
+				log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails, scores, nil), "failed to rollback emails %#v back to queue", emails))
+				reqCancel()
+				_ = wait(rootCtx, 1*stdlibtime.Second) //nolint:errcheck // Noting to rollback.
 
-		reqCtx, reqCancel = context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
-		ttls, err := c.filterEmailsWithAliveTTL(reqCtx, now, &emails, scores)               //nolint:contextcheck // Background context.
-		if err != nil {
-			log.Error(errors.Wrapf(err, "failed to fetch TTLs for emails"))
-			log.Error(errors.Wrapf(c.rollbackEmailsBackToQueue(emails, scores, nil), "failed to rollback emails %#v back to queue", emails))
+				continue
+			}
 			reqCancel()
-			_ = wait(rootCtx, 1*stdlibtime.Second) //nolint:errcheck // Noting to rollback.
 
-			continue
+			if len(emails) == 0 {
+				_ = wait(rootCtx, 1*stdlibtime.Second) //nolint:errcheck // Nothing to rollback.
+
+				continue
+			}
 		}
-		reqCancel()
-
-		if len(emails) == 0 {
-			_ = wait(rootCtx, 1*stdlibtime.Second) //nolint:errcheck // Nothing to rollback.
-
-			continue
-		}
-
 		reqCtx, reqCancel = context.WithTimeout(context.Background(), 30*stdlibtime.Second) //nolint:gomnd // .
 		loginInformation, err := c.fetchLoginInformationForEmailBatch(reqCtx, now, emails, limit)
 		if err != nil {
@@ -254,7 +262,7 @@ func (c *client) dequeueNextEmails(ctx context.Context) (emailsBatch []string, s
 	return emailsBatch, scores, rate, nil
 }
 
-//nolint:funlen // .
+//nolint:funlen,gocognit,revive // .
 func (c *client) filterEmailsWithAliveTTL(ctx context.Context, now *time.Time, emails *[]string, scores map[string]int64) (ttls map[string]int64, err error) {
 	ttls = make(map[string]int64, 0)
 	if len(*emails) == 0 {
@@ -283,7 +291,13 @@ func (c *client) filterEmailsWithAliveTTL(ctx context.Context, now *time.Time, e
 		}
 	}
 	ttlBatch := pipeRes[0].(*redis.FloatSliceCmd).Val() //nolint:forcetypeassert // .
+	if len(ttlBatch) == 0 {
+		return ttls, nil
+	}
 	for idx := len(*emails) - 1; idx >= 0; idx-- {
+		if ttlBatch[idx] == 0 {
+			continue
+		}
 		ttlTime := stdlibtime.Unix(0, int64(ttlBatch[idx])).Add(c.cfg.QueueAliveTTL)
 		userLeftQueue := now.After(ttlTime)
 		if userLeftQueue {
