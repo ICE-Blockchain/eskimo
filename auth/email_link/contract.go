@@ -126,7 +126,7 @@ type (
 		} `yaml:"confirmationCode"`
 		DisableEmailSending     bool                `yaml:"disableEmailSending"`
 		QueueProcessing         bool                `yaml:"queueProcessing"`
-		QueueAliveTTL           stdlibtime.Duration `yaml:"queueAliveTTL"` //nolint:tagliatelle // .
+		QueueAliveTTL           stdlibtime.Duration `yaml:"queueAliveTTL" mapstructure:"queueAliveTTL"` //nolint:tagliatelle // .
 		ExtraLoadBalancersCount int                 `yaml:"extraLoadBalancersCount"`
 	}
 	loginID struct {
