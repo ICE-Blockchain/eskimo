@@ -59,6 +59,8 @@ CREATE INDEX IF NOT EXISTS users_shared_referral_lookup_v2_ix ON users (last_min
 WHERE mining_boost_level = 0
   AND verified = TRUE
   AND verified_t1_referrals = 0;
+CREATE INDEX IF NOT EXISTS users_referred_by_created_at_ix ON users (referred_by, created_at DESC);
+CREATE INDEX IF NOT EXISTS users_last_mining_ended_at_ix ON users (last_mining_ended_at DESC NULLS LAST);
 
 CREATE OR REPLACE FUNCTION before_update_on_users()
 RETURNS TRIGGER AS $$
