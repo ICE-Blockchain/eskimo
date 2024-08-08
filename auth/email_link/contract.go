@@ -87,6 +87,7 @@ const (
 
 	duplicatedSignInRequestsInLessThan = 2 * stdlibtime.Second
 	loginQueueKey                      = "login_queue"
+	loginQueueTTLKey                   = "login_queue_ttl"
 	loginRateLimitKey                  = "login_rate_limit"
 	initEmailRateLimit                 = "1000:1m"
 )
@@ -123,9 +124,10 @@ type (
 		ConfirmationCode struct {
 			MaxWrongAttemptsCount int64 `yaml:"maxWrongAttemptsCount"`
 		} `yaml:"confirmationCode"`
-		DisableEmailSending     bool `yaml:"disableEmailSending"`
-		QueueProcessing         bool `yaml:"queueProcessing"`
-		ExtraLoadBalancersCount int  `yaml:"extraLoadBalancersCount"`
+		DisableEmailSending     bool                `yaml:"disableEmailSending"`
+		QueueProcessing         bool                `yaml:"queueProcessing"`
+		QueueAliveTTL           stdlibtime.Duration `yaml:"queueAliveTTL"` //nolint:tagliatelle // .
+		ExtraLoadBalancersCount int                 `yaml:"extraLoadBalancersCount"`
 	}
 	loginID struct {
 		Email          string `json:"email,omitempty" example:"someone1@example.com"`

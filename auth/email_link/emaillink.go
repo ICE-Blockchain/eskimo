@@ -158,6 +158,9 @@ func (cfg *config) validate() {
 	if cfg.TeamName == "" {
 		log.Panic("no team name specified")
 	}
+	if cfg.QueueAliveTTL == 0 {
+		cfg.QueueAliveTTL = cfg.EmailValidation.ExpirationTime
+	}
 }
 
 func (t *emailTemplate) getSubject(data any) string {
