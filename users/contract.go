@@ -308,6 +308,7 @@ type (
 		} `yaml:"globalAggregationInterval"`
 		//nolint:tagliatelle // .
 		IntervalBetweenRepeatableKYCSteps stdlibtime.Duration `yaml:"intervalBetweenRepeatableKYCSteps" mapstructure:"intervalBetweenRepeatableKYCSteps"`
+		MaxReferralsCount                 int64               `yaml:"maxReferralsCount" mapstructure:"maxReferralsCount"`
 		DisableConsumer                   bool                `yaml:"disableConsumer"`
 	}
 )

@@ -121,6 +121,7 @@ auth/email-link/2:
     credentials:
       #apiKey: bogus2
 users: &users
+  maxReferralsCount: 200
   defaultReferralName: bogus
   kyc:
     kyc-step1-reset-url: https://localhost:443/v1w/face-auth/
