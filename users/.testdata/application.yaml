@@ -5,6 +5,7 @@ logger:
   encoder: console
   level: info
 users: &users
+  maxReferralsCount: 200
   wintr/connectors/storage/v2:
     runDDL: true
     primaryURL: postgresql://root:pass@localhost:5432/ice
