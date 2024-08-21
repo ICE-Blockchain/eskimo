@@ -43,7 +43,7 @@ func (c *client) handleEmailModification(ctx context.Context, els *emailLinkSign
 	}
 	if notifyEmail != "" {
 		now := time.Now()
-		resetConfirmationCode := generateConfirmationCode()
+		resetConfirmationCode := c.generateConfirmationCode("")
 		uErr := c.upsertEmailLinkSignIn(ctx, oldEmail, els.DeviceUniqueID, resetConfirmationCode, els.Language, now)
 		if uErr != nil {
 			return multierror.Append( //nolint:wrapcheck // .

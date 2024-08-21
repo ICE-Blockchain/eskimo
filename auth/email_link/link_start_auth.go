@@ -6,6 +6,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"math"
 	"math/big"
 	"sync/atomic"
 	stdlibtime "time"
@@ -55,7 +56,7 @@ func (c *client) SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUn
 			return 0, "", "", errors.Wrapf(vErr, "can't validate modification email for:%#v", oldID)
 		}
 	}
-	confirmationCode := generateConfirmationCode()
+	confirmationCode := c.generateConfirmationCode(id.Email)
 	loginSession, err = c.generateLoginSession(&id, clientIP, oldEmail, loginSessionNumber)
 	if err != nil {
 		return 0, "", "", errors.Wrap(err, "can't call generateLoginSession")
@@ -337,8 +338,11 @@ func (c *client) generateLoginSession(id *loginID, clientIP, oldEmail string, lo
 	return payload, nil
 }
 
-func generateConfirmationCode() string {
-	result, err := rand.Int(rand.Reader, big.NewInt(999)) //nolint:gomnd // It's max value.
+func (c *client) generateConfirmationCode(emailForSpecificCode string) string {
+	if code, hasConstCode := c.cfg.ConfirmationCode.ConstCodes[emailForSpecificCode]; hasConstCode {
+		return code
+	}
+	result, err := rand.Int(rand.Reader, big.NewInt(int64(math.Pow10(loginCodeLength)-1)))
 	log.Panic(err, "random wrong")
 
 	return fmt.Sprintf("%03d", result.Int64()+1)
