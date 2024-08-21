@@ -90,6 +90,7 @@ const (
 	loginQueueTTLKey                   = "login_queue_ttl"
 	loginRateLimitKey                  = "login_rate_limit"
 	initEmailRateLimit                 = "1000:1m"
+	loginCodeLength                    = 3
 )
 
 type (
@@ -116,18 +117,19 @@ type (
 		LoginSession     struct {
 			JwtSecret string `yaml:"jwtSecret"`
 		} `yaml:"loginSession"`
+		ConfirmationCode struct {
+			ConstCodes            map[string]string `yaml:"constCodes" mapstructure:"constCodes"`
+			MaxWrongAttemptsCount int64             `yaml:"maxWrongAttemptsCount"`
+		} `yaml:"confirmationCode"`
 		EmailValidation struct {
 			AuthLink       string              `yaml:"authLink"`
 			ExpirationTime stdlibtime.Duration `yaml:"expirationTime" mapstructure:"expirationTime"`
 			BlockDuration  stdlibtime.Duration `yaml:"blockDuration"`
 		} `yaml:"emailValidation"`
-		ConfirmationCode struct {
-			MaxWrongAttemptsCount int64 `yaml:"maxWrongAttemptsCount"`
-		} `yaml:"confirmationCode"`
-		DisableEmailSending     bool                `yaml:"disableEmailSending"`
-		QueueProcessing         bool                `yaml:"queueProcessing"`
 		QueueAliveTTL           stdlibtime.Duration `yaml:"queueAliveTTL" mapstructure:"queueAliveTTL"` //nolint:tagliatelle // .
 		ExtraLoadBalancersCount int                 `yaml:"extraLoadBalancersCount"`
+		DisableEmailSending     bool                `yaml:"disableEmailSending"`
+		QueueProcessing         bool                `yaml:"queueProcessing"`
 	}
 	loginID struct {
 		Email          string `json:"email,omitempty" example:"someone1@example.com"`

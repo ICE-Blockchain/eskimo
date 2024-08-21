@@ -108,7 +108,7 @@ func (*twitterVerifierImpl) ExtractUsernameFromURL(postURL string) (username str
 		expectedStatusText    = "status"
 	)
 
-	if tokens := strings.Split(postURL, "/"); len(tokens) > expectedTokensLenMin && //nolint:revive // False-Positive.
+	if tokens := strings.Split(postURL, "/"); len(tokens) > expectedTokensLenMin &&
 		tokens[expectedStatusIndex] == expectedStatusText {
 		username = tokens[expectedUsernameIndex]
 	}

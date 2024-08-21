@@ -145,7 +145,7 @@ func runConcurrently[ARG any](ctx context.Context, run func(context.Context, ARG
 }
 
 func randomBetween(left, right uint64) uint64 {
-	n, err := rand.Int(rand.Reader, big.NewInt(int64(right)-int64(left)))
+	n, err := rand.Int(rand.Reader, big.NewInt(int64(right)-int64(left))) //nolint:gosec // .
 	log.Panic(errors.Wrap(err, "crypto random generator failed"))
 
 	return n.Uint64() + left

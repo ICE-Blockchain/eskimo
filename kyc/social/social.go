@@ -18,7 +18,6 @@ import (
 
 	social "github.com/ice-blockchain/eskimo/kyc/social/internal"
 	"github.com/ice-blockchain/eskimo/users"
-	"github.com/ice-blockchain/freezer/tokenomics"
 	appcfg "github.com/ice-blockchain/wintr/config"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
 	"github.com/ice-blockchain/wintr/log"
@@ -399,7 +398,7 @@ func (r *repository) expectedPostText(user *users.User, vm *VerificationMetadata
 		templ = allTemplates[tname][vm.KYCStep][vm.Social][postContentLanguageTemplateType]["en"][randVal]
 	}
 	bf := new(bytes.Buffer)
-	data := map[string]any{"Username": strings.ReplaceAll(user.Username, ".", "-"), "WelcomeBonus": tokenomics.WelcomeBonusV2Amount}
+	data := map[string]any{"Username": strings.ReplaceAll(user.Username, ".", "-"), "WelcomeBonus": r.cfg.WelcomeBonusV2Amount}
 	log.Panic(errors.Wrapf(templ.content.Execute(bf, data), "failed to execute postContentLanguageTemplateType template for data:%#v", data))
 
 	return bf.String()

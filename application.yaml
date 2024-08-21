@@ -38,6 +38,7 @@ wintr/connectors/storage/v2: &db
   replicaURLs:
     - postgresql://root:pass@localhost:5433/eskimo
 kyc/social:
+  welcomeBonusV2Amount: 500
   config-json-url: https://somewhere.com/something/somebogus.json
   environment: local
   enable-alerts: false
@@ -105,6 +106,8 @@ auth/email-link:
     jwtSecret: bogus
   confirmationCode:
     maxWrongAttemptsCount: 3
+    constCodes:
+      bogus@example.com: 111
   petName: Tenanter
   appName: Tenant
   teamName: Tenant

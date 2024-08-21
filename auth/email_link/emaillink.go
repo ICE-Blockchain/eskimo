@@ -61,6 +61,11 @@ func NewClient(ctx context.Context, cancel context.CancelFunc, userModifier User
 		if cfg.QueueProcessing {
 			go cl.processEmailQueue(ctx)
 		}
+		for emailForConstCode, code := range cfg.ConfirmationCode.ConstCodes {
+			if len(code) > loginCodeLength {
+				log.Panic(errors.Errorf("const code %v for email %v is too long, max length is %v", code, emailForConstCode, loginCodeLength))
+			}
+		}
 	}
 	go cl.startOldLoginAttemptsCleaner(ctx)
 

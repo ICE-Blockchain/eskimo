@@ -140,5 +140,6 @@ type (
 		MaxSessionsAllowed   int                 `yaml:"max-sessions-allowed" mapstructure:"max-sessions-allowed"`     //nolint:tagliatelle // .
 		MaxAttemptsAllowed   uint8               `yaml:"max-attempts-allowed" mapstructure:"max-attempts-allowed"`     //nolint:tagliatelle // .
 		EnableAlerts         bool                `yaml:"enable-alerts" mapstructure:"enable-alerts"`                   //nolint:tagliatelle // .
+		WelcomeBonusV2Amount float64             `yaml:"welcomeBonusV2Amount" mapstructure:"welcomeBonusV2Amount"`     //nolint:tagliatelle // .
 	}
 )

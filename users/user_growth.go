@@ -35,7 +35,7 @@ func (r *repository) generateUserGrowthKeys(now *time.Time, days uint64) []strin
 	const totalAndActiveFactor = 2
 	keys := make([]string, 0, totalAndActiveFactor*days+1)
 	keys = append(keys, totalUsersGlobalKey)
-	for day := stdlibtime.Duration(0); day < stdlibtime.Duration(days); day++ {
+	for day := stdlibtime.Duration(0); day < stdlibtime.Duration(days); day++ { //nolint:gosec // .
 		currentDay := now.Add(-1 * day * r.cfg.GlobalAggregationInterval.Parent)
 		keys = append(append(keys, r.totalUsersGlobalParentKey(&currentDay)), r.totalActiveUsersGlobalChildrenKeys(&currentDay)...)
 	}
@@ -87,7 +87,7 @@ func (r *repository) aggregateGlobalValuesToGrowth(
 					if math.Abs(float64(nowInTzWithUTC.Sub(*now.Time))) > float64(r.cfg.GlobalAggregationInterval.Parent) {
 						nowInTzWithUTC = now
 					}
-					fullNegativeDayDuration := (-1) * r.cfg.GlobalAggregationInterval.Parent * stdlibtime.Duration(dayIdx-1)
+					fullNegativeDayDuration := (-1) * r.cfg.GlobalAggregationInterval.Parent * stdlibtime.Duration(dayIdx-1) //nolint:gosec // .
 					stats[dayIdx].Date = time.New(nowInTzWithUTC.Add(fullNegativeDayDuration).Add(-nsSinceParentIntervalZeroValue - 1))
 					if stats[dayIdx].Date.Truncate(r.cfg.GlobalAggregationInterval.Parent).Equal(stats[dayIdx-1].Date.Truncate(r.cfg.GlobalAggregationInterval.Parent)) {
 						stats[dayIdx].Date = time.New(stats[dayIdx].Date.Add(-r.cfg.GlobalAggregationInterval.Parent))

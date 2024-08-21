@@ -261,7 +261,7 @@ func validateHiddenProfileElements(req *server.Request[ModifyUserRequestBody, Mo
 			}
 		}
 		if !valid {
-			invalidHiddenProfileElement = &actual //nolint:revive,exportloopref // Its safe. Its the last iteration.
+			invalidHiddenProfileElement = &actual //nolint:exportloopref // Its safe. Its the last iteration.
 
 			break
 		}
