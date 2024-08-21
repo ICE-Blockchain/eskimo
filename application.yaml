@@ -38,7 +38,7 @@ wintr/connectors/storage/v2: &db
   replicaURLs:
     - postgresql://root:pass@localhost:5433/eskimo
 kyc/social:
-  welcome-bonus-v2-amount: 500
+  welcomeBonusV2Amount: 500
   config-json-url: https://somewhere.com/something/somebogus.json
   environment: local
   enable-alerts: false

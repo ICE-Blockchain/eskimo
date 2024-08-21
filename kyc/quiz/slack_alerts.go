@@ -70,7 +70,7 @@ func (r *repositoryImpl) sendAlertToSlack(ctx context.Context, ticker *stdlibtim
 		if time.Now().Sub(*alert.LastAlertAt.Time) < stdlibtime.Duration(float64(r.config.alertFrequency.Load().Nanoseconds())*0.8) { //nolint:gomnd // .
 			return errRaceCondition
 		}
-		if newFrequency := stdlibtime.Duration(alert.FrequencyInSeconds) * stdlibtime.Second; newFrequency != *r.config.alertFrequency.Load() {
+		if newFrequency := stdlibtime.Duration(alert.FrequencyInSeconds) * stdlibtime.Second; newFrequency != *r.config.alertFrequency.Load() { //nolint:gosec // .
 			r.config.alertFrequency.Store(&newFrequency)
 			ticker.Reset(newFrequency)
 		}

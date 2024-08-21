@@ -16,7 +16,7 @@ import (
 )
 
 func (s *miningSessionSource) Process(ctx context.Context, msg *messagebroker.Message) error {
-	if ctx.Err() != nil || len(msg.Value) == 0 {
+	if len(msg.Value) == 0 || ctx.Err() != nil {
 		return errors.Wrap(ctx.Err(), "unexpected deadline while processing message")
 	}
 	ses := new(miningSession)

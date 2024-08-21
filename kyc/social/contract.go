@@ -133,13 +133,13 @@ type (
 		ConfigJSONURL1       string              `yaml:"config-json-url1" mapstructure:"config-json-url1"` //nolint:tagliatelle // .
 		ConfigJSONURL2       string              `yaml:"config-json-url2" mapstructure:"config-json-url2"` //nolint:tagliatelle // .
 		Environment          string              `yaml:"environment" mapstructure:"environment"`
-		AlertSlackWebhook    string              `yaml:"alert-slack-webhook" mapstructure:"alert-slack-webhook"`         //nolint:tagliatelle // .
-		TenantName           string              `yaml:"tenant-name" mapstructure:"tenant-name"`                         //nolint:tagliatelle // .
-		DelayBetweenSessions stdlibtime.Duration `yaml:"delay-between-sessions" mapstructure:"delay-between-sessions"`   //nolint:tagliatelle // .
-		SessionWindow        stdlibtime.Duration `yaml:"session-window" mapstructure:"session-window"`                   //nolint:tagliatelle // .
-		MaxSessionsAllowed   int                 `yaml:"max-sessions-allowed" mapstructure:"max-sessions-allowed"`       //nolint:tagliatelle // .
-		MaxAttemptsAllowed   uint8               `yaml:"max-attempts-allowed" mapstructure:"max-attempts-allowed"`       //nolint:tagliatelle // .
-		EnableAlerts         bool                `yaml:"enable-alerts" mapstructure:"enable-alerts"`                     //nolint:tagliatelle // .
-		WelcomeBonusV2Amount float64             `yaml:"welcome-bonus-v2-amount" mapstructure:"welcome-bonus-v2-amount"` //nolint:tagliatelle // .
+		AlertSlackWebhook    string              `yaml:"alert-slack-webhook" mapstructure:"alert-slack-webhook"`       //nolint:tagliatelle // .
+		TenantName           string              `yaml:"tenant-name" mapstructure:"tenant-name"`                       //nolint:tagliatelle // .
+		DelayBetweenSessions stdlibtime.Duration `yaml:"delay-between-sessions" mapstructure:"delay-between-sessions"` //nolint:tagliatelle // .
+		SessionWindow        stdlibtime.Duration `yaml:"session-window" mapstructure:"session-window"`                 //nolint:tagliatelle // .
+		MaxSessionsAllowed   int                 `yaml:"max-sessions-allowed" mapstructure:"max-sessions-allowed"`     //nolint:tagliatelle // .
+		MaxAttemptsAllowed   uint8               `yaml:"max-attempts-allowed" mapstructure:"max-attempts-allowed"`     //nolint:tagliatelle // .
+		EnableAlerts         bool                `yaml:"enable-alerts" mapstructure:"enable-alerts"`                   //nolint:tagliatelle // .
+		WelcomeBonusV2Amount float64             `yaml:"welcomeBonusV2Amount" mapstructure:"welcomeBonusV2Amount"`     //nolint:tagliatelle // .
 	}
 )

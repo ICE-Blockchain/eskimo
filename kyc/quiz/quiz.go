@@ -226,8 +226,8 @@ func (r *repositoryImpl) prepareUserForReset(ctx context.Context, userID UserID,
 		return errors.Wrap(err, "failed to get failed attempts count")
 	}
 
-	if count < int(r.config.MaxAttemptsAllowed) {
-		for i := range int(r.config.MaxAttemptsAllowed) - count {
+	if count < int(r.config.MaxAttemptsAllowed) { //nolint:gosec // .
+		for i := range int(r.config.MaxAttemptsAllowed) - count { //nolint:gosec // .
 			ts := now.Add(-stdlibtime.Second * stdlibtime.Duration(i))
 			_, err = r.addFailedAttempt(ctx, userID, time.New(ts), tx, true)
 			if err != nil {
@@ -442,7 +442,7 @@ func (r *repositoryImpl) moveFailedAttempts(ctx context.Context, tx storage.Quer
 		return false, errors.Wrap(err, "failed to get failed attempts count")
 	}
 
-	if count < int(r.config.MaxAttemptsAllowed) {
+	if count < int(r.config.MaxAttemptsAllowed) { //nolint:gosec // .
 		return false, nil
 	}
 
@@ -968,7 +968,7 @@ func (r *repositoryImpl) ContinueQuizSession( //nolint:funlen,revive,gocognit //
 		}
 		var answeredQuestionsCount int
 		switch {
-		case int(question)-len(progress.Answers) < 0 || question-uint8(len(progress.Answers)) > 1:
+		case int(question)-len(progress.Answers) < 0 || question-uint8(len(progress.Answers)) > 1: //nolint:gosec // .
 			return errors.Wrap(ErrUnknownQuestionNumber, "please answer questions in order")
 		case uint8(len(progress.Answers)) == question-1:
 			newAnswers, aErr := r.UserAddAnswer(ctx, userID, tx, answer)
@@ -985,7 +985,7 @@ func (r *repositoryImpl) ContinueQuizSession( //nolint:funlen,revive,gocognit //
 				},
 			}
 
-			if int(incorrectNum) > r.config.MaxWrongAnswersPerSession {
+			if int(incorrectNum) > r.config.MaxWrongAnswersPerSession { //nolint:gosec // .
 				quiz.Result = FailureResult
 
 				return r.UserMarkSessionAsFinished(ctx, userID, now, tx, false, false)

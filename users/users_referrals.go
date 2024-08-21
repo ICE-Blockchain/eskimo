@@ -426,7 +426,7 @@ func (r *repository) updateReferralCount(ctx context.Context, msgTimestamp stdli
 	if us.Before != nil {
 		userID = us.Before.ID
 		referredBy = us.Before.ReferredBy
-		dayBetweenCreationAndDeletion = int16(msgTimestamp.Sub(*us.Before.CreatedAt.Time) / (hoursInOneDay * stdlibtime.Hour))
+		dayBetweenCreationAndDeletion = int16(msgTimestamp.Sub(*us.Before.CreatedAt.Time) / (hoursInOneDay * stdlibtime.Hour)) //nolint:gosec // .
 	}
 
 	if us.User != nil {
