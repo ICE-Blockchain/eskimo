@@ -86,14 +86,19 @@ func (c *client) signIn(
 	return emailConfirmed, issuedTokenSeq, nil
 }
 
+//nolint:funlen // .
 func (c *client) verifySignIn(ctx context.Context, els *emailLinkSignIn, id *loginID, confirmationCode string) error {
 	var shouldBeBlocked bool
 	var mErr *multierror.Error
-	if els.ConfirmationCodeWrongAttemptsCount >= c.cfg.ConfirmationCode.MaxWrongAttemptsCount {
+	if els.ConfirmationCodeWrongAttemptsCount >= c.cfg.ConfirmationCode.MaxWrongAttemptsCount { //nolint:nestif // .
 		blockEndTime := time.Now().Add(c.cfg.EmailValidation.BlockDuration)
-		blockTimeFitsNow := (els.BlockedUntil.Before(blockEndTime) && els.BlockedUntil.After(*els.CreatedAt.Time))
-		if els.BlockedUntil == nil || !blockTimeFitsNow {
+		if els.BlockedUntil == nil {
 			shouldBeBlocked = true
+		} else {
+			blockTimeFitsNow := (els.BlockedUntil.Before(blockEndTime) && els.BlockedUntil.After(*els.CreatedAt.Time))
+			if !blockTimeFitsNow {
+				shouldBeBlocked = true
+			}
 		}
 		if !shouldBeBlocked {
 			return errors.Wrapf(ErrConfirmationCodeAttemptsExceeded, "confirmation code wrong attempts count exceeded for id:%#v", id)
