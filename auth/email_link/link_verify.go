@@ -91,8 +91,8 @@ func (c *client) verifySignIn(ctx context.Context, els *emailLinkSignIn, id *log
 	var mErr *multierror.Error
 	if els.ConfirmationCodeWrongAttemptsCount >= c.cfg.ConfirmationCode.MaxWrongAttemptsCount {
 		blockEndTime := time.Now().Add(c.cfg.EmailValidation.BlockDuration)
-		blockTimeFitsNow := (els.BlockedUntil.Before(blockEndTime) && els.BlockedUntil.After(*els.CreatedAt.Time))
-		if els.BlockedUntil == nil || !blockTimeFitsNow {
+		blockTimeFitsNow := !els.BlockedUntil.IsNil() && (els.BlockedUntil.Before(blockEndTime) && els.BlockedUntil.After(*els.CreatedAt.Time))
+		if !blockTimeFitsNow || els.BlockedUntil.IsNil() {
 			shouldBeBlocked = true
 		}
 		if !shouldBeBlocked {
