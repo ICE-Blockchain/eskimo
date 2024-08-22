@@ -42,10 +42,10 @@ func compareLinkWithoutRootDomain(target, expectedURL string) bool {
 	for _, domain := range domains {
 		x := "https://" + domain
 		if strings.HasPrefix(target, x) {
-			target = strings.Replace(target, x, "", 1)
+			target = strings.Replace(target, x, "", 1) //nolint:revive // .
 		}
 		if strings.HasPrefix(expectedURL, x) {
-			expectedURL = strings.Replace(expectedURL, x, "", 1)
+			expectedURL = strings.Replace(expectedURL, x, "", 1) //nolint:revive // .
 		}
 	}
 
