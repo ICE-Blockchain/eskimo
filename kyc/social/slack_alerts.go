@@ -159,7 +159,8 @@ func (r *repository) sendSlackMessage(ctx context.Context, kycStep users.KYCStep
 	message := struct {
 		Text string `json:"text,omitempty"`
 	}{
-		Text: fmt.Sprintf("[%v]Unsuccessful kycStep [%v], social [%v] stats:\n%v", r.cfg.Environment, kycStep, social, strings.Join(rows, "\n")),
+		Text: fmt.Sprintf("[%v]Unsuccessful kycStep [%v], social [%v] tenant [%v] stats:\n%v",
+			r.cfg.Environment, kycStep, social, r.cfg.TenantName, strings.Join(rows, "\n")),
 	}
 	data, err := json.Marshal(message)
 	if err != nil {
