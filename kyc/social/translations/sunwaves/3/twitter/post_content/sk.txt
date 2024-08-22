@@ -1,7 +1,5 @@
-🎶 Posúvame hudobné festivaly na nové výšky s @sunwaves_token
+✅ Overujem si účet na #SUNWAVES s prezývkou: "{{.Username}}"
 
-🪙 Pripojte sa k #SUNWAVES a získajte {{.WelcomeBonus}} SW mincí pri registrácii.
+👉 Zistite viac o @sunwaves_token!
 
-https://sunwavestoken.com/@{{.Username}}
-
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

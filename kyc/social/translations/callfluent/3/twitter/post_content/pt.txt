@@ -1,5 +1,5 @@
-☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
+✅ Verificando minha conta no #CallFluent com o apelido: "{{.Username}}"
 
-🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
+👉 Saiba mais sobre @CallFluentAI!
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

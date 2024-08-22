@@ -1,7 +1,5 @@
-🎶 ارتقاء جشنواره‌های موسیقی به ارتفاعات جدید با @sunwaves_token
+✅ تأیید حساب من در #SUNWAVES با نام مستعار: "{{.Username}}"
 
-🪙 به #SUNWAVES بپیوندید و {{.WelcomeBonus}} سکه SW هنگام ثبت نام دریافت کنید.
+👉 درباره @sunwaves_token بیشتر بدانید!
 
-https://sunwavestoken.com/@{{.Username}}
-
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

@@ -1,7 +1,5 @@
-🎶 带着 @sunwaves_token 把音乐节推向新高度
+✅ 在 #SUNWAVES 上验证我的账户，昵称: "{{.Username}}"
 
-🪙 加入 #SUNWAVES 并在注册时获得 {{.WelcomeBonus}} SW 币。
+👉 了解更多关于 @sunwaves_token 的信息！
 
-https://sunwavestoken.com/@{{.Username}}
-
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

@@ -1,5 +1,5 @@
-☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
+✅ Επαληθεύω τον λογαριασμό μου στο #CallFluent με το ψευδώνυμο: "{{.Username}}"
 
-🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
+👉 Μάθετε περισσότερα για @CallFluentAI!
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

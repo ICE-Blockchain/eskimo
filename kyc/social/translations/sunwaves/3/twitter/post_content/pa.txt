@@ -1,7 +1,5 @@
-🎶 @sunwaves_token ਨਾਲ ਸੰਗੀਤ ਤਿਉਹਾਰਾਂ ਨੂੰ ਨਵੀਆਂ ਉਚਾਈਆਂ 'ਤੇ ਲੈ ਜਾਣਾ
+✅ #SUNWAVES 'ਤੇ ਮੇਰੇ ਖਾਤੇ ਦੀ ਪੁਸ਼ਟੀ ਹੋ ਰਹੀ ਹੈ: "{{.Username}}"
 
-🪙 #SUNWAVES 'ਚ ਸ਼ਾਮਲ ਹੋਵੋ ਅਤੇ ਸਾਈਨ ਅਪ ਕਰਨ 'ਤੇ {{.WelcomeBonus}} SW ਸਿਕੇ ਪ੍ਰਾਪਤ ਕਰੋ।
+👉 @sunwaves_token ਬਾਰੇ ਹੋਰ ਜਾਣੋ!
 
-https://sunwavestoken.com/@{{.Username}}
-
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb

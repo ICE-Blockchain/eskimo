@@ -1,5 +1,5 @@
-☎️ @CallfluentAI transforms business communications through advanced AI-driven phone agents powered by blockchain technology.
+✅ #CallFluent 'ਤੇ ਮੇਰੇ ਖਾਤੇ ਦੀ ਪੁਸ਼ਟੀ ਹੋ ਰਹੀ ਹੈ: "{{.Username}}"
 
-🪙 Join #CallFluent and receive {{.WelcomeBonus}} $CALL coins when you sign up.
+👉 @CallFluentAI ਬਾਰੇ ਹੋਰ ਜਾਣੋ!
 
-#Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb {{.Username}}
+#IceOpenNetwork #ION #Binance #OKX #Bybit #Kucoin #HTX #Gateio #Upbit #Bithumb
