@@ -36,6 +36,22 @@ func (t *twitterVerifierImpl) VerifyText(ctx context.Context, doc *goquery.Docum
 	return
 }
 
+func compareLinkWithoutRootDomain(target, expectedURL string) bool {
+	domains := []string{"twitter.com", "x.com"}
+
+	for _, domain := range domains {
+		x := "https://" + domain
+		if strings.HasPrefix(target, x) {
+			target = strings.Replace(target, x, "", 1)
+		}
+		if strings.HasPrefix(expectedURL, x) {
+			expectedURL = strings.Replace(expectedURL, x, "", 1)
+		}
+	}
+
+	return strings.EqualFold(target, expectedURL)
+}
+
 func (t *twitterVerifierImpl) VerifyPostLinkOf(ctx context.Context, target, expectedURL string) bool {
 	if strings.EqualFold(target, expectedURL) {
 		return true
@@ -43,16 +59,10 @@ func (t *twitterVerifierImpl) VerifyPostLinkOf(ctx context.Context, target, expe
 
 	if strings.HasPrefix(target, "https://t.co") {
 		loc, err := t.Scraper.Fetcher().Head(ctx, target)
-		if strings.HasPrefix(loc, "https://twitter.com") {
-			loc = strings.Replace(loc, "https://twitter.com", "", 1)
-		}
-		if strings.HasPrefix(loc, "https://x.com") {
-			loc = strings.Replace(loc, "https://x.com", "", 1)
-		}
 		if err != nil {
-			log.Warn("twitter: failed to fetch location header", "error", err)
+			log.Warn("twitter: failed to fetch location header: %v", err)
 			// Fallthrough.
-		} else if strings.EqualFold(loc, expectedURL) {
+		} else if compareLinkWithoutRootDomain(loc, expectedURL) {
 			return true
 		}
 	}
@@ -67,11 +77,15 @@ func (t *twitterVerifierImpl) VerifyPostLinkOf(ctx context.Context, target, expe
 	return strings.Contains(strings.ToLower(string(result.Content)), strings.ToLower(expectedURL))
 }
 
+func (*twitterVerifierImpl) IsHashTagLink(target string) bool {
+	return strings.HasPrefix(target, "https://twitter.com/hashtag/") || strings.HasPrefix(target, "https://x.com/hashtag/")
+}
+
 func (t *twitterVerifierImpl) VerifyPostLink(ctx context.Context, doc *goquery.Document, expectedPostURL string) (foundPost bool) {
 	doc.Find("a").EachWithBreak(func(_ int, s *goquery.Selection) bool {
 		for _, node := range s.Nodes {
 			for attrIndex := range node.Attr {
-				if node.Attr[attrIndex].Key == "href" {
+				if node.Attr[attrIndex].Key == "href" && !t.IsHashTagLink(node.Attr[attrIndex].Val) {
 					foundPost = t.VerifyPostLinkOf(ctx, node.Attr[attrIndex].Val, expectedPostURL)
 				}
 			}
