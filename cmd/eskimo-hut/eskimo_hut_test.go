@@ -25,7 +25,7 @@ var (
 func TestMain(m *testing.M) {
 	const order = usersfixture.TestConnectorsOrder + 1
 	read := serverfixture.NewTestConnector("cmd/eskimo", "eskimo-hut", "", "", order+1, usersfixture.RContainerMounts()...)
-	write := serverfixture.NewTestConnector("cmd/eskimo-hut", "eskimo-hut", swaggerRoot, expectedSwaggerJSON, order, usersfixture.WContainerMounts()...)
+	write := serverfixture.NewTestConnector("cmd/eskimo-hut", "eskimo-hut", swaggerRootSuffix, expectedSwaggerJSON, order, usersfixture.WContainerMounts()...)
 	bridge = fixture.NewBridge(read, write)
 
 	connectorsfixture.

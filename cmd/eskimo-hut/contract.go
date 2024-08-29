@@ -189,7 +189,7 @@ type (
 
 const (
 	applicationYamlKey = "cmd/eskimo-hut"
-	swaggerRoot        = "/users/w"
+	swaggerRootSuffix  = "/users/w"
 )
 
 // Values for server.ErrorResponse#Code.
@@ -251,5 +251,6 @@ type (
 		APIKey  string `yaml:"api-key" mapstructure:"api-key"` //nolint:tagliatelle // Nope.
 		Host    string `yaml:"host"`
 		Version string `yaml:"version"`
+		Tenant  string `yaml:"tenant"`
 	}
 )
