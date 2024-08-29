@@ -21,6 +21,7 @@ cmd/eskimo-hut:
   host: localhost:1443
   version: local
   defaultEndpointTimeout: 120s
+  tenant: sunwaves
   httpServer:
     port: 1443
     certPath: cmd/eskimo-hut/.testdata/localhost.crt

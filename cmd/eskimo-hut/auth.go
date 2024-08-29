@@ -411,7 +411,7 @@ func parseProcessFaceRecognitionResultRequest(req *server.Request[ProcessFaceRec
 		usr.KYCStepsLastUpdatedAt = &nilDates
 		usr.KYCStepsCreatedAt = &nilDates
 	}
-	kycStepPassed := users.KYCStep(len(lastUpdatedAtDates))
+	kycStepPassed := users.KYCStep(len(lastUpdatedAtDates)) //nolint:gosec // .
 	usr.KYCStepPassed = &kycStepPassed
 	switch {
 	case *req.Data.Disabled:

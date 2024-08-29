@@ -40,6 +40,10 @@ func main() {
 	if cfg.APIKey == "" {
 		log.Panic("'api-key' is missing")
 	}
+	swaggerRoot := swaggerRootSuffix
+	if cfg.Tenant != "" {
+		swaggerRoot = "/" + cfg.Tenant + swaggerRootSuffix
+	}
 	server.New(new(service), applicationYamlKey, swaggerRoot).ListenAndServe(ctx, cancel)
 }
 
