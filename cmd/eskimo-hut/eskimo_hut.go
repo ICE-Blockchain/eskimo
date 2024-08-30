@@ -40,11 +40,12 @@ func main() {
 	if cfg.APIKey == "" {
 		log.Panic("'api-key' is missing")
 	}
-	swaggerRoot := swaggerRootSuffix
+	nginxPrefix := ""
 	if cfg.Tenant != "" {
-		swaggerRoot = "/" + cfg.Tenant + swaggerRootSuffix
+		nginxPrefix = "/" + cfg.Tenant
+		api.SwaggerInfo.BasePath = nginxPrefix
 	}
-	server.New(new(service), applicationYamlKey, swaggerRoot).ListenAndServe(ctx, cancel)
+	server.New(new(service), applicationYamlKey, swaggerRootSuffix, nginxPrefix).ListenAndServe(ctx, cancel)
 }
 
 func (s *service) RegisterRoutes(router *server.Router) {
