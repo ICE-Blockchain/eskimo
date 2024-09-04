@@ -46,3 +46,13 @@ func TestDataFetcherHead(t *testing.T) {
 		require.Error(t, err)
 	})
 }
+
+func TestDataScraperLogURL(t *testing.T) {
+	t.Parallel()
+
+	sc := newMustWebScraper("https://bar.localhost", "apikey")
+	_, err := sc.Scrape(context.TODO(), "https://httpstat.us/400?fooo=bar&t=100500", webScraperOptions{})
+	require.Error(t, err)
+	t.Logf("error line = %v", err)
+	require.Contains(t, err.Error(), "httpstat.us")
+}

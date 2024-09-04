@@ -93,6 +93,7 @@ func TestTwitterKYCNoRepost(t *testing.T) {
 }
 
 func TestTwitterPrivate(t *testing.T) {
+	t.Skip("find another tweet")
 	t.Parallel()
 
 	conf := loadConfig()
