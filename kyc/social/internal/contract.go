@@ -52,7 +52,8 @@ type (
 	}
 
 	censorer interface {
-		Censor(in error) (out error)
+		CensorError(in error) (out error)
+		CensorString(in string) (out string)
 	}
 
 	webScraperImpl struct {

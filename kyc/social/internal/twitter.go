@@ -176,13 +176,13 @@ func (t *twitterVerifierImpl) Scrape(ctx context.Context, target string) (result
 		const errorText = `Sorry, you are not authorized to see this status.`
 
 		if strings.Contains(string(result.Content), errorText) {
-			return nil, ErrTweetPrivate
+			return nil, errors.Wrap(ErrTweetPrivate, target)
 		}
 
 		fallthrough
 
 	default:
-		return nil, multierror.Append(ErrFetchFailed, errors.Errorf("unexpected status code: `%v`, response: `%v`", result.Code, string(result.Content)))
+		return nil, errors.Wrapf(ErrFetchFailed, "%q: unexpected status code: `%v`, response: `%v`", target, result.Code, string(result.Content))
 	}
 }
 

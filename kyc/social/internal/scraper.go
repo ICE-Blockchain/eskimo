@@ -15,19 +15,27 @@ import (
 	"github.com/ice-blockchain/wintr/log"
 )
 
-func (c *censorerImpl) Censor(err error) error {
+func (c *censorerImpl) CensorString(str string) string {
 	const censor = "CENSORED"
 
+	if str == "" || c == nil {
+		return str
+	}
+
+	out := str
+	for _, token := range c.Strings {
+		out = strings.ReplaceAll(out, token, censor)
+	}
+
+	return out
+}
+
+func (c *censorerImpl) CensorError(err error) error {
 	if err == nil || c == nil {
 		return err
 	}
 
-	msg := err.Error()
-	for _, s := range c.Strings {
-		msg = strings.ReplaceAll(msg, s, censor)
-	}
-
-	return errors.New(msg)
+	return errors.New(c.CensorString(err.Error()))
 }
 
 func (d *dataFetcherImpl) Head(ctx context.Context, target string) (location string, err error) {
@@ -38,18 +46,19 @@ func (d *dataFetcherImpl) Head(ctx context.Context, target string) (location str
 		SetRetryCount(0).
 		Head(target)
 	if err != nil {
-		return "", multierror.Append(ErrFetchFailed, d.Censorer.Censor(err))
+		return "", multierror.Append(ErrFetchFailed, d.Censorer.CensorError(err))
 	}
 
 	u, err := resp.Location()
 	if err != nil {
-		return "", multierror.Append(ErrFetchReadFailed, d.Censorer.Censor(err))
+		return "", multierror.Append(ErrFetchReadFailed, d.Censorer.CensorError(err))
 	}
 
 	return u.String(), nil
 }
 
 func (d *dataFetcherImpl) Fetch(ctx context.Context, target string, retry req.RetryConditionFunc) (data []byte, code int, err error) {
+	censoredURL := d.Censorer.CensorString(target)
 	resp, err := req.DefaultClient().
 		R().
 		SetContext(ctx).
@@ -57,7 +66,7 @@ func (d *dataFetcherImpl) Fetch(ctx context.Context, target string, retry req.Re
 		SetRetryCount(0).
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
-				log.Error(d.Censorer.Censor(err), "scaper: fetch failed")
+				log.Error(d.Censorer.CensorError(err), "scaper: fetch failed")
 			} else {
 				log.Warn("scaper: fetch failed: unexpected status code: " + resp.Status)
 			}
@@ -71,12 +80,11 @@ func (d *dataFetcherImpl) Fetch(ctx context.Context, target string, retry req.Re
 		}).
 		Get(target)
 	if err != nil {
-		return nil, 0, multierror.Append(ErrFetchFailed, d.Censorer.Censor(err))
+		return nil, 0, multierror.Append(errors.Wrap(ErrFetchFailed, censoredURL), d.Censorer.CensorError(err))
 	}
-
 	data, err = resp.ToBytes()
 	if err != nil {
-		return nil, 0, multierror.Append(ErrFetchReadFailed, d.Censorer.Censor(err))
+		return nil, 0, multierror.Append(errors.Wrap(ErrFetchReadFailed, censoredURL), d.Censorer.CensorError(err))
 	}
 
 	return data, resp.GetStatusCode(), nil
