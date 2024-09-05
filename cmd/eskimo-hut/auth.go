@@ -150,7 +150,7 @@ func (s *service) SignIn(
 //	@Tags			Auth
 //	@Accept			json
 //	@Produce		json
-//	@Param			Authorization	header		string			true	"Insert your access token"	default(Bearer <Add access token here>)
+//	@Param			Authorization	header		string			false	"Insert your access token"	default(Bearer <Add access token here>)
 //	@Param			request			body		RefreshToken	true	"Body containing customClaims"
 //	@Success		200				{object}	RefreshedToken
 //	@Failure		400				{object}	server.ErrorResponse	"if users data from token does not match data in db"
@@ -165,6 +165,9 @@ func (s *service) RegenerateTokens( //nolint:gocritic // .
 	req *server.Request[RefreshToken, RefreshedToken],
 ) (*server.Response[RefreshedToken], *server.Response[server.ErrorResponse]) {
 	tokenPayload := strings.TrimPrefix(req.Data.Authorization, "Bearer ")
+	if tokenPayload == "" { //nolint:gosec // .
+		return nil, server.Unauthorized(errors.New("refresh token is missing"))
+	}
 	tokens, err := s.tokenRefresher.RegenerateTokens(ctx, tokenPayload)
 	if err != nil {
 		switch {

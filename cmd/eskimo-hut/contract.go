@@ -162,11 +162,11 @@ type (
 		ConfirmationCode string `json:"confirmationCode" required:"true" example:"999"`
 	}
 	RefreshToken struct {
-		Authorization string `header:"Authorization" swaggerignore:"true" required:"true" allowForbiddenWriteOperation:"true" allowUnauthorized:"true"`
+		Authorization string `header:"Authorization" swaggerignore:"true" allowForbiddenWriteOperation:"true" allowUnauthorized:"true"`
 	}
 	TelegramSignIn struct {
 		TelegramBotID *string `json:"telegramBotId" required:"false"`
-		Authorization string  `header:"Authorization" swaggerignore:"true" required:"true" allowForbiddenWriteOperation:"true" allowUnauthorized:"true"`
+		Authorization string  `header:"Authorization" swaggerignore:"true" allowForbiddenWriteOperation:"true" allowUnauthorized:"true"`
 	}
 	StartOrContinueKYCStep4SessionRequestBody struct {
 		QuestionNumber *uint8 `form:"questionNumber" required:"true" swaggerignore:"true" example:"11"`
