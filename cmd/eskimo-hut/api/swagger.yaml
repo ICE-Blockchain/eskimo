@@ -1406,7 +1406,6 @@ paths:
         description: Insert your access token
         in: header
         name: Authorization
-        required: true
         type: string
       - description: Body containing customClaims
         in: body
