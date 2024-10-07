@@ -62,7 +62,7 @@ func main() {
 			break
 		}
 		for idx, record := range records {
-			index := uint64(idx) + offset
+			index := uint64(idx) + offset //nolint:gosec // .
 			if record.ID == "" {
 				log.Error(errors.Errorf("no user with phone number `%v` found", record.PhoneNumber))
 

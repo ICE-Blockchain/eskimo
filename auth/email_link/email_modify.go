@@ -129,7 +129,7 @@ func (c *client) sendNotifyEmailChanged(ctx context.Context, notifyEmail, newEma
 	}{
 		AppName: c.cfg.AppName,
 	}
-	lbIdx := atomic.AddUint64(&c.emailClientLBIndex, 1) % uint64(c.cfg.ExtraLoadBalancersCount+1)
+	lbIdx := atomic.AddUint64(&c.emailClientLBIndex, 1) % uint64(c.cfg.ExtraLoadBalancersCount+1) //nolint:gosec // .
 
 	return errors.Wrapf(c.emailClients[lbIdx].Send(ctx, &email.Parcel{
 		Body: &email.Body{

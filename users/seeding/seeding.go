@@ -124,7 +124,7 @@ func createReferral(db tarantool.Connector, referredBy string) string {
 	id := uuid.NewString()
 	params := map[string]any{
 		"id":                    id,
-		"hashCode":              xxh3.HashStringSeed(id, uint64(now.UnixNano())),
+		"hashCode":              xxh3.HashStringSeed(id, uint64(now.UnixNano())), //nolint:gosec // .
 		"username":              fmt.Sprintf("u%v", now.UnixNano()),
 		"profilePictureName":    users.RandomDefaultProfilePictureName(),
 		"hiddenProfileElements": users.RandomizeHiddenProfileElements(),

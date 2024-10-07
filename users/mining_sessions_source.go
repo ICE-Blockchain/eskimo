@@ -80,7 +80,7 @@ func (s *miningSessionSource) updateMiningSession(ctx context.Context, ses *mini
 		  AND (last_mining_started_at IS NULL OR (extract(epoch from last_mining_started_at)::bigint/%[1]v) != (extract(epoch from $2::timestamp)::bigint/%[1]v))
 		  AND (last_mining_ended_at IS NULL OR (extract(epoch from last_mining_ended_at)::bigint/%[1]v) != (extract(epoch from $3::timestamp)::bigint/%[1]v))
 	    RETURNING *`,
-		uint64(s.cfg.GlobalAggregationInterval.MinMiningSessionDuration/stdlibtime.Second))
+		uint64(s.cfg.GlobalAggregationInterval.MinMiningSessionDuration/stdlibtime.Second)) //nolint:gosec // .
 	usr, err := storage.ExecOne[User](ctx, s.db, sql,
 		time.Now().Time,
 		ses.LastNaturalMiningStartedAt.Time,
