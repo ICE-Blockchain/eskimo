@@ -412,8 +412,8 @@ func (r *repository) GetReferralAcquisitionHistory(ctx context.Context, userID s
 		date := time.New(now.AddDate(0, 0, -day))
 		result[day] = &ReferralAcquisition{
 			Date: date,
-			T1:   uint64(orderOfDaysT1[day-elapsedDaysSinceLastRefCountsUpdate]),
-			T2:   uint64(orderOfDaysT2[day-elapsedDaysSinceLastRefCountsUpdate]),
+			T1:   uint64(orderOfDaysT1[day-elapsedDaysSinceLastRefCountsUpdate]), //nolint:gosec // .
+			T2:   uint64(orderOfDaysT2[day-elapsedDaysSinceLastRefCountsUpdate]), //nolint:gosec // .
 		}
 	}
 

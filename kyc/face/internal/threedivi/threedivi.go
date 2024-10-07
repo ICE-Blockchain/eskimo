@@ -101,7 +101,7 @@ func (t *threeDivi) updateAvailability(ctx context.Context) error {
 		if cErr != nil {
 			return errors.Wrapf(cErr, "failed to parse metrics of availability of face auth")
 		}
-		t.activeUsersCount.Store(uint64(activeUsers))
+		t.activeUsersCount.Store(uint64(activeUsers)) //nolint:gosec // .
 	}
 
 	return nil
@@ -113,7 +113,7 @@ func (t *threeDivi) Available(_ context.Context, userWasPreviouslyForwardedToFac
 
 //nolint:revive // .
 func (t *threeDivi) isAvailable(userWasPreviouslyForwardedToFaceKYC bool) error {
-	if uint64(t.cfg.ThreeDiVi.ConcurrentUsers)-(t.activeUsersCount.Load()+t.loadBalancedUsersCount.Load()) >= 1 {
+	if uint64(t.cfg.ThreeDiVi.ConcurrentUsers)-(t.activeUsersCount.Load()+t.loadBalancedUsersCount.Load()) >= 1 { //nolint:gosec // .
 		if !userWasPreviouslyForwardedToFaceKYC {
 			t.loadBalancedUsersCount.Add(1)
 		}
