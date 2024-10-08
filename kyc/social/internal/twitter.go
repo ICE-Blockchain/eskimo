@@ -155,8 +155,6 @@ func (t *twitterVerifierImpl) Scrape(ctx context.Context, target string) (result
 				Retry: twitterRetryFn,
 				ProxyOptions: func(m map[string]string) map[string]string {
 					m["country"] = country
-					delete(m, "render_js")
-					delete(m, "wait_until")
 
 					return m
 				},
