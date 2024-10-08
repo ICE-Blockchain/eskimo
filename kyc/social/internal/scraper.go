@@ -104,13 +104,7 @@ func (s *webScraperImpl) Scrape(ctx context.Context, target string, opts webScra
 }
 
 func (s *webScraperImpl) BuildQuery(target string, options func(map[string]string) map[string]string) string {
-	conf := map[string]string{
-		"render_js":  "1",
-		"device":     "mobile",
-		"proxy_type": "residential",
-		"timeout":    "30000",
-		"wait_until": "networkidle2",
-	}
+	conf := map[string]string{}
 
 	if options != nil {
 		conf = options(conf)
