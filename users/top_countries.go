@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	stdlibtime "time"
 
 	"github.com/pkg/errors"
 
@@ -95,6 +96,11 @@ func (r *repository) updateTotalUsersPerCountryCount(ctx context.Context, usr *U
 	}
 	sql := fmt.Sprintf(sqlTemplate, strings.Join(values, ","), incrementCondition)
 	_, err := storage.Exec(ctx, r.db, sql, params...)
+	if err != nil && errors.Is(err, storage.ErrSerializationFailure) {
+		stdlibtime.Sleep(10 * stdlibtime.Millisecond) //nolint:mnd,gomnd // Not a magic number.
+
+		return r.updateTotalUsersPerCountryCount(ctx, usr)
+	}
 
 	return errors.Wrapf(err, "error changing country count for params:%#v", params...)
 }

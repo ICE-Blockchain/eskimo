@@ -547,7 +547,9 @@ func (r *repository) incrementOrDecrementReferralCount(ctx context.Context, user
 		opToday,
 	)
 	rowsUpdated, err := storage.Exec(ctx, r.db, sql, userID, storedDate.Time, t1, t2, nowMidnight.Time, t0UserID, t0Date.Time)
-	if rowsUpdated == 0 || storage.IsErr(err, storage.ErrNotFound) {
+	if rowsUpdated == 0 || (err != nil && (storage.IsErr(err, storage.ErrNotFound) || errors.Is(err, storage.ErrSerializationFailure))) {
+		stdlibtime.Sleep(10 * stdlibtime.Millisecond) //nolint:mnd,gomnd // Not a magic number.
+
 		return r.incrementOrDecrementReferralCount(ctx, userID, daysBetweenCreationAndDeletion)
 	}
 

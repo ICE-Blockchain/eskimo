@@ -154,7 +154,7 @@ func (r *repository) updateTotalUsersCount(ctx context.Context, usr *UserSnapsho
 	return nil
 }
 
-//nolint:revive // .
+//nolint:revive,funlen // .
 func (r *repository) incrementOrDecrementTotalUsers(ctx context.Context, date *time.Time, increment bool) error {
 	if ctx.Err() != nil {
 		return errors.Wrap(ctx.Err(), "unexpected deadline")
@@ -179,6 +179,10 @@ func (r *repository) incrementOrDecrementTotalUsers(ctx context.Context, date *t
 						SET value = (select GREATEST(total.value %[1]v 1,0) FROM global total WHERE total.key = '%[3]v')`, operation, strings.Join(sqlParams, ","), params[0])
 	if _, err := storage.Exec(ctx, r.db, sql, params...); err != nil && !storage.IsErr(err, storage.ErrNotFound) {
 		return errors.Wrapf(err, "failed to update global.value to global.value%v1 of key='%v', for params:%#v ", operation, totalUsersGlobalKey, params)
+	} else if err != nil && errors.Is(err, storage.ErrSerializationFailure) {
+		stdlibtime.Sleep(10 * stdlibtime.Millisecond) //nolint:mnd,gomnd // Not a magic number.
+
+		return r.incrementOrDecrementTotalUsers(ctx, date, increment)
 	}
 	keys := make([]string, 0, len(params))
 	for _, v := range params {
@@ -206,7 +210,13 @@ func (r *repository) incrementTotalActiveUsersCount(ctx context.Context, ms *min
 				ON CONFLICT (key) DO UPDATE   
 						SET value = global.value + 1`, strings.Join(sqlParams, ","))
 
-	if _, err := storage.Exec(ctx, r.db, sql, keys...); err != nil && !storage.IsErr(err, storage.ErrNotFound) {
+	_, err := storage.Exec(ctx, r.db, sql, keys...)
+	if err != nil && errors.Is(err, storage.ErrSerializationFailure) {
+		stdlibtime.Sleep(10 * stdlibtime.Millisecond) //nolint:mnd,gomnd // Not a magic number.
+
+		return r.incrementTotalActiveUsersCount(ctx, ms)
+	}
+	if err != nil && !storage.IsErr(err, storage.ErrNotFound) {
 		return errors.Wrapf(err, "failed to update global.value to global.value+1 for keys:%#v", keys) //nolint:asasalint // Wrong.
 	}
 
