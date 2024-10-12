@@ -34,8 +34,9 @@ type (
 		Offset  uint64 `form:"offset" example:"5"`
 	}
 	GetUserGrowthArg struct {
-		TZ   string `form:"tz" example:"+4:30"`
-		Days uint64 `form:"days" example:"7"`
+		TZ            string `form:"tz" example:"+4:30"`
+		Days          uint64 `form:"days" example:"7"`
+		Authorization string `header:"Authorization" swaggerignore:"true" required:"true" example:"some token"`
 	}
 	GetReferralAcquisitionHistoryArg struct {
 		UserID string `uri:"userId" required:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"`
@@ -247,6 +248,7 @@ func (s *service) GetUserGrowth( //nolint:gocritic,funlen // False negative.
 			tz = t.Location()
 		}
 	}
+	ctx = users.ContextWithAuthorization(ctx, req.Data.Authorization)
 	result, err := s.usersProcessor.GetUserGrowth(ctx, req.Data.Days, tz)
 	if err != nil {
 		return nil, server.Unexpected(errors.Wrapf(err, "failed to get user growth stats for: %#v", req.Data))

@@ -127,6 +127,7 @@ auth/email-link/2:
 users: &users
   maxReferralsCount: 200
   defaultReferralName: bogus
+  adoptionUrl: https://localhost:3443/v1r/tokenomics-statistics/adoption
   kyc:
     kyc-step1-reset-url: https://localhost:443/v1w/face-auth/
   disableConsumer: false

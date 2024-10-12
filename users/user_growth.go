@@ -6,14 +6,17 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"net/http"
 	"strings"
 	stdlibtime "time"
 
 	"github.com/goccy/go-json"
+	"github.com/imroc/req/v3"
 	"github.com/pkg/errors"
 
 	messagebroker "github.com/ice-blockchain/wintr/connectors/message_broker"
 	storage "github.com/ice-blockchain/wintr/connectors/storage/v2"
+	"github.com/ice-blockchain/wintr/log"
 	"github.com/ice-blockchain/wintr/time"
 )
 
@@ -27,8 +30,49 @@ func (r *repository) GetUserGrowth(ctx context.Context, days uint64, tz *stdlibt
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to getGlobalValues for keys:%#v", keys)
 	}
+	totalActiveUsers, err := r.getAdoptionTotalActiveUsersValue(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to getAdoptionTotalActiveUsersValue")
+	}
 
-	return r.aggregateGlobalValuesToGrowth(days, now, values, keys, tz), nil
+	return r.aggregateGlobalValuesToGrowth(days, now, values, keys, tz, totalActiveUsers), nil
+}
+
+func (r *repository) getAdoptionTotalActiveUsersValue(ctx context.Context) (totalActiveUsers uint64, err error) {
+	if resp, err := req.
+		SetContext(ctx).
+		SetRetryCount(25).
+		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second).
+		SetRetryHook(func(resp *req.Response, err error) {
+			if err != nil {
+				log.Error(errors.Wrap(err, "failed to fetch adoption, retrying..."))
+			} else {
+				log.Error(errors.Errorf("failed to fetch users adoption with status code:%v, retrying...", resp.GetStatusCode()))
+			}
+		}).
+		SetRetryCondition(func(resp *req.Response, err error) bool {
+			return err != nil || resp.GetStatusCode() != http.StatusOK
+		}).
+		SetHeader("Accept", "application/json").
+		SetHeader("Accept", "application/json").
+		SetHeader("Authorization", authorization(ctx)).
+		SetHeader("Cache-Control", "no-cache, no-store, must-revalidate").
+		SetHeader("Pragma", "no-cache").
+		SetHeader("Expires", "0").
+		Get(r.cfg.AdoptionUrl); err != nil {
+		return 0, errors.Wrapf(err, "failed to get fetch `%v`", r.cfg.AdoptionUrl)
+	} else if data, err2 := resp.ToBytes(); err2 != nil {
+		return 0, errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.AdoptionUrl)
+	} else {
+		var adoption struct {
+			TotalActiveUsers uint64 `json:"totalActiveUsers" example:"11"`
+		}
+		if err = json.UnmarshalContext(ctx, data, &adoption); err != nil {
+			return 0, errors.Wrapf(err, "failed to unmarshal into %#v, data: %v", adoption, string(data))
+		}
+
+		return adoption.TotalActiveUsers, nil
+	}
 }
 
 func (r *repository) generateUserGrowthKeys(now *time.Time, days uint64) []string {
@@ -49,11 +93,11 @@ func (r *repository) aggregateGlobalValuesToGrowth(
 	values []*GlobalUnsigned,
 	keys []string,
 	tz *stdlibtime.Location,
+	totalActiveUsers uint64,
 ) *UserGrowthStatistics {
 	nsSinceParentIntervalZeroValue := r.cfg.nanosSinceGlobalAggregationIntervalParentZeroValue(now)
 	stats := make([]*UserCountTimeSeriesDataPoint, days, days) //nolint:gosimple // .
-	var activeNow, activeMaxPerParent, dayIdx uint64
-	nowKey := r.totalActiveUsersGlobalChildKey(now.Time)
+	var activeMaxPerParent, dayIdx uint64
 	nowInTZ := time.New(now.In(tz))
 	for ix, key := range keys {
 		if ix == 0 {
@@ -97,9 +141,6 @@ func (r *repository) aggregateGlobalValuesToGrowth(
 			activeMaxPerParent = 0
 			dayIdx++
 		} else {
-			if key == nowKey {
-				activeNow = val
-			}
 			if val > activeMaxPerParent {
 				activeMaxPerParent = val
 			}
@@ -111,7 +152,7 @@ func (r *repository) aggregateGlobalValuesToGrowth(
 	return &UserGrowthStatistics{
 		TimeSeries: stats,
 		UserCount: UserCount{
-			Active: activeNow,
+			Active: totalActiveUsers,
 			Total:  values[0].Value,
 		},
 	}
@@ -306,4 +347,10 @@ func NanosSinceMidnight(now *time.Time) stdlibtime.Duration {
 		stdlibtime.Duration(now.Second())*stdlibtime.Second +
 		stdlibtime.Duration(now.Minute())*stdlibtime.Minute +
 		stdlibtime.Duration(now.Hour())*stdlibtime.Hour
+}
+
+func authorization(ctx context.Context) (authorization string) {
+	authorization, _ = ctx.Value(authorizationCtxValueKey).(string) //nolint:errcheck // Not needed.
+
+	return
 }

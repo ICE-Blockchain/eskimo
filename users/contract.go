@@ -306,6 +306,7 @@ type (
 			Parent                   stdlibtime.Duration `yaml:"parent"`
 			Child                    stdlibtime.Duration `yaml:"child"`
 		} `yaml:"globalAggregationInterval"`
+		AdoptionUrl string `yaml:"adoptionUrl" mapstructure:"adoptionUrl"`
 		//nolint:tagliatelle // .
 		IntervalBetweenRepeatableKYCSteps stdlibtime.Duration `yaml:"intervalBetweenRepeatableKYCSteps" mapstructure:"intervalBetweenRepeatableKYCSteps"`
 		MaxReferralsCount                 int64               `yaml:"maxReferralsCount" mapstructure:"maxReferralsCount"`
