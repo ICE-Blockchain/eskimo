@@ -299,6 +299,7 @@ type (
 	}
 	// | config holds the configuration of this package mounted from `application.yaml`.
 	config struct {
+		AdoptionURL               string                   `yaml:"adoptionUrl" mapstructure:"adoptionUrl"`
 		DefaultReferralName       string                   `yaml:"defaultReferralName"`
 		messagebroker.Config      `mapstructure:",squash"` //nolint:tagliatelle // Nope.
 		GlobalAggregationInterval struct {
@@ -306,7 +307,6 @@ type (
 			Parent                   stdlibtime.Duration `yaml:"parent"`
 			Child                    stdlibtime.Duration `yaml:"child"`
 		} `yaml:"globalAggregationInterval"`
-		AdoptionUrl string `yaml:"adoptionUrl" mapstructure:"adoptionUrl"`
 		//nolint:tagliatelle // .
 		IntervalBetweenRepeatableKYCSteps stdlibtime.Duration `yaml:"intervalBetweenRepeatableKYCSteps" mapstructure:"intervalBetweenRepeatableKYCSteps"`
 		MaxReferralsCount                 int64               `yaml:"maxReferralsCount" mapstructure:"maxReferralsCount"`

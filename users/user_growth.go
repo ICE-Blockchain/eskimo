@@ -38,16 +38,17 @@ func (r *repository) GetUserGrowth(ctx context.Context, days uint64, tz *stdlibt
 	return r.aggregateGlobalValuesToGrowth(days, now, values, keys, tz, totalActiveUsers), nil
 }
 
+//nolint:funlen // .
 func (r *repository) getAdoptionTotalActiveUsersValue(ctx context.Context) (totalActiveUsers uint64, err error) {
-	if resp, err := req.
+	resp, err := req.
 		SetContext(ctx).
-		SetRetryCount(25).
-		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second).
+		SetRetryCount(25).                                                       //nolint:gomnd,mnd // .
+		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second). //nolint:gomnd,mnd // .
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
-				log.Error(errors.Wrap(err, "failed to fetch adoption, retrying..."))
+				log.Error(errors.Wrap(err, "failed to fetch adoption, retrying...")) //nolint:revive // .
 			} else {
-				log.Error(errors.Errorf("failed to fetch users adoption with status code:%v, retrying...", resp.GetStatusCode()))
+				log.Error(errors.Errorf("failed to fetch users adoption with status code:%v, retrying...", resp.GetStatusCode())) //nolint:revive // .
 			}
 		}).
 		SetRetryCondition(func(resp *req.Response, err error) bool {
@@ -59,20 +60,22 @@ func (r *repository) getAdoptionTotalActiveUsersValue(ctx context.Context) (tota
 		SetHeader("Cache-Control", "no-cache, no-store, must-revalidate").
 		SetHeader("Pragma", "no-cache").
 		SetHeader("Expires", "0").
-		Get(r.cfg.AdoptionUrl); err != nil {
-		return 0, errors.Wrapf(err, "failed to get fetch `%v`", r.cfg.AdoptionUrl)
-	} else if data, err2 := resp.ToBytes(); err2 != nil {
-		return 0, errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.AdoptionUrl)
-	} else {
-		var adoption struct {
-			TotalActiveUsers uint64 `json:"totalActiveUsers" example:"11"`
-		}
-		if err = json.UnmarshalContext(ctx, data, &adoption); err != nil {
-			return 0, errors.Wrapf(err, "failed to unmarshal into %#v, data: %v", adoption, string(data))
-		}
-
-		return adoption.TotalActiveUsers, nil
+		Get(r.cfg.AdoptionURL)
+	if err != nil {
+		return 0, errors.Wrapf(err, "failed to get fetch `%v`", r.cfg.AdoptionURL)
 	}
+	data, err2 := resp.ToBytes()
+	if err2 != nil {
+		return 0, errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.AdoptionURL)
+	}
+	var adoption struct {
+		TotalActiveUsers uint64 `json:"totalActiveUsers" example:"11"`
+	}
+	if err = json.UnmarshalContext(ctx, data, &adoption); err != nil {
+		return 0, errors.Wrapf(err, "failed to unmarshal into %#v, data: %v", adoption, string(data))
+	}
+
+	return adoption.TotalActiveUsers, nil
 }
 
 func (r *repository) generateUserGrowthKeys(now *time.Time, days uint64) []string {
@@ -140,10 +143,8 @@ func (r *repository) aggregateGlobalValuesToGrowth(
 			}
 			activeMaxPerParent = 0
 			dayIdx++
-		} else {
-			if val > activeMaxPerParent {
-				activeMaxPerParent = val
-			}
+		} else if val > activeMaxPerParent {
+			activeMaxPerParent = val
 		}
 	}
 	stats[dayIdx-1].UserCount.Active = activeMaxPerParent
