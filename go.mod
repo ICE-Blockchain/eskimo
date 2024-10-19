@@ -5,7 +5,6 @@ go 1.23
 require (
 	dario.cat/mergo v1.0.1
 	github.com/PuerkitoBio/goquery v1.10.0
-	github.com/alitto/pond v1.9.2
 	github.com/goccy/go-json v0.10.3
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/google/uuid v1.6.0
