@@ -218,7 +218,9 @@ func (r *repository) incrementOrDecrementTotalUsers(ctx context.Context, date *t
 	}
 	sql := fmt.Sprintf(`INSERT INTO global (key, value) VALUES %[2]v
 								ON CONFLICT (key) DO UPDATE    
-						SET value = (select GREATEST(total.value %[1]v 1,0) FROM global total WHERE total.key = '%[3]v')`, operation, strings.Join(sqlParams, ","), params[0])
+						SET value = (
+							select GREATEST(total.value %[1]v 1,0) FROM global total WHERE total.key = '%[3]v' FOR UPDATE
+						)`, operation, strings.Join(sqlParams, ","), params[0])
 	if _, err := storage.Exec(ctx, r.db, sql, params...); err != nil && !storage.IsErr(err, storage.ErrNotFound) {
 		return errors.Wrapf(err, "failed to update global.value to global.value%v1 of key='%v', for params:%#v ", operation, totalUsersGlobalKey, params)
 	} else if err != nil && errors.Is(err, storage.ErrSerializationFailure) {
