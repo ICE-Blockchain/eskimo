@@ -21,7 +21,7 @@ func NewRefresher(authClient wintrauth.Client, email, telegram ProviderRefresher
 }
 
 func (c *tokenRefresher) RegenerateTokens(ctx context.Context, previousRefreshToken string) (tokens *Tokens, err error) {
-	token, err := c.authClient.ParseToken(previousRefreshToken)
+	token, err := c.authClient.ParseToken(previousRefreshToken, true)
 	if err != nil {
 		if errors.Is(err, wintrauth.ErrExpiredToken) {
 			return nil, errors.Wrapf(ErrExpiredToken, "failed to verify due to expired token:%v", previousRefreshToken)

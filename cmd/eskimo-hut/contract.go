@@ -12,6 +12,7 @@ import (
 	emaillink "github.com/ice-blockchain/eskimo/auth/email_link"
 	telegramauth "github.com/ice-blockchain/eskimo/auth/telegram"
 	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
+	linkerkyc "github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	kycsocial "github.com/ice-blockchain/eskimo/kyc/social"
 	"github.com/ice-blockchain/eskimo/users"
@@ -188,6 +189,15 @@ type (
 		UserID           string          `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
 		SkipKYCSteps     []users.KYCStep `form:"skipKYCSteps" swaggerignore:"true" example:"3,4,5,6,7,8,9,10"`
 	}
+	ForwardToFaceKYCRequestBody struct {
+		XClientType string            `form:"x_client_type" swaggerignore:"true" required:"false" example:"web"`
+		Tokens      map[string]string `json:"tokens"`
+		UserID      string            `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
+
+	}
+	ForwardToFaceKYCResponse struct {
+		KycFaceAvailable bool `json:"kycFaceAvailable" example:"true"`
+	}
 )
 
 // Private API.
@@ -195,6 +205,7 @@ type (
 const (
 	applicationYamlKey = "cmd/eskimo-hut"
 	swaggerRootSuffix  = "/users/w"
+	tenantCtxKey       = "tenantCtxKey"
 )
 
 // Values for server.ErrorResponse#Code.
@@ -228,6 +239,8 @@ const (
 
 	socialKYCStepAlreadyCompletedSuccessfullyErrorCode = "SOCIAL_KYC_STEP_ALREADY_COMPLETED_SUCCESSFULLY"
 	socialKYCStepNotAvailableErrorCode                 = "SOCIAL_KYC_STEP_NOT_AVAILABLE"
+	linkingNotOwnedProfile                             = "NOT_OWNER_OF_REMOTE_USER"
+	linkingDuplicate                                   = "DUPLICATE"
 
 	deviceIDTokenClaim = "deviceUniqueID" //nolint:gosec // .
 
@@ -251,6 +264,7 @@ type (
 		tokenRefresher      auth.TokenRefresher
 		socialRepository    kycsocial.Repository
 		faceKycClient       facekyc.Client
+		usersLinker         linkerkyc.Linker
 	}
 	config struct {
 		APIKey           string `yaml:"api-key" mapstructure:"api-key"`                         //nolint:tagliatelle // Nope.

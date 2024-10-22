@@ -13,34 +13,56 @@ import (
 	"github.com/ice-blockchain/eskimo/kyc/face/internal/threedivi"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
+	"github.com/ice-blockchain/wintr/time"
 )
 
 type (
+	Tenant         = string
+	Token          = string
 	UserRepository = internal.UserRepository
 	Config         struct {
-		ThreeDiVi               threedivi.Config `mapstructure:",squash"` //nolint:tagliatelle // .
+		kycConfigJSON           *atomic.Pointer[kycConfigJSON]
+		ConfigJSONURL           string           `yaml:"config-json-url" mapstructure:"config-json-url"`
+		ThreeDiVi               threedivi.Config `mapstructure:",squash"`
 		UnexpectedErrorsAllowed uint64           `yaml:"unexpectedErrorsAllowed" mapstructure:"unexpectedErrorsAllowed"`
+	}
+	Linker interface {
+		Verify(ctx context.Context, now *time.Time, userID string, tokens map[Tenant]Token) (map[Tenant]string, error)
+		Get(ctx context.Context, userID string) (map[Tenant]string, error)
 	}
 	Client interface {
 		io.Closer
 		Reset(ctx context.Context, user *users.User, fetchState bool) error
 		CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (available bool, err error)
+		ForwardToKYC(ctx context.Context, userID string, tokens map[Tenant]Token) (available bool, err error)
 	}
 )
 
 type (
 	client struct {
-		db               *storage.DB
 		client           internalClient
+		users            UserRepository
+		accountsLinker   Linker
+		db               *storage.DB
 		cfg              Config
 		unexpectedErrors atomic.Uint64
 	}
 	internalClient = internal.Client
+	kycConfigJSON  struct {
+		FaceKYC struct {
+			Enabled bool `json:"enabled"`
+		} `json:"face-auth"` //nolint:tagliatelle // .
+		WebFaceKYC struct {
+			Enabled bool `json:"enabled"`
+		} `json:"web-face-auth"` //nolint:tagliatelle // .
+	}
 )
 
 const (
-	applicationYamlKey = "kyc/face"
-	refreshTime        = 1 * stdlibtime.Minute
+	applicationYamlKey    = "kyc/face"
+	refreshTime           = 1 * stdlibtime.Minute
+	requestDeadline       = 25 * stdlibtime.Second
+	clientTypeCtxValueKey = "clientTypeCtxValueKey"
 )
 
 //nolint:grouper // .
