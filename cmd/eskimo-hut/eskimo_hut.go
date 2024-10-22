@@ -40,6 +40,10 @@ func main() {
 	if cfg.APIKey == "" {
 		log.Panic("'api-key' is missing")
 	}
+	cfg.ThirdPartyAPIKey = strings.ReplaceAll(cfg.ThirdPartyAPIKey, "\n", "")
+	if cfg.ThirdPartyAPIKey == "" {
+		log.Panic("'api-key' is missing")
+	}
 	nginxPrefix := ""
 	if cfg.Tenant != "" {
 		nginxPrefix = "/" + cfg.Tenant

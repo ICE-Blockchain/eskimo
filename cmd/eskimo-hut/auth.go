@@ -31,7 +31,7 @@ func (s *service) setupAuthRoutes(router *server.Router) {
 		POST("auth/processFaceRecognitionResult", server.RootHandler(s.ProcessFaceRecognitionResult)).
 		POST("auth/getValidUserForPhoneNumberMigration", server.RootHandler(s.GetValidUserForPhoneNumberMigration)).
 		POST("auth/signInWithTelegram", server.RootHandler(s.SignInWithTelegram)).
-		POST("auth/thirdParty/{thirdParty}/claimUser/{username}", server.RootHandler(s.ClaimUserByThirdParty))
+		POST("auth/thirdParty/:thirdParty/claimUser/:username", server.RootHandler(s.ClaimUserByThirdParty))
 }
 
 // SendSignInLinkToEmail godoc
@@ -551,7 +551,7 @@ func (s *service) SignInWithTelegram( //nolint:gocritic // .
 //	@Failure		403			{object}	server.ErrorResponse	"api key invalid"
 //	@Failure		500			{object}	server.ErrorResponse
 //	@Failure		504			{object}	server.ErrorResponse	"if request times out"
-//	@Router			/v1w/auth/thirdParty/:thirdParty/claimUser/:username [POST].
+//	@Router			/v1w/auth/thirdParty/{thirdParty}/claimUser/{username} [POST].
 func (s *service) ClaimUserByThirdParty( //nolint:gocritic // .
 	ctx context.Context,
 	req *server.Request[ClaimUserByThirdPartyRequestArg, any],

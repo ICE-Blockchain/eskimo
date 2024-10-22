@@ -1130,7 +1130,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/v1w/auth/thirdParty/:thirdParty/claimUser/:username": {
+        "/v1w/auth/thirdParty/{thirdParty}/claimUser/{username}": {
             "post": {
                 "description": "Claims the user",
                 "consumes": [

@@ -1579,7 +1579,7 @@ paths:
             $ref: '#/definitions/server.ErrorResponse'
       tags:
       - Auth
-  /v1w/auth/thirdParty/:thirdParty/claimUser/:username:
+  /v1w/auth/thirdParty/{thirdParty}/claimUser/{username}:
     post:
       consumes:
       - application/json
