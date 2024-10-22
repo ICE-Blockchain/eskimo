@@ -1123,6 +1123,73 @@
                 }
             }
         },
+        "/v1w/auth/thirdParty/:thirdParty/claimUser/:username": {
+            "post": {
+                "description": "Claims the user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "ThirdParty"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "\u003cAdd api key here\u003e",
+                        "description": "Insert your api key",
+                        "name": "X-API-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "some name or identifier of the caller",
+                        "name": "thirdParty",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "the username",
+                        "name": "username",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "403": {
+                        "description": "api key invalid",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "if the username provided does not exist or the account does not validate the requirements",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "504": {
+                        "description": "if request times out",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1w/kyc/checkKYCStep4Status/users/{userId}": {
             "post": {
                 "description": "Checks the status of the quiz kyc step (4).",

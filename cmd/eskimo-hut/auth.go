@@ -30,7 +30,8 @@ func (s *service) setupAuthRoutes(router *server.Router) {
 		POST("auth/getMetadata", server.RootHandler(s.Metadata)).
 		POST("auth/processFaceRecognitionResult", server.RootHandler(s.ProcessFaceRecognitionResult)).
 		POST("auth/getValidUserForPhoneNumberMigration", server.RootHandler(s.GetValidUserForPhoneNumberMigration)).
-		POST("auth/signInWithTelegram", server.RootHandler(s.SignInWithTelegram))
+		POST("auth/signInWithTelegram", server.RootHandler(s.SignInWithTelegram)).
+		POST("auth/thirdParty/{thirdParty}/claimUser/{username}", server.RootHandler(s.ClaimUserByThirdParty))
 }
 
 // SendSignInLinkToEmail godoc
@@ -533,4 +534,40 @@ func (s *service) SignInWithTelegram( //nolint:gocritic // .
 	}
 
 	return server.OK(&RefreshedToken{Tokens: tokens}), nil
+}
+
+// ClaimUserByThirdParty godoc
+//
+//	@Schemes
+//	@Description	Claims the user
+//	@Tags			ThirdParty
+//	@Accept			json
+//	@Produce		json
+//	@Param			X-API-Key	header	string	true	"Insert your api key"	default(<Add api key here>)
+//	@Param			thirdParty	path	string	true	"some name or identifier of the caller"
+//	@Param			username	path	string	true	"the username"
+//	@Success		200			"OK"
+//	@Failure		404			{object}	server.ErrorResponse	"if the username provided does not exist or the account does not validate the requirements"
+//	@Failure		403			{object}	server.ErrorResponse	"api key invalid"
+//	@Failure		500			{object}	server.ErrorResponse
+//	@Failure		504			{object}	server.ErrorResponse	"if request times out"
+//	@Router			/v1w/auth/thirdParty/:thirdParty/claimUser/:username [POST].
+func (s *service) ClaimUserByThirdParty( //nolint:gocritic // .
+	ctx context.Context,
+	req *server.Request[ClaimUserByThirdPartyRequestArg, any],
+) (*server.Response[any], *server.Response[server.ErrorResponse]) {
+	if cfg.ThirdPartyAPIKey != req.Data.APIKey {
+		return nil, server.Forbidden(errors.New("not allowed"))
+	}
+	if err := s.usersProcessor.ClaimUserBy3rdParty(ctx, req.Data.Username, req.Data.ThirdParty); err != nil {
+		err = errors.Wrapf(err, "failed to ClaimUserBy3rdParty(%v,%v)", req.Data.Username, req.Data.ThirdParty)
+		switch {
+		case errors.Is(err, users.ErrNotFound):
+			return nil, server.NotFound(err, userNotFoundErrorCode)
+		default:
+			return nil, server.Unexpected(err)
+		}
+	}
+
+	return server.OK[any](), nil
 }

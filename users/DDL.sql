@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users  (
                     last_mining_started_at timestamp,
                     last_mining_ended_at timestamp,
                     last_ping_cooldown_ended_at timestamp,
+                    claimed_by_third_party_at timestamp,
                     hash_code bigint not null generated always as identity,
                     verified_t1_referrals bigint NOT NULL DEFAULT 0,
                     kyc_step_passed smallint NOT NULL DEFAULT 0,
@@ -13,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users  (
                     random_referred_by BOOLEAN NOT NULL DEFAULT FALSE,
                     verified BOOLEAN NOT NULL DEFAULT FALSE,
                     t1_referrals_sharing_enabled BOOLEAN,
+                    claimed_by_third_party text,
                     client_data text,
                     hidden_profile_elements text[],
                     phone_number text NOT NULL UNIQUE,
@@ -50,6 +52,8 @@ DO $$ BEGIN
                 ALTER COLUMN kyc_step_passed SET DEFAULT 0;
     end if;
 END $$;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS claimed_by_third_party_at timestamp;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS claimed_by_third_party text;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS t1_referrals_sharing_enabled BOOLEAN;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS verified BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS mining_boost_level smallint NOT NULL DEFAULT 0;

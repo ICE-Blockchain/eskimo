@@ -128,6 +128,11 @@ type (
 		DeviceUniqueID string `json:"deviceUniqueId" required:"true" example:"70063ABB-E69F-4FD2-8B83-90DD372802DA"`
 		Language       string `json:"language" required:"true" example:"en"`
 	}
+	ClaimUserByThirdPartyRequestArg struct {
+		APIKey     string `header:"X-API-Key" swaggerignore:"true" allowUnauthorized:"true" required:"true" example:"some secret"` //nolint:tagliatelle // Nope.
+		Username   string `uri:"username" swaggerignore:"true" allowUnauthorized:"true" required:"true" example:"jdoe"`
+		ThirdParty string `uri:"thirdParty" swaggerignore:"true" allowUnauthorized:"true" required:"true" example:"Facebook"`
+	}
 	StatusArg struct {
 		LoginSession string `json:"loginSession" allowUnauthorized:"true" required:"true" example:"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE2ODQzMjQ0NTYsImV4cCI6MTcxNTg2MDQ1NiwiYXVkIjoiIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIm90cCI6IjUxMzRhMzdkLWIyMWEtNGVhNi1hNzk2LTAxOGIwMjMwMmFhMCJ9.q3xa8Gwg2FVCRHLZqkSedH3aK8XBqykaIy85rRU40nM"` //nolint:lll // .
 	}
@@ -248,9 +253,10 @@ type (
 		faceKycClient       facekyc.Client
 	}
 	config struct {
-		APIKey  string `yaml:"api-key" mapstructure:"api-key"` //nolint:tagliatelle // Nope.
-		Host    string `yaml:"host"`
-		Version string `yaml:"version"`
-		Tenant  string `yaml:"tenant"`
+		APIKey           string `yaml:"api-key" mapstructure:"api-key"`                         //nolint:tagliatelle // Nope.
+		ThirdPartyAPIKey string `yaml:"third-party-api-key" mapstructure:"third-party-api-key"` //nolint:tagliatelle // Nope.
+		Host             string `yaml:"host"`
+		Version          string `yaml:"version"`
+		Tenant           string `yaml:"tenant"`
 	}
 )

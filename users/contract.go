@@ -109,6 +109,7 @@ type (
 		LastMiningStartedAt       *time.Time                  `json:"lastMiningStartedAt,omitempty" example:"2022-01-03T16:20:52.156534Z" swaggerignore:"true" db:"last_mining_started_at"`                                       //nolint:lll // .
 		LastMiningEndedAt         *time.Time                  `json:"lastMiningEndedAt,omitempty" example:"2022-01-03T16:20:52.156534Z" swaggerignore:"true" db:"last_mining_ended_at"`                                           //nolint:lll // .
 		LastPingCooldownEndedAt   *time.Time                  `json:"lastPingCooldownEndedAt,omitempty" example:"2022-01-03T16:20:52.156534Z" swaggerignore:"true" db:"last_ping_cooldown_ended_at"`                              //nolint:lll // .
+		ClaimedByThirdPartyAt     *time.Time                  `json:"-" example:"2022-01-03T16:20:52.156534Z" swaggerignore:"true" db:"claimed_by_third_party_at"`                                                                //nolint:lll // .
 		HiddenProfileElements     *Enum[HiddenProfileElement] `json:"hiddenProfileElements,omitempty" swaggertype:"array,string" example:"level" enums:"globalRank,referralCount,level,role,badges" db:"hidden_profile_elements"` //nolint:lll // .
 		RandomReferredBy          *bool                       `json:"randomReferredBy,omitempty" example:"true" swaggerignore:"true" db:"random_referred_by"`
 		Verified                  *bool                       `json:"verified" example:"true" db:"verified"`
@@ -131,6 +132,7 @@ type (
 		BlockchainAccountAddress       string   `json:"blockchainAccountAddress,omitempty" example:"0x4B73C58370AEfcEf86A6021afCDe5673511376B2" db:"blockchain_account_address"`              //nolint:lll // .
 		Language                       string   `json:"language,omitempty" example:"en" db:"language"`
 		Lookup                         string   `json:"-" example:"username" db:"lookup"`
+		ClaimedByThirdParty            string   `json:"-" example:"Facebook" swaggerignore:"true" db:"claimed_by_third_party"`
 		AgendaContactUserIDs           []string `json:"agendaContactUserIDs,omitempty" swaggerignore:"true" db:"agenda_contact_user_ids"`
 		VerifiedT1ReferralCount        uint64   `json:"verifiedT1ReferralCount,omitempty" example:"100" db:"verified_t1_referrals"`
 		HashCode                       int64    `json:"hashCode,omitempty" example:"43453546464576547" swaggerignore:"true" db:"hash_code"`
@@ -209,6 +211,8 @@ type (
 		CreateUser(ctx context.Context, usr *User, clientIP net.IP) error
 		DeleteUser(ctx context.Context, userID UserID) error
 		ModifyUser(ctx context.Context, usr *User, profilePicture *multipart.FileHeader) (*UserProfile, error)
+
+		ClaimUserBy3rdParty(ctx context.Context, username, thirdParty string) error
 
 		TryResetKYCSteps(ctx context.Context, resetClient ResetKycClient, userID string) (*UserProfile, error)
 	}
