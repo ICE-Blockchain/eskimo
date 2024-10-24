@@ -164,19 +164,25 @@ func (*threeDivi) activeUsers(data []byte) (int, error) {
 	return openConns / connsPerUser, nil
 }
 
-func (t *threeDivi) CheckAndUpdateStatus(ctx context.Context, searchUserID string, userToUpdate *users.User) (hasFaceKYCResult bool, faceID string, err error) {
+func (t *threeDivi) CheckAndUpdateStatus(ctx context.Context, searchUserID string, userToUpdate *users.User) (hasFaceKYCResult bool, faceID, tenant string, err error) {
 	bafApplicant, err := t.searchIn3DiviForApplicant(ctx, searchUserID)
 	if err != nil && !errors.Is(err, errFaceAuthNotStarted) {
-		return false, "", errors.Wrapf(err, "failed to sync face auth status from 3divi BAF")
+		return false, "", "", errors.Wrapf(err, "failed to sync face auth status from 3divi BAF")
 	}
 	usr := t.parseApplicant(userToUpdate, bafApplicant)
 	hasFaceKYCResult = usr.HasFaceKYCResult()
 	_, mErr := t.users.ModifyUser(ctx, usr, nil)
 	if bafApplicant != nil {
 		faceID = bafApplicant.ApplicantID
+		if len(bafApplicant.Metadata) > 0 {
+			tenantI, hasTenant := bafApplicant.Metadata["tenant"]
+			if hasTenant {
+				tenant = tenantI.(string)
+			}
+		}
 	}
 
-	return hasFaceKYCResult, faceID, errors.Wrapf(mErr, "failed to update user with face kyc result")
+	return hasFaceKYCResult, faceID, tenant, errors.Wrapf(mErr, "failed to update user with face kyc result")
 }
 
 //nolint:funlen,revive // .
@@ -217,7 +223,7 @@ func (t *threeDivi) Reset(ctx context.Context, user *users.User, fetchState bool
 		return errors.Wrapf(err2, "failed to read body of delete face auth state request for userID:%v", user.ID)
 	} else { //nolint:revive // .
 		if fetchState {
-			_, _, err = t.CheckAndUpdateStatus(ctx, user.ID, user)
+			_, _, _, err = t.CheckAndUpdateStatus(ctx, user.ID, user)
 
 			return errors.Wrapf(err, "failed to check user's face auth state after reset for userID %v", user.ID)
 		}
@@ -287,6 +293,8 @@ func stepIdx(step users.KYCStep) int {
 }
 
 func (t *threeDivi) searchIn3DiviForApplicant(ctx context.Context, userID users.UserID) (*applicant, error) {
+	u := fmt.Sprintf("%v/publicapi/api/v2/private/Applicants/ByReferenceId/%v", t.cfg.ThreeDiVi.BAFHost, userID)
+	log.Info("GET ", u)
 	if resp, err := req.
 		SetContext(ctx).
 		SetRetryCount(10).                                                       //nolint:gomnd // .
@@ -304,7 +312,7 @@ func (t *threeDivi) searchIn3DiviForApplicant(ctx context.Context, userID users.
 			return err != nil || (resp.GetStatusCode() != http.StatusOK && resp.GetStatusCode() != http.StatusNotFound)
 		}).
 		SetHeader("Authorization", fmt.Sprintf("Bearer %v", t.cfg.ThreeDiVi.BAFToken)).
-		Get(fmt.Sprintf("%v/publicapi/api/v2/private/Applicants/ByReferenceId/%v", t.cfg.ThreeDiVi.BAFHost, userID)); err != nil {
+		Get(u); err != nil {
 		return nil, errors.Wrapf(err, "failed to match applicantId for userID:%v", userID)
 	} else if statusCode := resp.GetStatusCode(); statusCode != http.StatusOK && statusCode != http.StatusNotFound {
 		return nil, errors.Errorf("[%v]failed to match applicantIdfor userID:%v", statusCode, userID)

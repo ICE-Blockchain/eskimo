@@ -35,6 +35,7 @@ type (
 		Code                   string              `json:"code"`
 		LastValidationResponse *validationResponse `json:"lastValidationResponse"`
 		ApplicantID            string              `json:"applicantId"`
+		Metadata               map[string]any      `json:"metadata"`
 		Status                 int                 `json:"status"`
 		HasRiskEvents          bool                `json:"hasRiskEvents"`
 	}

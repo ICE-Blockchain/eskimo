@@ -27,8 +27,9 @@ type (
 		UnexpectedErrorsAllowed uint64           `yaml:"unexpectedErrorsAllowed" mapstructure:"unexpectedErrorsAllowed"`
 	}
 	Linker interface {
-		Verify(ctx context.Context, now *time.Time, userID string, tokens map[Tenant]Token) (map[Tenant]string, error)
-		Get(ctx context.Context, userID string) (map[Tenant]string, error)
+		Verify(ctx context.Context, now *time.Time, userID string, tokens map[Tenant]Token) (allLinkedProfiles map[Tenant]string, verified Tenant, err error)
+		Get(ctx context.Context, userID string) (allLinkedProfiles map[Tenant]string, verified Tenant, err error)
+		SetTenantVerified(ctx context.Context, userID string, tenant Tenant) error
 	}
 	Client interface {
 		io.Closer

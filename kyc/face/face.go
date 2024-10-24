@@ -50,27 +50,41 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 	}
 	hasResult := false
 	now := time.Now()
-	faceId := ""
+	var faceID, verifiedTenantFrom3rdParty, verifiedTenant string
 	if userWasPreviouslyForwardedToFaceKYC {
-		linkedTenants, err := c.accountsLinker.Get(ctx, user.ID)
+		var linkedTenants map[Tenant]string
+		linkedTenants, verifiedTenant, err = c.accountsLinker.Get(ctx, user.ID)
 		if err != nil {
 			return false, errors.Wrapf(err, "failed to get linked tenants for user id %v", user.ID)
 		}
-		for _, remoteUserID := range linkedTenants {
-			if hasResult, faceId, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, user); err != nil {
-				c.unexpectedErrors.Add(1)
-				log.Error(errors.Wrapf(err, "[unexpected]failed to update face auth status for user ID %s", user.ID))
+		remoteUserID := linkedTenants[verifiedTenant]
+		if hasResult, faceID, verifiedTenantFrom3rdParty, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, user); err != nil {
+			c.unexpectedErrors.Add(1)
+			log.Error(errors.Wrapf(err, "[unexpected]failed to update face auth status for user ID %s", user.ID))
 
-				return false, nil
-			}
-			if hasResult {
-				break
-			}
+			return false, nil
 		}
+		if verifiedTenantFrom3rdParty != "" {
+			verifiedTenant = verifiedTenantFrom3rdParty
+		}
+		//for _, remoteUserID := range linkedTenants {
+		//	if hasResult, faceId, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, user); err != nil {
+		//		c.unexpectedErrors.Add(1)
+		//		log.Error(errors.Wrapf(err, "[unexpected]failed to update face auth status for user ID %s", user.ID))
+		//
+		//		return false, nil
+		//	}
+		//	if hasResult {
+		//		break
+		//	}
+		//}
 
 	}
 	if hasResult {
-		if dErr := c.saveFaceID(ctx, user.ID, faceId); dErr != nil {
+		if dErr := c.accountsLinker.SetTenantVerified(ctx, user.ID, verifiedTenant); dErr != nil {
+			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", user.ID)
+		}
+		if dErr := c.saveFaceID(ctx, user.ID, faceID); dErr != nil {
 			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", user.ID)
 		}
 	}
@@ -158,29 +172,46 @@ func (c *client) ForwardToKYC(ctx context.Context, userID string, tokens map[Ten
 		return false, nil
 	}
 	var linkedTenants map[Tenant]string
+	verifiedTenant := ""
 	if len(tokens) > 0 {
-		linkedTenants, err = c.accountsLinker.Verify(ctx, now, usr.ID, tokens)
+		linkedTenants, verifiedTenant, err = c.accountsLinker.Verify(ctx, now, usr.ID, tokens)
 	} else {
-		linkedTenants, err = c.accountsLinker.Get(ctx, usr.ID)
+		linkedTenants, verifiedTenant, err = c.accountsLinker.Get(ctx, usr.ID)
 	}
 	if err != nil {
 		return false, errors.Wrapf(err, "failed to get linked tenants for user ID %v", userID)
 	}
-	for _, remoteUserID := range linkedTenants {
-		// TODO: avoid extra calls of this based on linkedTenants info if has kyc?
-		passed := false
-		faceId := usr.ID
-		passed, faceId, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, usr.User)
-		if err != nil {
-			return false, errors.Wrapf(err, "failed to sync face kyc status back for user %v", remoteUserID)
-		}
-		if passed {
-			if err = c.saveFaceID(ctx, usr.ID, faceId); err != nil {
-				return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", usr.ID)
-			}
-			return false, nil
-		}
+	remoteUserID := linkedTenants[verifiedTenant]
+	passed := false
+	faceId := usr.ID
+	passed, faceId, verifiedTenant, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, usr.User)
+	if err != nil {
+		return false, errors.Wrapf(err, "failed to sync face kyc status back for user %v", remoteUserID)
 	}
+	if passed {
+		if err = c.accountsLinker.SetTenantVerified(ctx, usr.ID, verifiedTenant); err != nil {
+			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", usr.ID)
+		}
+		if err = c.saveFaceID(ctx, usr.ID, faceId); err != nil {
+			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", usr.ID)
+		}
+		return false, nil
+	}
+	//for _, remoteUserID := range linkedTenants {
+	//	// TODO: avoid extra calls of this based on linkedTenants info if has kyc?
+	//	passed := false
+	//	faceId := usr.ID
+	//	passed, faceId, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, usr.User)
+	//	if err != nil {
+	//		return false, errors.Wrapf(err, "failed to sync face kyc status back for user %v", remoteUserID)
+	//	}
+	//	if passed {
+	//		if err = c.saveFaceID(ctx, usr.ID, faceId); err != nil {
+	//			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", usr.ID)
+	//		}
+	//		return false, nil
+	//	}
+	//}
 	userWasPreviouslyForwardedToFaceKYC, err := c.checkIfUserWasForwardedToFaceKYC(ctx, usr.ID)
 	availabilityErr := c.client.Available(ctx, userWasPreviouslyForwardedToFaceKYC)
 	if userWasPreviouslyForwardedToFaceKYC || availabilityErr == nil {

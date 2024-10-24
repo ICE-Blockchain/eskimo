@@ -14,7 +14,7 @@ import (
 type (
 	Client interface {
 		Available(ctx context.Context, userWasPreviouslyForwardedToFaceKYC bool) error
-		CheckAndUpdateStatus(ctx context.Context, searchUserID string, user *users.User) (hasFaceKYCResult bool, faceID string, err error)
+		CheckAndUpdateStatus(ctx context.Context, searchUserID string, user *users.User) (hasFaceKYCResult bool, faceID, tenant string, err error)
 		Reset(ctx context.Context, user *users.User, fetchState bool) error
 	}
 	UserRepository interface {

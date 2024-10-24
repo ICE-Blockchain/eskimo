@@ -45,23 +45,23 @@ func NewAccountLinker(ctx context.Context) Linker {
 
 func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
 	allLinkedProfiles = map[Tenant]UserID{}
-	verifiedTenant := ""
+	verified = l.cfg.Tenant
 	for tenant, token := range tokens {
 		remoteID, hasKYCResult, err := l.verifyToken(ctx, userID, tenant, token)
 		if err != nil {
-			return allLinkedProfiles, verifiedTenant, err
+			return allLinkedProfiles, verified, err
 		}
 		allLinkedProfiles[tenant] = remoteID
 		if hasKYCResult {
-			verifiedTenant = tenant
+			verified = tenant
 		}
 	}
 	allLinkedProfiles[l.cfg.Tenant] = userID
-	if err := l.storeLinkedAccounts(ctx, now, userID, verifiedTenant, allLinkedProfiles); err != nil {
+	if err := l.storeLinkedAccounts(ctx, now, userID, verified, allLinkedProfiles); err != nil {
 		return nil, "", errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
-	return allLinkedProfiles, verifiedTenant, nil
+	return l.Get(ctx, userID)
 }
 
 func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
@@ -70,7 +70,7 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	idx := 1
 	for linkTenant, linkUserID := range res {
 		params = append(params, *now.Time, l.cfg.Tenant, userID, linkTenant, linkUserID, linkTenant == verifiedTenant)
-		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v, %[6]v)", idx, idx+1, idx+2, idx+3, idx+4, idx+5))
+		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v, $%[6]v)", idx, idx+1, idx+2, idx+3, idx+4, idx+5))
 		idx += 6
 	}
 	sql := fmt.Sprintf(`INSERT INTO 
@@ -87,6 +87,7 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	return nil
 }
 func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
+	verified = l.cfg.Tenant
 	linkedUsers, err := storage.Select[struct {
 		LinkedAt     *time.Time `db:"linked_at"`
 		UserID       string     `db:"user_id"`
