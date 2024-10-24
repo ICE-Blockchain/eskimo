@@ -43,34 +43,38 @@ func NewAccountLinker(ctx context.Context) Linker {
 	}
 }
 
-func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (LinkedProfiles, error) {
-	res := map[Tenant]UserID{}
+func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
+	allLinkedProfiles = map[Tenant]UserID{}
+	verifiedTenant := ""
 	for tenant, token := range tokens {
-		remoteID, _, err := l.verifyToken(ctx, userID, tenant, token)
+		remoteID, hasKYCResult, err := l.verifyToken(ctx, userID, tenant, token)
 		if err != nil {
-			return res, err
+			return allLinkedProfiles, verifiedTenant, err
 		}
-		res[tenant] = remoteID
+		allLinkedProfiles[tenant] = remoteID
+		if hasKYCResult {
+			verifiedTenant = tenant
+		}
 	}
-	res[l.cfg.Tenant] = userID
-	if err := l.storeLinkedAccounts(ctx, now, userID, l.cfg.Tenant, res); err != nil {
-		return nil, errors.Wrapf(err, "failed to save linked accounts for %v", userID)
+	allLinkedProfiles[l.cfg.Tenant] = userID
+	if err := l.storeLinkedAccounts(ctx, now, userID, verifiedTenant, allLinkedProfiles); err != nil {
+		return nil, "", errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
-	return res, nil
+	return allLinkedProfiles, verifiedTenant, nil
 }
 
-func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID, tenant string, res map[Tenant]UserID) error {
+func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
 	params := []any{}
 	values := []string{}
 	idx := 1
 	for linkTenant, linkUserID := range res {
-		params = append(params, *now.Time, tenant, userID, linkTenant, linkUserID)
-		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v)", idx, idx+1, idx+2, idx+3, idx+4))
-		idx += 5
+		params = append(params, *now.Time, l.cfg.Tenant, userID, linkTenant, linkUserID, linkTenant == verifiedTenant)
+		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v, %[6]v)", idx, idx+1, idx+2, idx+3, idx+4, idx+5))
+		idx += 6
 	}
 	sql := fmt.Sprintf(`INSERT INTO 
-   									 linked_user_accounts(linked_at, tenant, user_id, linked_tenant, linked_user_id)
+   									 linked_user_accounts(linked_at, tenant, user_id, linked_tenant, linked_user_id, has_kyc)
     							VALUES %v`, strings.Join(values, ",\n"))
 	rows, err := storage.Exec(ctx, l.globalDB, sql, params...)
 	if err != nil {
@@ -82,13 +86,14 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 
 	return nil
 }
-func (l *linker) Get(ctx context.Context, userID UserID) (LinkedProfiles, error) {
+func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
 	linkedUsers, err := storage.Select[struct {
 		LinkedAt     *time.Time `db:"linked_at"`
 		UserID       string     `db:"user_id"`
 		Tenant       string     `db:"tenant"`
 		LinkedTenant string     `db:"linked_tenant"`
 		LinkedUserID string     `db:"linked_user_id"`
+		HasKYC       bool       `db:"has_kyc"`
 	}](ctx, l.globalDB, `
 WITH RECURSIVE rec AS (
 SELECT * FROM linked_user_accounts WHERE user_id = $1 OR linked_user_id = $1
@@ -98,20 +103,22 @@ JOIN rec on rec.user_id = linked_user_accounts.user_id OR rec.linked_user_id = l
 select * from rec;
 `, userID)
 	if err != nil && storage.IsErr(err, storage.ErrNotFound) {
-		return nil, errors.Wrapf(err, "failed to fetch linked accounts for user %v", userID)
+		return nil, "", errors.Wrapf(err, "failed to fetch linked accounts for user %v", userID)
 	}
-	res := make(map[Tenant]UserID)
+	allLinkedProfiles = make(map[Tenant]UserID)
 	for _, usr := range linkedUsers {
 		if usr.LinkedTenant == l.cfg.Tenant && usr.LinkedUserID == userID {
-			res[usr.Tenant] = usr.UserID
-			res[usr.LinkedTenant] = usr.LinkedUserID
+			allLinkedProfiles[usr.Tenant] = usr.UserID
+			allLinkedProfiles[usr.LinkedTenant] = usr.LinkedUserID
 		} else {
-			res[usr.LinkedTenant] = usr.LinkedUserID
+			allLinkedProfiles[usr.LinkedTenant] = usr.LinkedUserID
 		}
-
+		if usr.HasKYC {
+			verified = usr.Tenant
+		}
 	}
 
-	return res, nil
+	return allLinkedProfiles, verified, nil
 }
 
 func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) (remoteID UserID, hasFaceResult bool, err error) {
@@ -183,4 +190,11 @@ func (l *linker) buildGetUserURL(tenant, userID string) (string, error) {
 	}
 
 	return url.JoinPath(u, "v1r/users/", userID)
+}
+
+func (l *linker) SetTenantVerified(ctx context.Context, userID UserID, tenant Tenant) error {
+	_, err := storage.Exec(ctx, l.globalDB, `UPDATE linked_user_accounts SET has_kyc = true 
+                            WHERE linked_tenant = $1 AND linked_user_id = $2
+                            AND user_id = linked_user_id AND tenant = linked_tenant`, tenant, userID)
+	return errors.Wrapf(err, "failed to set verified tenant for %v %v", userID, tenant)
 }
