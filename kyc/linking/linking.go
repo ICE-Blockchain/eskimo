@@ -52,8 +52,8 @@ func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, toke
 		}
 		res[tenant] = remoteID
 	}
-	res[userID] = currentTenant(ctx)
-	if err := l.storeLinkedAccounts(ctx, now, userID, currentTenant(ctx), res); err != nil {
+	res[l.cfg.Tenant] = userID
+	if err := l.storeLinkedAccounts(ctx, now, userID, l.cfg.Tenant, res); err != nil {
 		return nil, errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
@@ -65,7 +65,7 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	values := []string{}
 	idx := 1
 	for linkTenant, linkUserID := range res {
-		params = append(params, *now.Time, userID, tenant, linkTenant, linkUserID)
+		params = append(params, *now.Time, tenant, userID, linkTenant, linkUserID)
 		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v)", idx, idx+1, idx+2, idx+3, idx+4))
 		idx += 5
 	}
@@ -89,13 +89,26 @@ func (l *linker) Get(ctx context.Context, userID UserID) (LinkedProfiles, error)
 		Tenant       string     `db:"tenant"`
 		LinkedTenant string     `db:"linked_tenant"`
 		LinkedUserID string     `db:"linked_user_id"`
-	}](ctx, l.globalDB, `SELECT * FROM linked_user_accounts WHERE user_id = $1 OR linked_user_id = $1`, userID)
+	}](ctx, l.globalDB, `
+WITH RECURSIVE rec AS (
+SELECT * FROM linked_user_accounts WHERE user_id = $1 OR linked_user_id = $1
+UNION SELECT linked_user_accounts.* FROM linked_user_accounts
+JOIN rec on rec.user_id = linked_user_accounts.user_id OR rec.linked_user_id = linked_user_accounts.linked_user_id
+)
+select * from rec;
+`, userID)
 	if err != nil && storage.IsErr(err, storage.ErrNotFound) {
 		return nil, errors.Wrapf(err, "failed to fetch linked accounts for user %v", userID)
 	}
 	res := make(map[Tenant]UserID)
 	for _, usr := range linkedUsers {
-		res[usr.LinkedTenant] = usr.LinkedUserID
+		if usr.LinkedTenant == l.cfg.Tenant && usr.LinkedUserID == userID {
+			res[usr.Tenant] = usr.UserID
+			res[usr.LinkedTenant] = usr.LinkedUserID
+		} else {
+			res[usr.LinkedTenant] = usr.LinkedUserID
+		}
+
 	}
 
 	return res, nil
@@ -109,7 +122,7 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 		}
 		return "", false, errors.Wrapf(err, "failed to link accounts with %v", userID)
 	}
-	if usr.CreatedAt == nil && usr.ReferredBy != "" && usr.Username != "" {
+	if usr.CreatedAt == nil || usr.ReferredBy == "" || usr.Username == "" {
 		return "", false, ErrNotOwnRemoteUser
 	}
 
@@ -121,12 +134,9 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid token passed")
 	}
-	if tenant != t.Tenant {
-		return nil, errors.Errorf("invalid token passed, %v does not match token %v", tenant, t.Tenant)
-	}
 	var resp *req.Response
 	var usr users.User
-	url, err := l.buildGetUserURL(t.Tenant, t.Subject)
+	url, err := l.buildGetUserURL(tenant, t.Subject)
 	if err != nil {
 		log.Panic(errors.Wrapf(err, "failed to detect tenant url"))
 	}
@@ -173,8 +183,4 @@ func (l *linker) buildGetUserURL(tenant, userID string) (string, error) {
 	}
 
 	return url.JoinPath(u, "v1r/users/", userID)
-}
-
-func currentTenant(ctx context.Context) string {
-	return ctx.Value(tenantCtxKey).(string)
 }

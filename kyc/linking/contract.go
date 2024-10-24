@@ -30,7 +30,8 @@ type (
 		cfg      *config
 	}
 	config struct {
-		TenantURLs map[Tenant]string `yaml:"tenantUrls" mapstructure:"tenantUrls"`
+		TenantURLs map[Tenant]string `yaml:"tenantURLs" mapstructure:"tenantURLs"`
+		Tenant     string            `yaml:"tenant" mapstructure:"tenant"`
 	}
 )
 
@@ -44,4 +45,5 @@ var (
 	ddl                   string
 	errRemoteUserNotFound = errors.New("remote user not found")
 	ErrNotOwnRemoteUser   = errors.New("not own remote user")
+	ErrDuplicate          = storage.ErrDuplicate
 )
