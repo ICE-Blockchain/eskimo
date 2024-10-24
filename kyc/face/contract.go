@@ -22,8 +22,8 @@ type (
 	UserRepository = internal.UserRepository
 	Config         struct {
 		kycConfigJSON           *atomic.Pointer[kycConfigJSON]
-		ConfigJSONURL           string           `yaml:"config-json-url" mapstructure:"config-json-url"`
-		ThreeDiVi               threedivi.Config `mapstructure:",squash"`
+		ConfigJSONURL           string           `yaml:"config-json-url" mapstructure:"config-json-url"` //nolint:tagliatelle // .
+		ThreeDiVi               threedivi.Config `mapstructure:",squash"`                                //nolint:tagliatelle // .
 		UnexpectedErrorsAllowed uint64           `yaml:"unexpectedErrorsAllowed" mapstructure:"unexpectedErrorsAllowed"`
 	}
 	Linker interface {

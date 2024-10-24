@@ -193,7 +193,6 @@ type (
 		XClientType string            `form:"x_client_type" swaggerignore:"true" required:"false" example:"web"`
 		Tokens      map[string]string `json:"tokens"`
 		UserID      string            `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
-
 	}
 	ForwardToFaceKYCResponse struct {
 		KycFaceAvailable bool `json:"kycFaceAvailable" example:"true"`

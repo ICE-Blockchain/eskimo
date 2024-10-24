@@ -31,7 +31,7 @@ type (
 		cfg      *config
 	}
 	config struct {
-		TenantURLs map[Tenant]string `yaml:"tenantURLs" mapstructure:"tenantURLs"`
+		TenantURLs map[Tenant]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
 		Tenant     string            `yaml:"tenant" mapstructure:"tenant"`
 	}
 )

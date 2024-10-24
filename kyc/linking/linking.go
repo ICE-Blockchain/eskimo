@@ -43,21 +43,23 @@ func NewAccountLinker(ctx context.Context) Linker {
 	}
 }
 
-func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
-	allLinkedProfiles = map[Tenant]UserID{}
+func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allProfiles LinkedProfiles, verified Tenant, err error) {
+	allProfiles = map[Tenant]UserID{}
 	verified = l.cfg.Tenant
 	for tenant, token := range tokens {
-		remoteID, hasKYCResult, err := l.verifyToken(ctx, userID, tenant, token)
+		var remoteID string
+		var hasKYCResult bool
+		remoteID, hasKYCResult, err = l.verifyToken(ctx, userID, tenant, token)
 		if err != nil {
-			return allLinkedProfiles, verified, err
+			return allProfiles, verified, err
 		}
-		allLinkedProfiles[tenant] = remoteID
-		if hasKYCResult {
+		allProfiles[tenant] = remoteID
+		if hasKYCResult && verified == l.cfg.Tenant && tenant != l.cfg.Tenant {
 			verified = tenant
 		}
 	}
-	allLinkedProfiles[l.cfg.Tenant] = userID
-	if err := l.storeLinkedAccounts(ctx, now, userID, verified, allLinkedProfiles); err != nil {
+	allProfiles[l.cfg.Tenant] = userID
+	if err = l.storeLinkedAccounts(ctx, now, userID, verified, allProfiles); err != nil {
 		return nil, "", errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
@@ -70,6 +72,7 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	idx := 1
 	for linkTenant, linkUserID := range res {
 		params = append(params, *now.Time, l.cfg.Tenant, userID, linkTenant, linkUserID, linkTenant == verifiedTenant)
+		//nolint:gomnd // .
 		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v, $%[6]v)", idx, idx+1, idx+2, idx+3, idx+4, idx+5))
 		idx += 6
 	}
@@ -86,6 +89,7 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 
 	return nil
 }
+
 func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
 	verified = l.cfg.Tenant
 	linkedUsers, err := storage.Select[struct {
@@ -95,14 +99,11 @@ func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles Link
 		LinkedTenant string     `db:"linked_tenant"`
 		LinkedUserID string     `db:"linked_user_id"`
 		HasKYC       bool       `db:"has_kyc"`
-	}](ctx, l.globalDB, `
-WITH RECURSIVE rec AS (
-SELECT * FROM linked_user_accounts WHERE user_id = $1 OR linked_user_id = $1
-UNION SELECT linked_user_accounts.* FROM linked_user_accounts
-JOIN rec on rec.user_id = linked_user_accounts.user_id OR rec.linked_user_id = linked_user_accounts.linked_user_id
-)
-select * from rec;
-`, userID)
+	}](ctx, l.globalDB, `WITH RECURSIVE rec AS (
+								SELECT * FROM linked_user_accounts WHERE user_id = $1 OR linked_user_id = $1
+								UNION SELECT linked_user_accounts.* FROM linked_user_accounts
+								JOIN rec on rec.user_id = linked_user_accounts.user_id OR rec.linked_user_id = linked_user_accounts.linked_user_id
+							) SELECT * FROM rec;`, userID)
 	if err != nil && storage.IsErr(err, storage.ErrNotFound) {
 		return nil, "", errors.Wrapf(err, "failed to fetch linked accounts for user %v", userID)
 	}
@@ -128,6 +129,7 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 		if errors.Is(err, errRemoteUserNotFound) {
 			return "", false, ErrNotOwnRemoteUser
 		}
+
 		return "", false, errors.Wrapf(err, "failed to link accounts with %v", userID)
 	}
 	if usr.CreatedAt == nil || usr.ReferredBy == "" || usr.Username == "" {
@@ -137,14 +139,15 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 	return usr.ID, usr.HasFaceKYCResult(), nil
 }
 
+//nolint:funlen // Single http call.
 func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*users.User, error) {
-	t, err := server.Auth(ctx).ParseToken(token, false)
+	tok, err := server.Auth(ctx).ParseToken(token, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid token passed")
 	}
 	var resp *req.Response
 	var usr users.User
-	url, err := l.buildGetUserURL(tenant, t.Subject)
+	getUserURL, err := l.buildGetUserURL(tenant, tok.Subject)
 	if err != nil {
 		log.Panic(errors.Wrapf(err, "failed to detect tenant url"))
 	}
@@ -167,7 +170,7 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 		}).
 		SetHeader("Authorization", token).
 		AddQueryParam("caller", "eskimo-hut").
-		Get(url); err != nil {
+		Get(getUserURL); err != nil {
 		return nil, errors.Wrap(err, "failed to link accounts")
 	} else if statusCode := resp.GetStatusCode(); statusCode != http.StatusOK {
 		if statusCode == http.StatusNotFound {
@@ -176,8 +179,8 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 
 		return nil, errors.Errorf("[%v]failed to link accounts", statusCode)
 	} else if data, err2 := resp.ToBytes(); err2 != nil {
-		return nil, errors.Wrapf(err2, "failed to read body of linking users: %v", url)
-	} else if jErr := json.UnmarshalContext(ctx, data, &usr); jErr != nil { //nolint:revive // .
+		return nil, errors.Wrapf(err2, "failed to read body of linking users: %v", getUserURL)
+	} else if jErr := json.UnmarshalContext(ctx, data, &usr); jErr != nil {
 		return nil, errors.Wrapf(err2, "failed to decode body of linking users: %v", string(data))
 	}
 
@@ -190,12 +193,18 @@ func (l *linker) buildGetUserURL(tenant, userID string) (string, error) {
 		return "", errors.Errorf("unknown tenant %v", tenant)
 	}
 
-	return url.JoinPath(u, "v1r/users/", userID)
+	userURL, err := url.JoinPath(u, "v1r/users/", userID)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to build user url for tenant %v", tenant)
+	}
+
+	return userURL, nil
 }
 
 func (l *linker) SetTenantVerified(ctx context.Context, userID UserID, tenant Tenant) error {
 	_, err := storage.Exec(ctx, l.globalDB, `UPDATE linked_user_accounts SET has_kyc = true 
                             WHERE linked_tenant = $1 AND linked_user_id = $2
                             AND user_id = linked_user_id AND tenant = linked_tenant`, tenant, userID)
+
 	return errors.Wrapf(err, "failed to set verified tenant for %v %v", userID, tenant)
 }

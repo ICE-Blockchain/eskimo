@@ -5,12 +5,12 @@ package main
 import (
 	"context"
 	"fmt"
-	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
 	"slices"
 	"strings"
 
 	"github.com/pkg/errors"
 
+	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
 	"github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	kycsocial "github.com/ice-blockchain/eskimo/kyc/social"
@@ -338,7 +338,9 @@ func (s *service) TryResetKYCSteps( //nolint:gocritic,funlen,gocognit,revive,cyc
 //	@Failure		500					{object}	server.ErrorResponse
 //	@Failure		504					{object}	server.ErrorResponse	"if request times out"
 //	@Router			/v1w/kyc/checkFaceKYCStatus/users/{userId} [POST].
-func (s *service) ForwardToFaceKYC( //nolint:gocritic,funlen,gocognit,revive,cyclop,gocyclo // .
+//
+//nolint:gocritic // .
+func (s *service) ForwardToFaceKYC(
 	ctx context.Context,
 	req *server.Request[ForwardToFaceKYCRequestBody, ForwardToFaceKYCResponse],
 ) (*server.Response[ForwardToFaceKYCResponse], *server.Response[server.ErrorResponse]) {
