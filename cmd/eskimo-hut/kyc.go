@@ -351,7 +351,7 @@ func (s *service) ForwardToFaceKYC(
 		case errors.Is(err, linking.ErrNotOwnRemoteUser):
 			return nil, server.BadRequest(err, linkingNotOwnedProfile)
 		case errors.Is(err, linking.ErrDuplicate):
-			return nil, server.BadRequest(err, linkingDuplicate)
+			return nil, server.Conflict(err, linkingDuplicate)
 		default:
 			return nil, server.Unexpected(err)
 		}

@@ -76,10 +76,10 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 	}
 	if hasResult {
 		if dErr := c.accountsLinker.SetTenantVerified(ctx, user.ID, verifiedTenant); dErr != nil {
-			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", user.ID)
+			return false, errors.Wrapf(dErr, "failed to mark tenant %v verified for user %v", verifiedTenant, user.ID)
 		}
 		if dErr := c.saveFaceID(ctx, user.ID, faceID); dErr != nil {
-			return false, errors.Wrapf(err, "failed to save user face id kyc for user id %v", user.ID)
+			return false, errors.Wrapf(dErr, "failed to save user face id kyc for user id %v", user.ID)
 		}
 	}
 	if !hasResult || nextKYCStep == users.LivenessDetectionKYCStep {

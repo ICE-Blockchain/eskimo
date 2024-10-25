@@ -114,7 +114,7 @@ func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles Link
 								UNION SELECT linked_user_accounts.* FROM linked_user_accounts
 								JOIN rec on rec.user_id = linked_user_accounts.user_id OR rec.linked_user_id = linked_user_accounts.linked_user_id
 							) SELECT * FROM rec;`, userID)
-	if err != nil && storage.IsErr(err, storage.ErrNotFound) {
+	if err != nil && !storage.IsErr(err, storage.ErrNotFound) {
 		return nil, "", errors.Wrapf(err, "failed to fetch linked accounts for user %v", userID)
 	}
 	allLinkedProfiles = make(map[Tenant]UserID)
@@ -143,7 +143,7 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 			return "", false, ErrNotOwnRemoteUser
 		}
 
-		return "", false, errors.Wrapf(err, "failed to link accounts with %v", userID)
+		return "", false, errors.Wrapf(err, "failed to fwtch remote user data for %v", userID)
 	}
 	if usr.CreatedAt == nil || usr.ReferredBy == "" || usr.Username == "" {
 		return "", false, ErrNotOwnRemoteUser

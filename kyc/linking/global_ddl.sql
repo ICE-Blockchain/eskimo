@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS linked_user_accounts
     linked_tenant  TEXT NOT NULL,
     linked_user_id TEXT NOT NULL,
     has_kyc        BOOLEAN NOT NULL DEFAULT false,
-    primary key (tenant, user_id,linked_tenant,linked_user_id)
+    primary key (user_id, linked_user_id, tenant, linked_tenant)
 );
 
-CREATE INDEX IF NOT EXISTS linked_user_accounts_linked_user_id_user_id ON linked_user_accounts (user_id, linked_user_id);
+CREATE INDEX IF NOT EXISTS linked_user_accounts_linked_user_id ON linked_user_accounts (linked_user_id);
