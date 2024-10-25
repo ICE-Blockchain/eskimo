@@ -4,7 +4,6 @@ package linking
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -27,7 +26,6 @@ func init() { //nolint:gochecknoinits // It's the only way to tweak the client.
 	req.DefaultClient().SetJsonMarshal(json.Marshal)
 	req.DefaultClient().SetJsonUnmarshal(json.Unmarshal)
 	req.DefaultClient().GetClient().Timeout = requestDeadline
-	req.DefaultClient().SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true})
 }
 
 func NewAccountLinker(ctx context.Context) Linker {
@@ -44,17 +42,27 @@ func NewAccountLinker(ctx context.Context) Linker {
 }
 
 func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allProfiles LinkedProfiles, verified Tenant, err error) {
-	allProfiles = map[Tenant]UserID{}
-	verified = l.cfg.Tenant
+	allProfiles, verified, err = l.Get(ctx, userID)
+	if err != nil {
+		return allProfiles, verified, errors.Wrapf(err, "failed to get existing links for user %v", userID)
+	}
 	for tenant, token := range tokens {
 		var remoteID string
 		var hasKYCResult bool
 		remoteID, hasKYCResult, err = l.verifyToken(ctx, userID, tenant, token)
 		if err != nil {
-			return allProfiles, verified, err
+			return allProfiles, verified, errors.Wrap(err, "failed to verify token")
+		}
+		var remoteProfiles LinkedProfiles
+		remoteProfiles, verified, err = l.Get(ctx, remoteID)
+		if err != nil {
+			return allProfiles, verified, errors.Wrapf(err, "failed to get remote profiles for remote %v %v", tenant, remoteID)
+		}
+		for remTenant, rem := range remoteProfiles {
+			allProfiles[remTenant] = rem
 		}
 		allProfiles[tenant] = remoteID
-		if hasKYCResult && verified == l.cfg.Tenant && tenant != l.cfg.Tenant {
+		if hasKYCResult && verified == "" {
 			verified = tenant
 		}
 	}
@@ -63,7 +71,7 @@ func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, toke
 		return nil, "", errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
-	return l.Get(ctx, userID)
+	return allProfiles, verified, nil
 }
 
 func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
@@ -90,8 +98,9 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	return nil
 }
 
+//nolint:funlen // .
 func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles LinkedProfiles, verified Tenant, err error) {
-	verified = l.cfg.Tenant
+	verified = ""
 	linkedUsers, err := storage.Select[struct {
 		LinkedAt     *time.Time `db:"linked_at"`
 		UserID       string     `db:"user_id"`
@@ -108,6 +117,9 @@ func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles Link
 		return nil, "", errors.Wrapf(err, "failed to fetch linked accounts for user %v", userID)
 	}
 	allLinkedProfiles = make(map[Tenant]UserID)
+	if len(linkedUsers) == 0 {
+		return allLinkedProfiles, verified, nil
+	}
 	for _, usr := range linkedUsers {
 		if usr.LinkedTenant == l.cfg.Tenant && usr.LinkedUserID == userID {
 			allLinkedProfiles[usr.Tenant] = usr.UserID
