@@ -28,16 +28,17 @@ func init() { //nolint:gochecknoinits // It's the only way to tweak the client.
 	req.DefaultClient().GetClient().Timeout = requestDeadline
 }
 
-func NewAccountLinker(ctx context.Context) Linker {
+func NewAccountLinker(ctx context.Context, host string) Linker {
 	var cfg config
 	appcfg.MustLoadFromKey("kyc/linking", &cfg)
-	if len(cfg.TenantURLs) == 0 {
-		log.Panic("kyc/linking: Must provide tenantURLs")
+	if len(cfg.TenantURLs) == 0 && host == "" {
+		log.Panic("kyc/linking: Must provide tenantURLs or host")
 	}
 
 	return &linker{
 		globalDB: storage.MustConnect(ctx, ddl, ""),
 		cfg:      &cfg,
+		host:     host,
 	}
 }
 
@@ -200,12 +201,19 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 }
 
 func (l *linker) buildGetUserURL(tenant, userID string) (string, error) {
-	u, hasURL := l.cfg.TenantURLs[tenant]
+	var hasURL bool
+	var baseURL string
+	if len(l.cfg.TenantURLs) > 0 {
+		baseURL, hasURL = l.cfg.TenantURLs[tenant]
+	}
 	if !hasURL {
-		return "", errors.Errorf("unknown tenant %v", tenant)
+		var err error
+		if baseURL, err = url.JoinPath("https://"+l.host, tenant); err != nil {
+			return "", errors.Wrapf(err, "failed to build user url for tenant %v", tenant)
+		}
 	}
 
-	userURL, err := url.JoinPath(u, "v1r/users/", userID)
+	userURL, err := url.JoinPath(baseURL, "v1r/users/", userID)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to build user url for tenant %v", tenant)
 	}
@@ -219,4 +227,8 @@ func (l *linker) SetTenantVerified(ctx context.Context, userID UserID, tenant Te
                             AND user_id = linked_user_id AND tenant = linked_tenant`, tenant, userID)
 
 	return errors.Wrapf(err, "failed to set verified tenant for %v %v", userID, tenant)
+}
+
+func (l *linker) Close() error {
+	return errors.Wrap(l.globalDB.Close(), "failed to close global db")
 }

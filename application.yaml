@@ -84,9 +84,10 @@ kyc/face:
     concurrentUsers: 1
 kyc/linking:
   tenant: sunwaves
-  tenantURLs:
-    callfluent: https://localhost:1444/
-    doctorx: https://localhost:1445/
+  # If urls does not match <cmd/*->hostname>/$tenant/ schema.
+  #tenantURLs:
+  #  callfluent: https://localhost:1444/
+  #  doctorx: https://localhost:1445/
 kyc/quiz:
   environment: local
   enable-alerts: false

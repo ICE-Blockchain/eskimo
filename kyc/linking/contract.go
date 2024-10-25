@@ -5,6 +5,7 @@ package linking
 import (
 	"context"
 	_ "embed"
+	"io"
 	stdlibtime "time"
 
 	"github.com/pkg/errors"
@@ -19,6 +20,7 @@ type (
 	Tenant         = string
 	LinkedProfiles = map[Tenant]UserID
 	Linker         interface {
+		io.Closer
 		Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allLinkedProfiles LinkedProfiles, verified Tenant, err error)
 		Get(ctx context.Context, userID UserID) (allLinkedProfiles LinkedProfiles, verified Tenant, err error)
 		SetTenantVerified(ctx context.Context, userID UserID, tenant Tenant) error
@@ -29,6 +31,7 @@ type (
 	linker struct {
 		globalDB *storage.DB
 		cfg      *config
+		host     string
 	}
 	config struct {
 		TenantURLs map[Tenant]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
