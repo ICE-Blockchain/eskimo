@@ -1190,6 +1190,102 @@
                 }
             }
         },
+        "/v1w/kyc/checkFaceKYCStatus/users/{userId}": {
+            "post": {
+                "description": "Checks if user already passed face kyc on other tenants and if its available",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "KYC"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003cAdd access token here\u003e",
+                        "description": "Insert your access token",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "\u003cAdd metadata token here\u003e",
+                        "description": "Insert your metadata token",
+                        "name": "X-Account-Metadata",
+                        "in": "header"
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID of the user",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Request params",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/main.ForwardToFaceKYCRequestBody"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/main.ForwardToFaceKYCResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "if user dont own remote profile",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "if not authorized",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "not allowed due to various reasons",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "user is not found",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "422": {
+                        "description": "if syntax fails",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    },
+                    "504": {
+                        "description": "if request times out",
+                        "schema": {
+                            "$ref": "#/definitions/server.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/v1w/kyc/checkKYCStep4Status/users/{userId}": {
             "post": {
                 "description": "Checks the status of the quiz kyc step (4).",
@@ -2336,6 +2432,26 @@
                     "description": "Optional.",
                     "type": "string",
                     "example": "john.doe"
+                }
+            }
+        },
+        "main.ForwardToFaceKYCRequestBody": {
+            "type": "object",
+            "properties": {
+                "tokens": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "main.ForwardToFaceKYCResponse": {
+            "type": "object",
+            "properties": {
+                "kycFaceAvailable": {
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },

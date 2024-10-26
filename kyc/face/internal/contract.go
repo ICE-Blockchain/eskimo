@@ -14,11 +14,12 @@ import (
 type (
 	Client interface {
 		Available(ctx context.Context, userWasPreviouslyForwardedToFaceKYC bool) error
-		CheckAndUpdateStatus(ctx context.Context, user *users.User) (hasFaceKYCResult bool, err error)
+		CheckAndUpdateStatus(ctx context.Context, searchUserID string, user *users.User) (hasFaceKYCResult bool, faceID, tenant string, err error)
 		Reset(ctx context.Context, user *users.User, fetchState bool) error
 	}
 	UserRepository interface {
 		ModifyUser(ctx context.Context, usr *users.User, profilePicture *multipart.FileHeader) (*users.UserProfile, error)
+		GetUserByID(ctx context.Context, userID string) (*users.UserProfile, error)
 	}
 )
 

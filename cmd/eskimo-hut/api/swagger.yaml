@@ -60,6 +60,19 @@ definitions:
         example: john.doe
         type: string
     type: object
+  main.ForwardToFaceKYCRequestBody:
+    properties:
+      tokens:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  main.ForwardToFaceKYCResponse:
+    properties:
+      kycFaceAvailable:
+        example: true
+        type: boolean
+    type: object
   main.LoginFlowPayload:
     properties:
       confirmationCode:
@@ -1625,6 +1638,71 @@ paths:
             $ref: '#/definitions/server.ErrorResponse'
       tags:
       - ThirdParty
+  /v1w/kyc/checkFaceKYCStatus/users/{userId}:
+    post:
+      consumes:
+      - application/json
+      description: Checks if user already passed face kyc on other tenants and if
+        its available
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - default: <Add metadata token here>
+        description: Insert your metadata token
+        in: header
+        name: X-Account-Metadata
+        type: string
+      - description: ID of the user
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: Request params
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/main.ForwardToFaceKYCRequestBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.ForwardToFaceKYCResponse'
+        "400":
+          description: if user dont own remote profile
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "401":
+          description: if not authorized
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "403":
+          description: not allowed due to various reasons
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "404":
+          description: user is not found
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "422":
+          description: if syntax fails
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "504":
+          description: if request times out
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+      tags:
+      - KYC
   /v1w/kyc/checkKYCStep4Status/users/{userId}:
     post:
       consumes:

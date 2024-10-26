@@ -14,6 +14,7 @@ import (
 	telegramauth "github.com/ice-blockchain/eskimo/auth/telegram"
 	"github.com/ice-blockchain/eskimo/cmd/eskimo-hut/api"
 	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
+	linkerkyc "github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	"github.com/ice-blockchain/eskimo/kyc/social"
 	"github.com/ice-blockchain/eskimo/users"
@@ -67,7 +68,8 @@ func (s *service) Init(ctx context.Context, cancel context.CancelFunc) {
 	s.tokenRefresher = auth.NewRefresher(server.Auth(ctx), s.authEmailLinkClient, s.telegramAuthClient)
 	s.socialRepository = social.New(ctx, s.usersProcessor)
 	s.quizRepository = kycquiz.NewRepository(ctx, s.usersProcessor)
-	s.faceKycClient = facekyc.New(ctx, s.usersProcessor)
+	s.usersLinker = linkerkyc.NewAccountLinker(ctx, cfg.Host)
+	s.faceKycClient = facekyc.New(ctx, s.usersProcessor, s.usersLinker)
 }
 
 func (s *service) Close(ctx context.Context) error {
@@ -80,6 +82,7 @@ func (s *service) Close(ctx context.Context) error {
 		errors.Wrap(s.socialRepository.Close(), "could not close socialRepository"),
 		errors.Wrap(s.authEmailLinkClient.Close(), "could not close authEmailLinkClient"),
 		errors.Wrap(s.usersProcessor.Close(), "could not close usersProcessor"),
+		errors.Wrap(s.usersLinker.Close(), "could not close usersLinker"),
 		errors.Wrap(s.faceKycClient.Close(), "could not close faceKycClient"),
 	).ErrorOrNil()
 }

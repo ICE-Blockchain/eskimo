@@ -276,6 +276,11 @@ func (u *User) IsVerified() bool {
 		!(*u.KYCStepsLastUpdatedAt)[LivenessDetectionKYCStep-1].IsNil()
 }
 
+func (u *User) HasFaceKYCResult() bool {
+	return (u.KYCStepPassed != nil && *u.KYCStepPassed >= LivenessDetectionKYCStep) ||
+		(u.KYCStepBlocked != nil && *u.KYCStepBlocked > NoneKYCStep)
+}
+
 func (r *repository) sanitizeUserForUI(usr *User) {
 	usr.SetVerified()
 	usr.RandomReferredBy = nil

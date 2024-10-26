@@ -65,12 +65,28 @@ kyc/social:
   tenant-name: sunwaves
   referralInviteUrlPrefix: https://bogus.com/@
 kyc/face:
+  config-json-url: https://somewhere.com/something/somebogus.json
   threeDiVi:
     bafToken: bogus
     bafHost: http://bogus.com/
     availabilityUrl:
     secretApiToken: bogus-secret
     concurrentUsers: 1
+kyc/linking:
+  tenant: sunwaves
+  # If urls does not match <cmd/*->hostname>/$tenant/ schema.
+  #tenantURLs:
+  #  callfluent: https://localhost:1444/
+  #  doctorx: https://localhost:1445/
+  wintr/connectors/storage/v2:
+    runDDL: true
+    primaryURL: postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=40
+    credentials:
+      user: root
+      password: pass
+    replicaURLs:
+      - postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=20
+
 kyc/quiz:
   environment: local
   enable-alerts: false

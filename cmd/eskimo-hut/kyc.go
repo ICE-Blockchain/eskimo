@@ -10,6 +10,8 @@ import (
 
 	"github.com/pkg/errors"
 
+	facekyc "github.com/ice-blockchain/eskimo/kyc/face"
+	"github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	kycsocial "github.com/ice-blockchain/eskimo/kyc/social"
 	"github.com/ice-blockchain/eskimo/users"
@@ -23,7 +25,8 @@ func (s *service) setupKYCRoutes(router *server.Router) {
 		POST("kyc/startOrContinueKYCStep4Session/users/:userId", server.RootHandler(s.StartOrContinueKYCStep4Session)).
 		POST("kyc/checkKYCStep4Status/users/:userId", server.RootHandler(s.CheckKYCStep4Status)).
 		POST("kyc/verifySocialKYCStep/users/:userId", server.RootHandler(s.VerifySocialKYCStep)).
-		POST("kyc/tryResetKYCSteps/users/:userId", server.RootHandler(s.TryResetKYCSteps))
+		POST("kyc/tryResetKYCSteps/users/:userId", server.RootHandler(s.TryResetKYCSteps)).
+		POST("kyc/checkFaceKYCStatus/users/:userId", server.RootHandler(s.ForwardToFaceKYC))
 }
 
 func (s *service) startQuizSession(ctx context.Context, userID users.UserID, lang string) (*kycquiz.Quiz, error) {
@@ -312,4 +315,47 @@ func (s *service) TryResetKYCSteps( //nolint:gocritic,funlen,gocognit,revive,cyc
 	}
 
 	return server.OK(&User{UserProfile: resp, QuizStatus: quizStatus, KycFaceAvailable: kycFaceAvailable, Checksum: resp.Checksum()}), nil
+}
+
+// ForwardToFaceKYC godoc
+//
+//	@Schemes
+//	@Description	Checks if user already passed face kyc on other tenants and if its available
+//	@Tags			KYC
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			Authorization		header		string						true	"Insert your access token"		default(Bearer <Add access token here>)
+//	@Param			X-Account-Metadata	header		string						false	"Insert your metadata token"	default(<Add metadata token here>)
+//	@Param			userId				path		string						true	"ID of the user"
+//	@Param			request				body		ForwardToFaceKYCRequestBody	false	"Request params"
+//	@Success		200					{object}	ForwardToFaceKYCResponse
+//	@Failure		400					{object}	server.ErrorResponse	"if user dont own remote profile"
+//	@Failure		401					{object}	server.ErrorResponse	"if not authorized"
+//	@Failure		403					{object}	server.ErrorResponse	"not allowed due to various reasons"
+//	@Failure		404					{object}	server.ErrorResponse	"user is not found"
+//	@Failure		422					{object}	server.ErrorResponse	"if syntax fails"
+//	@Failure		500					{object}	server.ErrorResponse
+//	@Failure		504					{object}	server.ErrorResponse	"if request times out"
+//	@Router			/v1w/kyc/checkFaceKYCStatus/users/{userId} [POST].
+//
+//nolint:gocritic // .
+func (s *service) ForwardToFaceKYC(
+	ctx context.Context,
+	req *server.Request[ForwardToFaceKYCRequestBody, ForwardToFaceKYCResponse],
+) (*server.Response[ForwardToFaceKYCResponse], *server.Response[server.ErrorResponse]) {
+	ctx = facekyc.ContextWithClientType(ctx, req.Data.XClientType) //nolint:revive // .
+	kycFaceAvailable, err := s.faceKycClient.ForwardToKYC(ctx, req.Data.UserID, req.Data.Tokens)
+	if err != nil {
+		switch {
+		case errors.Is(err, linking.ErrNotOwnRemoteUser):
+			return nil, server.BadRequest(err, linkingNotOwnedProfile)
+		case errors.Is(err, linking.ErrDuplicate):
+			return nil, server.Conflict(err, linkingDuplicate)
+		default:
+			return nil, server.Unexpected(err)
+		}
+	}
+
+	return server.OK(&ForwardToFaceKYCResponse{KycFaceAvailable: kycFaceAvailable}), nil
 }

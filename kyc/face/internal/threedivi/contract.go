@@ -32,8 +32,9 @@ type (
 // Private API.
 type (
 	applicant struct {
-		Code                   string              `json:"code"`
 		LastValidationResponse *validationResponse `json:"lastValidationResponse"`
+		Metadata               map[string]any      `json:"metadata"`
+		Code                   string              `json:"code"`
 		ApplicantID            string              `json:"applicantId"`
 		Status                 int                 `json:"status"`
 		HasRiskEvents          bool                `json:"hasRiskEvents"`
