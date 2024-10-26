@@ -35,6 +35,7 @@ func NewAccountLinker(ctx context.Context, host string) Linker {
 		log.Panic("kyc/linking: Must provide tenantURLs or host")
 	}
 	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
+
 	return &linker{
 		globalDB: db,
 		cfg:      &cfg,
