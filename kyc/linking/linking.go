@@ -30,13 +30,13 @@ func init() { //nolint:gochecknoinits // It's the only way to tweak the client.
 
 func NewAccountLinker(ctx context.Context, host string) Linker {
 	var cfg config
-	appcfg.MustLoadFromKey("kyc/linking", &cfg)
+	appcfg.MustLoadFromKey(applicationYamlKey, &cfg)
 	if len(cfg.TenantURLs) == 0 && host == "" {
 		log.Panic("kyc/linking: Must provide tenantURLs or host")
 	}
-
+	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
 	return &linker{
-		globalDB: storage.MustConnect(ctx, ddl, ""),
+		globalDB: db,
 		cfg:      &cfg,
 		host:     host,
 	}

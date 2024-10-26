@@ -40,7 +40,8 @@ type (
 )
 
 const (
-	requestDeadline = 25 * stdlibtime.Second
+	requestDeadline    = 25 * stdlibtime.Second
+	applicationYamlKey = "kyc/linking"
 )
 
 var (

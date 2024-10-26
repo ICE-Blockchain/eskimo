@@ -30,18 +30,8 @@ cmd/eskimo-hut:
     refreshExpirationTime: 24h
     accessExpirationTime: 1h
     jwtSecret: bogus
-global:
-  wintr/connectors/storage/v2:
-    runDDL: true
-    primaryURL: postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=40
-    credentials:
-      user: root
-      password: pass
-    replicaURLs:
-      - postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=20
 wintr/connectors/storage/v2: &db
   runDDL: true
-  ignoreGlobal: true
   primaryURL: postgresql://root:pass@localhost:5433/eskimo
   credentials:
     user: root
@@ -88,6 +78,15 @@ kyc/linking:
   #tenantURLs:
   #  callfluent: https://localhost:1444/
   #  doctorx: https://localhost:1445/
+  wintr/connectors/storage/v2:
+    runDDL: true
+    primaryURL: postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=40
+    credentials:
+      user: root
+      password: pass
+    replicaURLs:
+      - postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=20
+
 kyc/quiz:
   environment: local
   enable-alerts: false
