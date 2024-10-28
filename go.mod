@@ -21,7 +21,7 @@ require (
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.4
 	github.com/telegram-mini-apps/init-data-golang v1.1.5
-	github.com/testcontainers/testcontainers-go v0.33.0
+	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/zeebo/xxh3 v1.0.2
 	golang.org/x/mod v0.21.0
 	golang.org/x/net v0.30.0

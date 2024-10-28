@@ -65,6 +65,7 @@ WHERE mining_boost_level = 0
   AND verified_t1_referrals = 0;
 CREATE INDEX IF NOT EXISTS users_referred_by_created_at_ix ON users (referred_by, created_at DESC);
 CREATE INDEX IF NOT EXISTS users_last_mining_ended_at_ix ON users (last_mining_ended_at DESC NULLS LAST);
+CREATE INDEX IF NOT EXISTS users_created_at ON users (created_at ASC);
 
 CREATE OR REPLACE FUNCTION before_update_on_users()
 RETURNS TRIGGER AS $$
