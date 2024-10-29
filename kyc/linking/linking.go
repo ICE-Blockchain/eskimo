@@ -167,8 +167,17 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 	}
 	if resp, err = req.
 		SetContext(ctx).
-		SetRetryCount(10).                                                       //nolint:gomnd // .
-		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second). //nolint:gomnd // .
+		SetRetryCount(10). //nolint:gomnd // .
+		SetRetryInterval(func(_ *req.Response, attempt int) stdlibtime.Duration {
+			switch {
+			case attempt <= 1:
+				return 100 * stdlibtime.Millisecond //nolint:gomnd // .
+			case attempt == 2: //nolint:gomnd // .
+				return 1 * stdlibtime.Second
+			default:
+				return 10 * stdlibtime.Second //nolint:gomnd // .
+			}
+		}).
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
 				log.Error(errors.Wrap(err, "failed to check accounts linking, retrying... "))
