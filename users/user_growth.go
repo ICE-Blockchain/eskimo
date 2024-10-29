@@ -42,8 +42,17 @@ func (r *repository) GetUserGrowth(ctx context.Context, days uint64, tz *stdlibt
 func (r *repository) getAdoptionTotalActiveUsersValue(ctx context.Context) (totalActiveUsers uint64, err error) {
 	resp, err := req.
 		SetContext(ctx).
-		SetRetryCount(25).                                                       //nolint:gomnd,mnd // .
-		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second). //nolint:gomnd,mnd // .
+		SetRetryCount(25). //nolint:gomnd,mnd // .
+		SetRetryInterval(func(_ *req.Response, attempt int) stdlibtime.Duration {
+			switch {
+			case attempt <= 1:
+				return 100 * stdlibtime.Millisecond //nolint:gomnd // .
+			case attempt == 2: //nolint:gomnd // .
+				return 1 * stdlibtime.Second
+			default:
+				return 10 * stdlibtime.Second //nolint:gomnd // .
+			}
+		}).
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
 				log.Error(errors.Wrap(err, "failed to fetch adoption, retrying...")) //nolint:revive // .
