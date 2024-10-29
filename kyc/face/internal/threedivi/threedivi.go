@@ -75,8 +75,17 @@ func (t *threeDivi) updateAvailability(ctx context.Context) error {
 	}
 	if resp, err := req.
 		SetContext(ctx).
-		SetRetryCount(10).                                                       //nolint:gomnd // .
-		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second). //nolint:gomnd // .
+		SetRetryCount(10). //nolint:gomnd // .
+		SetRetryInterval(func(_ *req.Response, attempt int) stdlibtime.Duration {
+			switch {
+			case attempt <= 1:
+				return 100 * stdlibtime.Millisecond //nolint:gomnd // .
+			case attempt == 2: //nolint:gomnd // .
+				return 1 * stdlibtime.Second
+			default:
+				return 10 * stdlibtime.Second //nolint:gomnd // .
+			}
+		}).
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
 				log.Error(errors.Wrap(err, "failed to check availability of face auth, retrying... "))
@@ -199,8 +208,8 @@ func (t *threeDivi) Reset(ctx context.Context, user *users.User, fetchState bool
 	var resp *req.Response
 	if resp, err = req.
 		SetContext(ctx).
-		SetRetryCount(10).                                                       //nolint:gomnd // .
-		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second). //nolint:gomnd // .
+		SetRetryCount(10). //nolint:gomnd // .
+		SetRetryInterval(backoff).
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
 				log.Error(errors.Wrap(err, "failed to delete face auth state for user, retrying... "))
@@ -293,13 +302,24 @@ func stepIdx(step users.KYCStep) int {
 	return int(step) - 1
 }
 
+func backoff(_ *req.Response, attempt int) stdlibtime.Duration {
+	switch {
+	case attempt <= 1:
+		return 100 * stdlibtime.Millisecond //nolint:gomnd // .
+	case attempt == 2: //nolint:gomnd // .
+		return 1 * stdlibtime.Second
+	default:
+		return 10 * stdlibtime.Second //nolint:gomnd // .
+	}
+}
+
 func (t *threeDivi) searchIn3DiviForApplicant(ctx context.Context, userID users.UserID) (*applicant, error) {
 	getApplicantURL := fmt.Sprintf("%v/publicapi/api/v2/private/Applicants/ByReferenceId/%v", t.cfg.ThreeDiVi.BAFHost, userID)
 	log.Debug("GET ", getApplicantURL)
 	if resp, err := req.
 		SetContext(ctx).
-		SetRetryCount(10).                                                       //nolint:gomnd // .
-		SetRetryBackoffInterval(10*stdlibtime.Millisecond, 1*stdlibtime.Second). //nolint:gomnd // .
+		SetRetryCount(10). //nolint:gomnd // .
+		SetRetryInterval(backoff).
 		SetRetryHook(func(resp *req.Response, err error) {
 			if err != nil {
 				log.Error(errors.Wrap(err, "failed to match applicantId for user, retrying... "))
