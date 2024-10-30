@@ -68,6 +68,7 @@ type (
 	Repository interface {
 		io.Closer
 		VerifyPost(ctx context.Context, metadata *VerificationMetadata) (*Verification, error)
+		VerifyPostForDistibutionVerification(ctx context.Context, metadata *VerificationMetadata) (*Verification, error)
 		SkipVerification(ctx context.Context, kycStep users.KYCStep, userID string) error
 	}
 	UserRepository interface {

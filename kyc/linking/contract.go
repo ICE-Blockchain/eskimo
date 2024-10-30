@@ -47,7 +47,7 @@ const (
 var (
 	//go:embed global_ddl.sql
 	ddl                   string
-	errRemoteUserNotFound = errors.New("remote user not found")
+	ErrRemoteUserNotFound = errors.New("remote user not found")
 	ErrNotOwnRemoteUser   = errors.New("not own remote user")
 	ErrDuplicate          = storage.ErrDuplicate
 )

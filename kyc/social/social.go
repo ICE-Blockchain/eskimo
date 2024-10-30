@@ -160,6 +160,7 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to verifySkipped for metadata:%#v", metadata)
 	}
+	//nolint:goconst // .
 	sql := `SELECT ARRAY_AGG(x.created_at) AS unsuccessful_attempts 
 			FROM (SELECT created_at 
 				  FROM social_kyc_unsuccessful_attempts 
@@ -252,6 +253,73 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	}
 	if err = r.modifyUser(ctx, true, false, metadata.KYCStep, now, user.User); err != nil {
 		return nil, errors.Wrapf(err, "[success][%v]failed to modifyUser", metadata.KYCStep)
+	}
+
+	return &Verification{Result: SuccessVerificationResult}, nil
+}
+
+//nolint:funlen,gocognit,revive // .
+func (r *repository) VerifyPostForDistibutionVerification(ctx context.Context, metadata *VerificationMetadata) (*Verification, error) {
+	now := time.Now()
+	user, err := r.user.GetUserByID(ctx, metadata.UserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to GetUserByID: %v", metadata.UserID)
+	}
+	sql := `SELECT ARRAY_AGG(x.created_at) AS unsuccessful_attempts 
+			FROM (SELECT created_at 
+				  FROM social_kyc_unsuccessful_attempts 
+				  WHERE user_id = $1
+				    AND kyc_step = $2
+				    AND reason != ANY($3)
+				  ORDER BY created_at DESC) x`
+	res, err := storage.Get[struct {
+		UnsuccessfulAttempts *[]time.Time `db:"unsuccessful_attempts"`
+	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, exhaustedRetriesReason})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get unsuccessful_attempts for userID:%v", metadata.UserID)
+	}
+	remainingAttempts := r.cfg.MaxAttemptsAllowed
+	if res.UnsuccessfulAttempts != nil {
+		for _, unsuccessfulAttempt := range *res.UnsuccessfulAttempts {
+			if unsuccessfulAttempt.After(now.Add(-r.cfg.SessionWindow)) {
+				remainingAttempts--
+				if remainingAttempts == 0 {
+					break
+				}
+			}
+		}
+	}
+	if remainingAttempts < 1 {
+		return nil, ErrNotAvailable
+	}
+	if metadata.Twitter.TweetURL == "" && metadata.Facebook.AccessToken == "" {
+		return &Verification{ExpectedPostText: r.expectedPostText(user.User, metadata)}, nil
+	}
+	pvm := &social.Metadata{
+		AccessToken:      metadata.Facebook.AccessToken,
+		PostURL:          metadata.Twitter.TweetURL,
+		ExpectedPostText: r.expectedPostSubtext(user.User, metadata),
+		ExpectedPostURL:  r.expectedPostURL(metadata),
+	}
+	userHandle, err := r.socialVerifiers[metadata.Social].VerifyPost(ctx, pvm)
+	if err != nil { //nolint:nestif // .
+		log.Error(errors.Wrapf(err, "social verification failed for Social:%v,Language:%v,userID:%v",
+			metadata.Social, metadata.Language, metadata.UserID))
+		reason := detectReason(err)
+		if userHandle != "" {
+			reason = strings.ToLower(userHandle) + ": " + reason
+		}
+		if err = r.saveUnsuccessfulAttempt(ctx, now, reason, metadata); err != nil {
+			return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", reason, metadata)
+		}
+		remainingAttempts--
+		if remainingAttempts == 0 {
+			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), exhaustedRetriesReason, metadata); err != nil {
+				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", exhaustedRetriesReason, metadata)
+			}
+		}
+
+		return &Verification{RemainingAttempts: &remainingAttempts, Result: FailureVerificationResult}, nil
 	}
 
 	return &Verification{Result: SuccessVerificationResult}, nil

@@ -14,6 +14,7 @@ import (
 	"github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	kycsocial "github.com/ice-blockchain/eskimo/kyc/social"
+	verificationscenarios "github.com/ice-blockchain/eskimo/kyc/verification_scenarios"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/log"
 	"github.com/ice-blockchain/wintr/server"
@@ -26,7 +27,8 @@ func (s *service) setupKYCRoutes(router *server.Router) {
 		POST("kyc/checkKYCStep4Status/users/:userId", server.RootHandler(s.CheckKYCStep4Status)).
 		POST("kyc/verifySocialKYCStep/users/:userId", server.RootHandler(s.VerifySocialKYCStep)).
 		POST("kyc/tryResetKYCSteps/users/:userId", server.RootHandler(s.TryResetKYCSteps)).
-		POST("kyc/checkFaceKYCStatus/users/:userId", server.RootHandler(s.ForwardToFaceKYC))
+		POST("kyc/checkFaceKYCStatus/users/:userId", server.RootHandler(s.ForwardToFaceKYC)).
+		POST("kyc/verifyCoinDistributionEligibility/users/:userId/scenarios/:scenarioEnum", server.RootHandler(s.VerifyKYCScenarios))
 }
 
 func (s *service) startQuizSession(ctx context.Context, userID users.UserID, lang string) (*kycquiz.Quiz, error) {
@@ -358,4 +360,112 @@ func (s *service) ForwardToFaceKYC(
 	}
 
 	return server.OK(&ForwardToFaceKYCResponse{KycFaceAvailable: kycFaceAvailable}), nil
+}
+
+// VerifyCoinDistributionEligibility godoc
+//
+//	@Schemes
+//	@Description	Verifies if a user is eligible for coin verificationscenarios.
+//	@Tags			KYC
+//	@Accept			json
+//	@Produce		json
+//
+//	@Param			Authorization		header		string	true	"Insert your access token"		default(Bearer <Add access token here>)
+//	@Param			X-Account-Metadata	header		string	false	"Insert your metadata token"	default(<Add metadata token here>)
+//	@Param			userId				path		string	true	"ID of the user"
+//	@Param			scenarioEnum		path		string	true	"the scenario"		enums(join_cmc,join_twitter,join_telegram,signup_tenants)
+//	@Param			request				body		verificationscenarios.VerificationMetadata	false	"Request params"
+//	@Success		200					{object}	kycsocial.Verification
+//	@Failure		400					{object}	server.ErrorResponse	"if validations fail"
+//	@Failure		401					{object}	server.ErrorResponse	"if not authorized"
+//	@Failure		403					{object}	server.ErrorResponse	"not allowed due to various reasons"
+//	@Failure		422					{object}	server.ErrorResponse	"if syntax fails"
+//	@Failure		500					{object}	server.ErrorResponse
+//	@Router			/v1w/kyc/verifyCoinDistributionEligibility/users/{userId}/scenarios/{scenarioEnum} [POST].
+func (s *service) VerifyKYCScenarios( //nolint:gocritic,funlen // .
+	ctx context.Context,
+	req *server.Request[verificationscenarios.VerificationMetadata, kycsocial.Verification],
+) (*server.Response[kycsocial.Verification], *server.Response[server.ErrorResponse]) {
+	if err := validateScenariosData(req.Data); err != nil {
+		return nil, server.UnprocessableEntity(errors.Wrapf(err, "validations failed for %#v", req.Data), invalidPropertiesErrorCode)
+	}
+	ctx = users.ContextWithAuthorization(ctx, req.Data.Authorization) //nolint:revive // .
+	result, err := s.verificationScenariosRepository.VerifyScenarios(ctx, req.Data)
+	if err = errors.Wrapf(err, "failed to VerifyCoinDistributionEligibility for userID:%v", req.Data.UserID); err != nil {
+		switch {
+		case errors.Is(err, verificationscenarios.ErrVerificationNotPassed):
+			return nil, server.BadRequest(err, kycVerificationScenariosVadidationFailedErrorCode)
+		case errors.Is(err, users.ErrRelationNotFound):
+			return nil, server.NotFound(err, userNotFoundErrorCode)
+		case errors.Is(err, users.ErrNotFound):
+			return nil, server.NotFound(err, userNotFoundErrorCode)
+		case errors.Is(err, kycsocial.ErrDuplicate):
+			return nil, server.Conflict(err, socialKYCStepAlreadyCompletedSuccessfullyErrorCode)
+		case errors.Is(err, kycsocial.ErrNotAvailable):
+			return nil, server.ForbiddenWithCode(err, socialKYCStepNotAvailableErrorCode)
+		case errors.Is(err, linking.ErrNotOwnRemoteUser):
+			return nil, server.BadRequest(err, linkingNotOwnedProfile)
+		case errors.Is(err, verificationscenarios.ErrNoPendingScenarios):
+			return nil, server.NotFound(err, kycVerificationScenariosNoPendingScenariosErrorCode)
+		case errors.Is(err, verificationscenarios.ErrWrongTenantTokens):
+			return nil, server.BadRequest(err, kycVerificationScenariosNoTenantTokens)
+		default:
+			return nil, server.Unexpected(err)
+		}
+	}
+	if result != nil {
+		return server.OK(result), nil
+	}
+
+	return server.OK[kycsocial.Verification](nil), nil
+}
+
+//nolint:funlen,gocognit,revive // .
+func validateScenariosData(data *verificationscenarios.VerificationMetadata) error {
+	switch data.ScenarioEnum {
+	case verificationscenarios.CoinDistributionScenarioCmc:
+		if data.CMCProfileLink == "" {
+			return errors.Errorf("empty cmc profile link `%v`", data.CMCProfileLink)
+		}
+	case verificationscenarios.CoinDistributionScenarioTwitter:
+		if data.TweetURL == "" {
+			return errors.Errorf("empty tweet url `%v`", data.TweetURL)
+		}
+		if data.Language == "" {
+			return errors.Errorf("empty language `%v`", data.Language)
+		}
+	case verificationscenarios.CoinDistributionScenarioTelegram:
+		if data.TelegramUsername == "" {
+			return errors.Errorf("empty telegram username `%v`", data.TelegramUsername)
+		}
+	case verificationscenarios.CoinDistributionScenarioSignUpTenants:
+		if len(data.TenantTokens) == 0 {
+			return errors.Errorf("empty tenant tokens `%v`", data.TenantTokens)
+		}
+		var (
+			supportedTenants = []verificationscenarios.TenantScenario{
+				verificationscenarios.CoinDistributionScenarioSignUpSunwaves,
+				verificationscenarios.CoinDistributionScenarioSignUpCallfluent,
+				verificationscenarios.CoinDistributionScenarioSignUpSealsend,
+				verificationscenarios.CoinDistributionScenarioSignUpSauces,
+				verificationscenarios.CoinDistributionScenarioSignUpDoctorx,
+			}
+			unsupportedTenants []verificationscenarios.TenantScenario
+		)
+		for tenant, token := range data.TenantTokens {
+			if token == "" { //nolint:gosec // .
+				return errors.Errorf("empty token for tenant `%v`", tenant)
+			}
+			if !slices.Contains(supportedTenants, tenant) {
+				unsupportedTenants = append(unsupportedTenants, tenant)
+			}
+		}
+		if len(unsupportedTenants) > 0 {
+			return errors.Errorf("unsupported tenants `%v`", unsupportedTenants)
+		}
+	default:
+		return errors.Errorf("unsupported scenario `%v`", data.ScenarioEnum)
+	}
+
+	return nil
 }

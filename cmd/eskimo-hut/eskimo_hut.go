@@ -17,6 +17,7 @@ import (
 	linkerkyc "github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	"github.com/ice-blockchain/eskimo/kyc/social"
+	verificationscenarios "github.com/ice-blockchain/eskimo/kyc/verification_scenarios"
 	"github.com/ice-blockchain/eskimo/users"
 	appcfg "github.com/ice-blockchain/wintr/config"
 	"github.com/ice-blockchain/wintr/log"
@@ -70,6 +71,7 @@ func (s *service) Init(ctx context.Context, cancel context.CancelFunc) {
 	s.quizRepository = kycquiz.NewRepository(ctx, s.usersProcessor)
 	s.usersLinker = linkerkyc.NewAccountLinker(ctx, cfg.Host)
 	s.faceKycClient = facekyc.New(ctx, s.usersProcessor, s.usersLinker)
+	s.verificationScenariosRepository = verificationscenarios.New(ctx, s.usersProcessor, cfg.Host)
 }
 
 func (s *service) Close(ctx context.Context) error {
@@ -84,6 +86,7 @@ func (s *service) Close(ctx context.Context) error {
 		errors.Wrap(s.usersProcessor.Close(), "could not close usersProcessor"),
 		errors.Wrap(s.usersLinker.Close(), "could not close usersLinker"),
 		errors.Wrap(s.faceKycClient.Close(), "could not close faceKycClient"),
+		errors.Wrap(s.verificationScenariosRepository.Close(), "could not close verificationScenariosRepository"),
 	).ErrorOrNil()
 }
 
