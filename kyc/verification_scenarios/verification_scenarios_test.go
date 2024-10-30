@@ -5,9 +5,10 @@ package verificationscenarios
 import (
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/santa/tasks"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetPendingKYCVerificationScenarios(t *testing.T) {

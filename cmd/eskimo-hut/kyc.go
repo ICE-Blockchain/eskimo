@@ -370,10 +370,10 @@ func (s *service) ForwardToFaceKYC(
 //	@Accept			json
 //	@Produce		json
 //
-//	@Param			Authorization		header		string	true	"Insert your access token"		default(Bearer <Add access token here>)
-//	@Param			X-Account-Metadata	header		string	false	"Insert your metadata token"	default(<Add metadata token here>)
-//	@Param			userId				path		string	true	"ID of the user"
-//	@Param			scenarioEnum		path		string	true	"the scenario"		enums(join_cmc,join_twitter,join_telegram,signup_tenants)
+//	@Param			Authorization		header		string										true	"Insert your access token"		default(Bearer <Add access token here>)
+//	@Param			X-Account-Metadata	header		string										false	"Insert your metadata token"	default(<Add metadata token here>)
+//	@Param			userId				path		string										true	"ID of the user"
+//	@Param			scenarioEnum		path		string										true	"the scenario"	enums(join_cmc,join_twitter,join_telegram,signup_tenants)
 //	@Param			request				body		verificationscenarios.VerificationMetadata	false	"Request params"
 //	@Success		200					{object}	kycsocial.Verification
 //	@Failure		400					{object}	server.ErrorResponse	"if validations fail"
