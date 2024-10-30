@@ -3,10 +3,14 @@
 package verificationscenarios
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
+	"sync/atomic"
+	"text/template"
 	stdlibtime "time"
 
 	"github.com/goccy/go-json"
@@ -15,6 +19,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/ice-blockchain/eskimo/kyc/linking"
+	"github.com/ice-blockchain/eskimo/kyc/scraper"
 	"github.com/ice-blockchain/eskimo/kyc/social"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/santa/tasks"
@@ -28,21 +33,22 @@ func New(ctx context.Context, usrRepo UserRepository, host string) Repository {
 	var cfg config
 	appcfg.MustLoadFromKey(applicationYamlKey, &cfg)
 	repo := &repository{
-		userRepo:     usrRepo,
-		cfg:          &cfg,
-		host:         host,
-		socialClient: social.New(ctx, usrRepo),
-		globalDB:     storage.MustConnect(ctx, "", applicationYamlKey),
+		userRepo:        usrRepo,
+		cfg:             &cfg,
+		host:            host,
+		globalDB:        storage.MustConnect(ctx, "", globalApplicationYamlKey),
+		db:              storage.MustConnect(ctx, ddl, applicationYamlKey),
+		twitterVerifier: scraper.New(scraper.StrategyTwitter),
 	}
+	go repo.startKYCConfigJSONSyncer(ctx)
 
 	return repo
 }
 
 func (r *repository) Close() error {
 	return errors.Wrap(multierror.Append(nil,
-		errors.Wrap(r.socialClient.Close(), "closing distribution repository failed"),
-		errors.Wrap(r.userRepo.Close(), "closing users repository failed"),
 		errors.Wrap(r.globalDB.Close(), "closing db connection failed"),
+		errors.Wrap(r.db.Close(), "closing db connection failed"),
 	).ErrorOrNil(), "some of close functions failed")
 }
 
@@ -67,15 +73,7 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 			return nil, errors.Wrapf(ErrVerificationNotPassed, "haven't passed the CMC verification for userID:%v", metadata.UserID)
 		}
 	case CoinDistributionScenarioTwitter:
-		verification, sErr := r.socialClient.VerifyPostForDistibutionVerification(ctx, &social.VerificationMetadata{
-			UserID:   metadata.UserID,
-			Language: metadata.Language,
-			Social:   social.TwitterType,
-			Twitter: social.Twitter{
-				TweetURL: metadata.TweetURL,
-			},
-			KYCStep: users.Social1KYCStep,
-		})
+		verification, sErr := r.VerifyTwitterPost(ctx, metadata)
 		if sErr != nil {
 			return verification, errors.Wrapf(sErr, "failed to call VerifyPostForDistibutionVerification for userID:%v", metadata.UserID)
 		}
@@ -235,19 +233,20 @@ func (r *repository) setCompletedDistributionScenario(
 	updUsr.ID = usr.ID
 	updUsr.DistributionScenariosCompleted = &scenarios
 	_, err := r.userRepo.ModifyUser(ctx, updUsr, nil)
-	if err != nil {
-		return errors.Wrapf(err, "failed to modify user for userID: %v, error: %v", usr.ID, err)
-	}
 
 	return errors.Wrapf(err, "failed to set completed distribution scenarios:%v", scenarios)
 }
 
 //nolint:funlen // .
 func (r *repository) getCompletedSantaTasks(ctx context.Context, userID string) (res []*tasks.Task, err error) {
-	resp, err := req.
-		SetContext(ctx).
-		SetRetryCount(25). //nolint:gomnd,mnd // .
-		SetRetryInterval(func(_ *req.Response, attempt int) stdlibtime.Duration {
+	getCompletedTasksURL, err := buildGetCompletedTasksURL(r.cfg.Tenant, userID, r.host, r.cfg.TenantURLs)
+	if err != nil {
+		log.Panic(errors.Wrapf(err, "failed to detect completed santa task url"))
+	}
+	resp, err := req. //nolint:dupl // .
+				SetContext(ctx).
+				SetRetryCount(25). //nolint:gomnd,mnd // .
+				SetRetryInterval(func(_ *req.Response, attempt int) stdlibtime.Duration {
 			switch {
 			case attempt <= 1:
 				return 100 * stdlibtime.Millisecond //nolint:gomnd // .
@@ -273,13 +272,13 @@ func (r *repository) getCompletedSantaTasks(ctx context.Context, userID string) 
 		SetHeader("Cache-Control", "no-cache, no-store, must-revalidate").
 		SetHeader("Pragma", "no-cache").
 		SetHeader("Expires", "0").
-		Get(fmt.Sprintf("%v%v?language=en&status=completed", r.cfg.SantaTasksURL, userID))
+		Get(fmt.Sprintf("%v?language=en&status=completed", getCompletedTasksURL))
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get fetch `%v`", r.cfg.SantaTasksURL)
+		return nil, errors.Wrapf(err, "failed to get fetch `%v`", getCompletedTasksURL)
 	}
 	data, err2 := resp.ToBytes()
 	if err2 != nil {
-		return nil, errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.SantaTasksURL)
+		return nil, errors.Wrapf(err2, "failed to read body of `%v`", getCompletedTasksURL)
 	}
 	var tasksResp []*tasks.Task
 	if err = json.UnmarshalContext(ctx, data, &tasksResp); err != nil {
@@ -317,4 +316,192 @@ func (r *repository) storeLinkedAccounts(ctx context.Context, userID string, res
 	}
 
 	return nil
+}
+
+func buildGetCompletedTasksURL(tenant, userID, host string, tenantURLs map[string]string) (string, error) {
+	var hasURL bool
+	var baseURL string
+	if len(tenantURLs) > 0 {
+		baseURL, hasURL = tenantURLs[tenant]
+	}
+	if !hasURL {
+		var err error
+		if baseURL, err = url.JoinPath("https://"+host, tenant); err != nil {
+			return "", errors.Wrapf(err, "failed to build user url for get completed tasks %v", tenant)
+		}
+	}
+	userURL, err := url.JoinPath(baseURL, "/v1r/tasks/x/users/", userID)
+	if err != nil {
+		return "", errors.Wrapf(err, "failed to build user url for tenant %v", tenant)
+	}
+
+	return userURL, nil
+}
+
+//nolint:funlen,gocognit,revive // .
+func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *VerificationMetadata) (*social.Verification, error) {
+	now := time.Now()
+	user, err := r.userRepo.GetUserByID(ctx, metadata.UserID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to GetUserByID: %v", metadata.UserID)
+	}
+	sql := `SELECT ARRAY_AGG(x.created_at) AS unsuccessful_attempts 
+			FROM (SELECT created_at 
+				  FROM verification_distribution_kyc_unsuccessful_attempts 
+				  WHERE user_id = $1
+				    AND reason != ANY($2)
+				  ORDER BY created_at DESC) x`
+	res, err := storage.Get[struct {
+		UnsuccessfulAttempts *[]time.Time `db:"unsuccessful_attempts"`
+	}](ctx, r.db, sql, metadata.UserID, []string{social.ExhaustedRetriesReason})
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to get unsuccessful_attempts for userID:%v", metadata.UserID)
+	}
+	remainingAttempts := r.cfg.MaxAttemptsAllowed
+	if res.UnsuccessfulAttempts != nil {
+		for _, unsuccessfulAttempt := range *res.UnsuccessfulAttempts {
+			if unsuccessfulAttempt.After(now.Add(-r.cfg.SessionWindow)) {
+				remainingAttempts--
+				if remainingAttempts == 0 {
+					break
+				}
+			}
+		}
+	}
+	if remainingAttempts < 1 {
+		return nil, social.ErrNotAvailable
+	}
+	pvm := &social.Metadata{
+		PostURL:          metadata.TweetURL,
+		ExpectedPostText: r.expectedPostSubtext(user.User, metadata),
+		ExpectedPostURL:  r.expectedPostURL(),
+	}
+	userHandle, err := r.twitterVerifier.VerifyPost(ctx, pvm)
+	if err != nil { //nolint:nestif // .
+		log.Error(errors.Wrapf(err, "social verification failed for twitter verifier,Language:%v,userID:%v", metadata.Language, metadata.UserID))
+		reason := social.DetectReason(err)
+		if userHandle != "" {
+			reason = strings.ToLower(userHandle) + ": " + reason
+		}
+		if err = r.saveUnsuccessfulAttempt(ctx, now, reason, metadata); err != nil {
+			return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", reason, metadata)
+		}
+		remainingAttempts--
+		if remainingAttempts == 0 {
+			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), social.ExhaustedRetriesReason, metadata); err != nil {
+				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", social.ExhaustedRetriesReason, metadata)
+			}
+		}
+
+		return &social.Verification{RemainingAttempts: &remainingAttempts, Result: social.FailureVerificationResult}, nil
+	}
+
+	return &social.Verification{Result: social.SuccessVerificationResult}, nil
+}
+
+func (r *repository) saveUnsuccessfulAttempt(ctx context.Context, now *time.Time, reason string, metadata *VerificationMetadata) error {
+	var socialName string
+	switch metadata.ScenarioEnum { //nolint:exhaustive // We know what socials we can use here.
+	case CoinDistributionScenarioTwitter:
+		socialName = "twitter"
+	default:
+		return errors.Errorf("unknown scenario: %v", metadata.ScenarioEnum)
+	}
+	sql := `INSERT INTO verification_distribution_kyc_unsuccessful_attempts(created_at, reason, user_id, social) VALUES ($1,$2,$3,$4)`
+	_, err := storage.Exec(ctx, r.db, sql, now.Time, reason, metadata.UserID, socialName)
+
+	return errors.Wrapf(err, "failed to `%v`; userId:%v,social:%v,reason:%v", sql, metadata.UserID, socialName, reason)
+}
+
+func (r *repository) expectedPostSubtext(user *users.User, metadata *VerificationMetadata) string {
+	if tmpl := r.cfg.kycConfigJSON1.Load().XPostPatternTemplate; tmpl != nil {
+		bf := new(bytes.Buffer)
+		cpy := *user
+		cpy.Username = strings.ReplaceAll(cpy.Username, ".", "-")
+		log.Panic(errors.Wrapf(tmpl.Execute(bf, cpy), "failed to execute expectedPostSubtext template for metadata:%+v user:%+v", metadata, user))
+
+		return bf.String()
+	}
+
+	return ""
+}
+
+func (r *repository) expectedPostURL() (resp string) {
+	resp = r.cfg.kycConfigJSON1.Load().XPostLink
+	resp = strings.Replace(resp, `https://x.com`, "", 1)
+	if paramsIndex := strings.IndexRune(resp, '?'); resp != "" && paramsIndex > 0 {
+		resp = resp[:paramsIndex]
+	}
+
+	return resp
+}
+
+func (r *repository) startKYCConfigJSONSyncer(ctx context.Context) {
+	ticker := stdlibtime.NewTicker(stdlibtime.Minute)
+	defer ticker.Stop()
+	r.cfg.kycConfigJSON1 = new(atomic.Pointer[social.KycConfigJSON])
+	log.Panic(errors.Wrap(r.syncKYCConfigJSON1(ctx), "failed to syncKYCConfigJSON1")) //nolint:revive // .
+
+	for {
+		select {
+		case <-ticker.C:
+			reqCtx, cancel := context.WithTimeout(ctx, requestDeadline)
+			log.Error(errors.Wrap(r.syncKYCConfigJSON1(reqCtx), "failed to syncKYCConfigJSON1"))
+			cancel()
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+//nolint:funlen,gomnd,nestif,dupl,revive // .
+func (r *repository) syncKYCConfigJSON1(ctx context.Context) error {
+	if resp, err := req.
+		SetContext(ctx).
+		SetRetryCount(25).
+		SetRetryInterval(func(_ *req.Response, attempt int) stdlibtime.Duration {
+			switch {
+			case attempt <= 1:
+				return 100 * stdlibtime.Millisecond //nolint:gomnd // .
+			case attempt == 2: //nolint:gomnd // .
+				return 1 * stdlibtime.Second
+			default:
+				return 10 * stdlibtime.Second //nolint:gomnd // .
+			}
+		}).
+		SetRetryHook(func(resp *req.Response, err error) {
+			if err != nil {
+				log.Error(errors.Wrap(err, "failed to fetch KYCConfigJSON, retrying...")) //nolint:revive // .
+			} else {
+				log.Error(errors.Errorf("failed to fetch KYCConfigJSON with status code:%v, retrying...", resp.GetStatusCode())) //nolint:revive // .
+			}
+		}).
+		SetRetryCondition(func(resp *req.Response, err error) bool {
+			return err != nil || resp.GetStatusCode() != http.StatusOK
+		}).
+		SetHeader("Accept", "application/json").
+		SetHeader("Cache-Control", "no-cache, no-store, must-revalidate").
+		SetHeader("Pragma", "no-cache").
+		SetHeader("Expires", "0").
+		Get(r.cfg.ConfigJSONURL1); err != nil {
+		return errors.Wrapf(err, "failed to get fetch `%v`", r.cfg.ConfigJSONURL1)
+	} else if data, err2 := resp.ToBytes(); err2 != nil {
+		return errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.ConfigJSONURL1)
+	} else { //nolint:revive // .
+		var kycConfig social.KycConfigJSON
+		if err = json.UnmarshalContext(ctx, data, &kycConfig); err != nil {
+			return errors.Wrapf(err, "failed to unmarshal into %#v, data: %v", kycConfig, string(data))
+		}
+		if body := string(data); !strings.Contains(body, "xPostPattern") && !strings.Contains(body, "xPostLink") {
+			return errors.Errorf("there's something wrong with the KYCConfigJSON body: %v", body)
+		}
+		if pattern := kycConfig.XPostPattern; pattern != "" {
+			if kycConfig.XPostPatternTemplate, err = template.New("kycCfg.Social1KYC.XPostPattern").Parse(pattern); err != nil {
+				return errors.Wrapf(err, "failed to parse kycCfg.Social1KYC.xPostPatternTemplate `%v`", pattern)
+			}
+		}
+		r.cfg.kycConfigJSON1.Swap(&kycConfig)
+
+		return nil
+	}
 }

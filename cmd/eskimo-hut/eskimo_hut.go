@@ -56,7 +56,8 @@ func main() {
 
 func (s *service) RegisterRoutes(router *server.Router) {
 	s.registerEskimoRoutes(router)
-	s.setupKYCRoutes(router)
+	s.setupKYCWriteRoutes(router)
+	s.setupKYCReadRoutes(router)
 	s.setupUserRoutes(router)
 	s.setupDevicesRoutes(router)
 	s.setupAuthRoutes(router)

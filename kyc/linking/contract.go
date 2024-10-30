@@ -42,6 +42,7 @@ type (
 const (
 	requestDeadline    = 25 * stdlibtime.Second
 	applicationYamlKey = "kyc/linking"
+	globalDBYamlKey    = "globalDB"
 )
 
 var (

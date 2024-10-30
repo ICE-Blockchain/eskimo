@@ -16,7 +16,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	social "github.com/ice-blockchain/eskimo/kyc/social/internal"
+	scraper "github.com/ice-blockchain/eskimo/kyc/scraper"
 	"github.com/ice-blockchain/eskimo/users"
 	appcfg "github.com/ice-blockchain/wintr/config"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
@@ -50,10 +50,10 @@ func loadTranslations() { //nolint:funlen,gocognit,revive // .
 						tmpl.content = template.Must(template.New(templName).Parse(tmpl.Content))
 
 						if _, found := allTemplates[tenantName(tenantFile.Name())]; !found {
-							allTemplates[tenantName(tenantFile.Name())] = make(map[users.KYCStep]map[social.StrategyType]map[languageTemplateType]map[string][]*languageTemplate)
+							allTemplates[tenantName(tenantFile.Name())] = make(map[users.KYCStep]map[scraper.StrategyType]map[languageTemplateType]map[string][]*languageTemplate)
 						}
 						if _, found := allTemplates[tenantName(tenantFile.Name())][kycStep]; !found {
-							allTemplates[tenantName(tenantFile.Name())][kycStep] = make(map[social.StrategyType]map[languageTemplateType]map[string][]*languageTemplate, len(AllTypes)) //nolint:lll // .
+							allTemplates[tenantName(tenantFile.Name())][kycStep] = make(map[scraper.StrategyType]map[languageTemplateType]map[string][]*languageTemplate, len(AllTypes)) //nolint:lll // .
 						}
 						if _, found := allTemplates[tenantName(tenantFile.Name())][kycStep][socialType]; !found {
 							allTemplates[tenantName(tenantFile.Name())][kycStep][socialType] = make(map[languageTemplateType]map[string][]*languageTemplate, len(&allLanguageTemplateType)) //nolint:lll // .
@@ -73,9 +73,9 @@ func New(ctx context.Context, usrRepo UserRepository) Repository {
 	var cfg config
 	appcfg.MustLoadFromKey(applicationYamlKey, &cfg)
 
-	socialVerifiers := make(map[Type]social.Verifier, len(AllTypes))
+	socialVerifiers := make(map[Type]scraper.Verifier, len(AllTypes))
 	for _, tp := range AllTypes {
-		socialVerifiers[tp] = social.New(tp)
+		socialVerifiers[tp] = scraper.New(tp)
 	}
 	cfg.alertFrequency = new(sync.Map)
 
@@ -130,7 +130,7 @@ func (r *repository) verifySkipped(ctx context.Context, metadata *VerificationMe
 	res, err := storage.Get[struct {
 		LatestCreatedAt *time.Time `db:"latest_created_at"`
 		SkippedCount    int        `db:"skipped"`
-	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, exhaustedRetriesReason})
+	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, ExhaustedRetriesReason})
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to get skipped attempt count for kycStep:%v,userID:%v", metadata.KYCStep, metadata.UserID)
 	}
@@ -160,7 +160,6 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to verifySkipped for metadata:%#v", metadata)
 	}
-	//nolint:goconst // .
 	sql := `SELECT ARRAY_AGG(x.created_at) AS unsuccessful_attempts 
 			FROM (SELECT created_at 
 				  FROM social_kyc_unsuccessful_attempts 
@@ -170,7 +169,7 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 				  ORDER BY created_at DESC) x`
 	res, err := storage.Get[struct {
 		UnsuccessfulAttempts *[]time.Time `db:"unsuccessful_attempts"`
-	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, exhaustedRetriesReason})
+	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, ExhaustedRetriesReason})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get unsuccessful_attempts for kycStep:%v,userID:%v", metadata.KYCStep, metadata.UserID)
 	}
@@ -188,7 +187,7 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	if metadata.Twitter.TweetURL == "" && metadata.Facebook.AccessToken == "" {
 		return &Verification{ExpectedPostText: r.expectedPostText(user.User, metadata)}, nil
 	}
-	pvm := &social.Metadata{
+	pvm := &Metadata{
 		AccessToken:      metadata.Facebook.AccessToken,
 		PostURL:          metadata.Twitter.TweetURL,
 		ExpectedPostText: r.expectedPostSubtext(user.User, metadata),
@@ -198,7 +197,7 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	if err != nil { //nolint:nestif // .
 		log.Error(errors.Wrapf(err, "social verification failed for KYCStep:%v,Social:%v,Language:%v,userID:%v",
 			metadata.KYCStep, metadata.Social, metadata.Language, metadata.UserID))
-		reason := detectReason(err)
+		reason := DetectReason(err)
 		if userHandle != "" {
 			reason = strings.ToLower(userHandle) + ": " + reason
 		}
@@ -207,8 +206,8 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 		}
 		remainingAttempts--
 		if remainingAttempts == 0 {
-			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), exhaustedRetriesReason, metadata); err != nil {
-				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", exhaustedRetriesReason, metadata)
+			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), ExhaustedRetriesReason, metadata); err != nil {
+				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", ExhaustedRetriesReason, metadata)
 			}
 			end := skippedCount+1 == r.cfg.MaxSessionsAllowed
 
@@ -225,14 +224,14 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 			if storage.IsErr(err, storage.ErrDuplicate) {
 				log.Error(errors.Wrapf(err, "[duplicate]social verification failed for KYCStep:%v,Social:%v,Language:%v,userID:%v,userHandle:%v",
 					metadata.KYCStep, metadata.Social, metadata.Language, metadata.UserID, userHandle))
-				reason := detectReason(terror.New(err, map[string]any{"user_handle": userHandle}))
+				reason := DetectReason(terror.New(err, map[string]any{"user_handle": userHandle}))
 				if err = r.saveUnsuccessfulAttempt(ctx, now, reason, metadata); err != nil {
 					return nil, errors.Wrapf(err, "[2]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", reason, metadata)
 				}
 				remainingAttempts--
 				if remainingAttempts == 0 {
-					if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), exhaustedRetriesReason, metadata); err != nil {
-						return nil, errors.Wrapf(err, "[2]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", exhaustedRetriesReason, metadata)
+					if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), ExhaustedRetriesReason, metadata); err != nil {
+						return nil, errors.Wrapf(err, "[2]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", ExhaustedRetriesReason, metadata)
 					}
 					end := skippedCount+1 == r.cfg.MaxSessionsAllowed
 					if err = r.modifyUser(ctx, end, end, metadata.KYCStep, now, user.User); err != nil {
@@ -253,73 +252,6 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	}
 	if err = r.modifyUser(ctx, true, false, metadata.KYCStep, now, user.User); err != nil {
 		return nil, errors.Wrapf(err, "[success][%v]failed to modifyUser", metadata.KYCStep)
-	}
-
-	return &Verification{Result: SuccessVerificationResult}, nil
-}
-
-//nolint:funlen,gocognit,revive // .
-func (r *repository) VerifyPostForDistibutionVerification(ctx context.Context, metadata *VerificationMetadata) (*Verification, error) {
-	now := time.Now()
-	user, err := r.user.GetUserByID(ctx, metadata.UserID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to GetUserByID: %v", metadata.UserID)
-	}
-	sql := `SELECT ARRAY_AGG(x.created_at) AS unsuccessful_attempts 
-			FROM (SELECT created_at 
-				  FROM social_kyc_unsuccessful_attempts 
-				  WHERE user_id = $1
-				    AND kyc_step = $2
-				    AND reason != ANY($3)
-				  ORDER BY created_at DESC) x`
-	res, err := storage.Get[struct {
-		UnsuccessfulAttempts *[]time.Time `db:"unsuccessful_attempts"`
-	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, exhaustedRetriesReason})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get unsuccessful_attempts for userID:%v", metadata.UserID)
-	}
-	remainingAttempts := r.cfg.MaxAttemptsAllowed
-	if res.UnsuccessfulAttempts != nil {
-		for _, unsuccessfulAttempt := range *res.UnsuccessfulAttempts {
-			if unsuccessfulAttempt.After(now.Add(-r.cfg.SessionWindow)) {
-				remainingAttempts--
-				if remainingAttempts == 0 {
-					break
-				}
-			}
-		}
-	}
-	if remainingAttempts < 1 {
-		return nil, ErrNotAvailable
-	}
-	if metadata.Twitter.TweetURL == "" && metadata.Facebook.AccessToken == "" {
-		return &Verification{ExpectedPostText: r.expectedPostText(user.User, metadata)}, nil
-	}
-	pvm := &social.Metadata{
-		AccessToken:      metadata.Facebook.AccessToken,
-		PostURL:          metadata.Twitter.TweetURL,
-		ExpectedPostText: r.expectedPostSubtext(user.User, metadata),
-		ExpectedPostURL:  r.expectedPostURL(metadata),
-	}
-	userHandle, err := r.socialVerifiers[metadata.Social].VerifyPost(ctx, pvm)
-	if err != nil { //nolint:nestif // .
-		log.Error(errors.Wrapf(err, "social verification failed for Social:%v,Language:%v,userID:%v",
-			metadata.Social, metadata.Language, metadata.UserID))
-		reason := detectReason(err)
-		if userHandle != "" {
-			reason = strings.ToLower(userHandle) + ": " + reason
-		}
-		if err = r.saveUnsuccessfulAttempt(ctx, now, reason, metadata); err != nil {
-			return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", reason, metadata)
-		}
-		remainingAttempts--
-		if remainingAttempts == 0 {
-			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), exhaustedRetriesReason, metadata); err != nil {
-				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", exhaustedRetriesReason, metadata)
-			}
-		}
-
-		return &Verification{RemainingAttempts: &remainingAttempts, Result: FailureVerificationResult}, nil
 	}
 
 	return &Verification{Result: SuccessVerificationResult}, nil
@@ -419,23 +351,23 @@ func (r *repository) saveSocial(ctx context.Context, socialType Type, userID, us
 	return errors.Wrapf(err, "failed to `%v`; userID:%v, social:%v, userHandle:%v", sql, userID, socialType, userHandle)
 }
 
-func detectReason(err error) string {
+func DetectReason(err error) string {
 	switch {
-	case errors.Is(err, social.ErrInvalidPageContent):
+	case errors.Is(err, scraper.ErrInvalidPageContent):
 		return "invalid page content"
-	case errors.Is(err, social.ErrTextNotFound):
+	case errors.Is(err, scraper.ErrTextNotFound):
 		return "expected text not found"
-	case errors.Is(err, social.ErrUsernameNotFound):
+	case errors.Is(err, scraper.ErrUsernameNotFound):
 		return "username not found"
-	case errors.Is(err, social.ErrPostNotFound):
+	case errors.Is(err, scraper.ErrPostNotFound):
 		return "post not found"
-	case errors.Is(err, social.ErrInvalidURL):
+	case errors.Is(err, scraper.ErrInvalidURL):
 		return "invalid URL"
 	case errors.Is(err, context.DeadlineExceeded):
 		return "timeout"
 	case errors.Is(err, context.Canceled):
 		return "cancellation"
-	case errors.Is(err, social.ErrFetchFailed):
+	case errors.Is(err, scraper.ErrFetchFailed):
 		return "post fetch failed"
 	case storage.IsErr(err, storage.ErrDuplicate):
 		if tErr := terror.As(err); tErr != nil {
@@ -489,9 +421,9 @@ func (r *repository) expectedPostTextIsExactMatch(metadata *VerificationMetadata
 	if metadata.Social == TwitterType {
 		switch metadata.KYCStep { //nolint:exhaustive // Not needed. Everything else is validated before this.
 		case users.Social1KYCStep:
-			return r.cfg.kycConfigJSON1.Load().xPostPatternTemplate != nil && r.cfg.kycConfigJSON1.Load().XPostPatternExactMatch
+			return r.cfg.kycConfigJSON1.Load().XPostPatternTemplate != nil && r.cfg.kycConfigJSON1.Load().XPostPatternExactMatch
 		case users.Social2KYCStep:
-			return r.cfg.kycConfigJSON2.Load().xPostPatternTemplate != nil && r.cfg.kycConfigJSON2.Load().XPostPatternExactMatch
+			return r.cfg.kycConfigJSON2.Load().XPostPatternTemplate != nil && r.cfg.kycConfigJSON2.Load().XPostPatternExactMatch
 		default:
 			panic(fmt.Sprintf("social step `%v` not implemented ", metadata.KYCStep))
 		}
@@ -505,9 +437,9 @@ func (r *repository) expectedPostSubtext(user *users.User, metadata *Verificatio
 		var tmpl *template.Template
 		switch metadata.KYCStep { //nolint:exhaustive // Not needed. Everything else is validated before this.
 		case users.Social1KYCStep:
-			tmpl = r.cfg.kycConfigJSON1.Load().xPostPatternTemplate
+			tmpl = r.cfg.kycConfigJSON1.Load().XPostPatternTemplate
 		case users.Social2KYCStep:
-			tmpl = r.cfg.kycConfigJSON2.Load().xPostPatternTemplate
+			tmpl = r.cfg.kycConfigJSON2.Load().XPostPatternTemplate
 		default:
 			panic(fmt.Sprintf("social step `%v` not implemented ", metadata.KYCStep))
 		}

@@ -26,8 +26,8 @@ func init() { //nolint:gochecknoinits // It's the only way to tweak the client.
 func (r *repository) startKYCConfigJSONSyncer(ctx context.Context) {
 	ticker := stdlibtime.NewTicker(stdlibtime.Minute)
 	defer ticker.Stop()
-	r.cfg.kycConfigJSON1 = new(atomic.Pointer[kycConfigJSON])
-	r.cfg.kycConfigJSON2 = new(atomic.Pointer[kycConfigJSON])
+	r.cfg.kycConfigJSON1 = new(atomic.Pointer[KycConfigJSON])
+	r.cfg.kycConfigJSON2 = new(atomic.Pointer[KycConfigJSON])
 	log.Panic(errors.Wrap(r.syncKYCConfigJSON1(ctx), "failed to syncKYCConfigJSON1")) //nolint:revive // .
 	log.Panic(errors.Wrap(r.syncKYCConfigJSON2(ctx), "failed to syncKYCConfigJSON2"))
 
@@ -80,7 +80,7 @@ func (r *repository) syncKYCConfigJSON1(ctx context.Context) error {
 	} else if data, err2 := resp.ToBytes(); err2 != nil {
 		return errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.ConfigJSONURL1)
 	} else { //nolint:revive // .
-		var kycConfig kycConfigJSON
+		var kycConfig KycConfigJSON
 		if err = json.UnmarshalContext(ctx, data, &kycConfig); err != nil {
 			return errors.Wrapf(err, "failed to unmarshal into %#v, data: %v", kycConfig, string(data))
 		}
@@ -88,8 +88,8 @@ func (r *repository) syncKYCConfigJSON1(ctx context.Context) error {
 			return errors.Errorf("there's something wrong with the KYCConfigJSON body: %v", body)
 		}
 		if pattern := kycConfig.XPostPattern; pattern != "" {
-			if kycConfig.xPostPatternTemplate, err = template.New("kycCfg.Social1KYC.XPostPattern").Parse(pattern); err != nil {
-				return errors.Wrapf(err, "failed to parse kycCfg.Social1KYC.xPostPatternTemplate `%v`", pattern)
+			if kycConfig.XPostPatternTemplate, err = template.New("kycCfg.Social1KYC.XPostPattern").Parse(pattern); err != nil {
+				return errors.Wrapf(err, "failed to parse kycCfg.Social1KYC.XPostPatternTemplate `%v`", pattern)
 			}
 		}
 		r.cfg.kycConfigJSON1.Swap(&kycConfig)
@@ -132,7 +132,7 @@ func (r *repository) syncKYCConfigJSON2(ctx context.Context) error {
 	} else if data, err2 := resp.ToBytes(); err2 != nil {
 		return errors.Wrapf(err2, "failed to read body of `%v`", r.cfg.ConfigJSONURL2)
 	} else { //nolint:revive // .
-		var kycConfig kycConfigJSON
+		var kycConfig KycConfigJSON
 		if err = json.UnmarshalContext(ctx, data, &kycConfig); err != nil {
 			return errors.Wrapf(err, "failed to unmarshal into %#v, data: %v", kycConfig, string(data))
 		}
@@ -140,8 +140,8 @@ func (r *repository) syncKYCConfigJSON2(ctx context.Context) error {
 			return errors.Errorf("there's something wrong with the KYCConfigJSON body: %v", body)
 		}
 		if pattern := kycConfig.XPostPattern; pattern != "" {
-			if kycConfig.xPostPatternTemplate, err = template.New("kycCfg.Social2KYC.XPostPattern").Parse(pattern); err != nil {
-				return errors.Wrapf(err, "failed to parse kycCfg.Social2KYC.xPostPatternTemplate `%v`", pattern)
+			if kycConfig.XPostPatternTemplate, err = template.New("kycCfg.Social2KYC.XPostPattern").Parse(pattern); err != nil {
+				return errors.Wrapf(err, "failed to parse kycCfg.Social2KYC.XPostPatternTemplate `%v`", pattern)
 			}
 		}
 		r.cfg.kycConfigJSON2.Swap(&kycConfig)

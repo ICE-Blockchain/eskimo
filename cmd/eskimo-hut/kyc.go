@@ -20,7 +20,7 @@ import (
 	"github.com/ice-blockchain/wintr/server"
 )
 
-func (s *service) setupKYCRoutes(router *server.Router) {
+func (s *service) setupKYCWriteRoutes(router *server.Router) {
 	router.
 		Group("v1w").
 		POST("kyc/startOrContinueKYCStep4Session/users/:userId", server.RootHandler(s.StartOrContinueKYCStep4Session)).
@@ -29,6 +29,12 @@ func (s *service) setupKYCRoutes(router *server.Router) {
 		POST("kyc/tryResetKYCSteps/users/:userId", server.RootHandler(s.TryResetKYCSteps)).
 		POST("kyc/checkFaceKYCStatus/users/:userId", server.RootHandler(s.ForwardToFaceKYC)).
 		POST("kyc/verifyCoinDistributionEligibility/users/:userId/scenarios/:scenarioEnum", server.RootHandler(s.VerifyKYCScenarios))
+}
+
+func (s *service) setupKYCReadRoutes(router *server.Router) {
+	router.
+		Group("v1r").
+		GET("kyc/verifyCoinDistributionEligibility/users/:userId", server.RootHandler(s.GetPendingKYCVerificationScenarios))
 }
 
 func (s *service) startQuizSession(ctx context.Context, userID users.UserID, lang string) (*kycquiz.Quiz, error) {

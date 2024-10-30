@@ -10,7 +10,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ice-blockchain/go-tarantool-client v0.0.0-20230327200757-4fc71fa3f7bb
-	github.com/ice-blockchain/santa v1.160.0
+	github.com/ice-blockchain/santa v1.161.0
 	github.com/ice-blockchain/wintr v1.154.0
 	github.com/imroc/req/v3 v3.48.0
 	github.com/ip2location/ip2location-go/v9 v9.7.0
@@ -31,8 +31,8 @@ require (
 require (
 	cel.dev/expr v0.18.0 // indirect
 	cloud.google.com/go v0.116.0 // indirect
-	cloud.google.com/go/auth v0.9.9 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.4 // indirect
+	cloud.google.com/go/auth v0.10.0 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.5 // indirect
 	cloud.google.com/go/compute/metadata v0.5.2 // indirect
 	cloud.google.com/go/firestore v1.17.0 // indirect
 	cloud.google.com/go/iam v1.2.2 // indirect

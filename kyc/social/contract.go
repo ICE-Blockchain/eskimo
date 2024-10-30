@@ -14,7 +14,7 @@ import (
 
 	"github.com/pkg/errors"
 
-	social "github.com/ice-blockchain/eskimo/kyc/social/internal"
+	"github.com/ice-blockchain/eskimo/kyc/scraper"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/connectors/storage/v2"
 )
@@ -22,8 +22,8 @@ import (
 // Public API.
 
 const (
-	FacebookType = social.StrategyFacebook
-	TwitterType  = social.StrategyTwitter
+	FacebookType = scraper.StrategyFacebook
+	TwitterType  = scraper.StrategyTwitter
 )
 
 const (
@@ -44,7 +44,8 @@ var (
 )
 
 type (
-	Type               = social.StrategyType
+	Type               = scraper.StrategyType
+	Metadata           = scraper.Metadata
 	VerificationResult string
 	Verification       struct {
 		RemainingAttempts *uint8             `json:"remainingAttempts,omitempty" example:"3"`
@@ -65,10 +66,15 @@ type (
 		Social   Type          `form:"social" required:"true" swaggerignore:"true" example:"twitter"`
 		KYCStep  users.KYCStep `form:"kycStep" required:"true" swaggerignore:"true" example:"1"`
 	}
+	KycConfigJSON struct {
+		XPostPatternTemplate   *template.Template `json:"-"`
+		XPostPattern           string             `json:"xPostPattern"`
+		XPostLink              string             `json:"xPostLink"`
+		XPostPatternExactMatch bool               `json:"xPostPatternExactMatch"`
+	}
 	Repository interface {
 		io.Closer
 		VerifyPost(ctx context.Context, metadata *VerificationMetadata) (*Verification, error)
-		VerifyPostForDistibutionVerification(ctx context.Context, metadata *VerificationMetadata) (*Verification, error)
 		SkipVerification(ctx context.Context, kycStep users.KYCStep, userID string) error
 	}
 	UserRepository interface {
@@ -91,7 +97,7 @@ const (
 
 const (
 	skippedReason          = "skipped"
-	exhaustedRetriesReason = "exhausted_retries"
+	ExhaustedRetriesReason = "exhausted_retries"
 )
 
 var (
@@ -115,22 +121,15 @@ type (
 	}
 	repository struct {
 		user            UserRepository
-		socialVerifiers map[Type]social.Verifier
+		socialVerifiers map[Type]scraper.Verifier
 		cfg             *config
 		db              *storage.DB
 	}
 
-	kycConfigJSON struct {
-		xPostPatternTemplate   *template.Template `json:"-"` //nolint:revive // .
-		XPostPattern           string             `json:"xPostPattern"`
-		XPostLink              string             `json:"xPostLink"`
-		XPostPatternExactMatch bool               `json:"xPostPatternExactMatch"`
-	}
-
 	config struct {
 		alertFrequency       *sync.Map // .map[users.KYCStep]stdlibtime.Duration.
-		kycConfigJSON1       *atomic.Pointer[kycConfigJSON]
-		kycConfigJSON2       *atomic.Pointer[kycConfigJSON]
+		kycConfigJSON1       *atomic.Pointer[KycConfigJSON]
+		kycConfigJSON2       *atomic.Pointer[KycConfigJSON]
 		ConfigJSONURL1       string              `yaml:"config-json-url1" mapstructure:"config-json-url1"` //nolint:tagliatelle // .
 		ConfigJSONURL2       string              `yaml:"config-json-url2" mapstructure:"config-json-url2"` //nolint:tagliatelle // .
 		Environment          string              `yaml:"environment" mapstructure:"environment"`

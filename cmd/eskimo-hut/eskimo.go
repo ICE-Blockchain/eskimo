@@ -268,8 +268,7 @@ func (s *service) setupUserReadRoutes(router *server.Router) {
 		Group("v1r").
 		GET("users", server.RootHandler(s.GetUsers)).
 		GET("users/:userId", server.RootHandler(s.GetUserByID)).
-		GET("user-views/username", server.RootHandler(s.GetUserByUsername)).
-		GET("kyc/verifyCoinDistributionEligibility/users/:userId", server.RootHandler(s.GetPendingKYCVerificationScenarios))
+		GET("user-views/username", server.RootHandler(s.GetUserByUsername))
 }
 
 // GetUsers godoc

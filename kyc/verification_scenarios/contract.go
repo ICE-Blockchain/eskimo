@@ -4,10 +4,14 @@ package verificationscenarios
 
 import (
 	"context"
+	_ "embed"
 	"errors"
 	"io"
 	"mime/multipart"
+	"sync/atomic"
+	stdlibtime "time"
 
+	"github.com/ice-blockchain/eskimo/kyc/scraper"
 	"github.com/ice-blockchain/eskimo/kyc/social"
 	"github.com/ice-blockchain/eskimo/users"
 	storage "github.com/ice-blockchain/wintr/connectors/storage/v2"
@@ -55,7 +59,7 @@ type (
 	VerificationMetadata struct {
 		Authorization    string                   `header:"Authorization" swaggerignore:"true" required:"true" example:"some token"`
 		UserID           string                   `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
-		ScenarioEnum     Scenario                 `uri:"scenarioEnum" example:"cmc" swaggerignore:"true" required:"true" enums:"cmc,twitter,telegram,tenant"`                                           //nolint:lll // .
+		ScenarioEnum     Scenario                 `uri:"scenarioEnum" example:"join_cmc" swaggerignore:"true" required:"true" enums:"join_cmc,join_twitter,join_telegram,signup_tenants"`               //nolint:lll // .
 		Language         string                   `json:"language" required:"false" swaggerignore:"true" example:"en"`
 		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"sunwaves:sometoken,sealsend:sometoken"`
 		CMCProfileLink   string                   `json:"cmcProfileLink" required:"false" example:"some profile"`
@@ -68,20 +72,34 @@ type (
 
 const (
 	applicationYamlKey       = "kyc/coinDistributionEligibility"
+	globalApplicationYamlKey = "globalDb"
 	authorizationCtxValueKey = "authorizationCtxValueKey"
+
+	verificationTwitterScenarioKYCStep int8 = 120
+	requestDeadline                         = 25 * stdlibtime.Second
+)
+
+// .
+var (
+	//go:embed DDL.sql
+	ddl string
 )
 
 type (
 	repository struct {
-		cfg          *config
-		globalDB     *storage.DB
-		userRepo     UserRepository
-		socialClient social.Repository
-		host         string
+		cfg             *config
+		globalDB        *storage.DB
+		db              *storage.DB
+		userRepo        UserRepository
+		twitterVerifier scraper.Verifier
+		host            string
 	}
 	config struct {
-		TenantURLs    map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
-		Tenant        string            `yaml:"tenant" mapstructure:"tenant"`
-		SantaTasksURL string            `yaml:"santaTasksUrl" mapstructure:"santaTasksUrl"`
+		TenantURLs         map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
+		kycConfigJSON1     *atomic.Pointer[social.KycConfigJSON]
+		Tenant             string              `yaml:"tenant" mapstructure:"tenant"`
+		ConfigJSONURL1     string              `yaml:"configJsonUrl1" mapstructure:"configJsonUrl1"` //nolint:tagliatelle // .
+		SessionWindow      stdlibtime.Duration `yaml:"sessionWindow" mapstructure:"sessionWindow"`   //nolint:tagliatelle // .
+		MaxAttemptsAllowed uint8               `yaml:"maxAttemptsAllowed" mapstructure:"maxAttemptsAllowed"`
 	}
 )
