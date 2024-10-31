@@ -447,6 +447,7 @@ func validateScenariosData(data *verificationscenarios.VerificationMetadata) err
 				verificationscenarios.CoinDistributionScenarioSignUpSealsend,
 				verificationscenarios.CoinDistributionScenarioSignUpSauces,
 				verificationscenarios.CoinDistributionScenarioSignUpDoctorx,
+				verificationscenarios.CoinDistributionScenarioSignUpTokero,
 			}
 			unsupportedTenants []verificationscenarios.TenantScenario
 		)

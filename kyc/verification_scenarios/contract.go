@@ -31,6 +31,7 @@ const (
 	CoinDistributionScenarioSignUpCallfluent TenantScenario = "signup_callfluent"
 	CoinDistributionScenarioSignUpSauces     TenantScenario = "signup_sauces"
 	CoinDistributionScenarioSignUpDoctorx    TenantScenario = "signup_doctorx"
+	CoinDistributionScenarioSignUpTokero     TenantScenario = "signup_tokero"
 )
 
 // .
@@ -59,7 +60,7 @@ type (
 		UserID           string                   `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
 		ScenarioEnum     Scenario                 `uri:"scenarioEnum" example:"join_cmc" swaggerignore:"true" required:"true" enums:"join_cmc,join_twitter,join_telegram,signup_tenants"`               //nolint:lll // .
 		Language         string                   `json:"language" required:"false" swaggerignore:"true" example:"en"`
-		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"signup_sunwaves:sometoken,signup_sealsend:sometoken,signup_callfluent:sometoken,signup_doctorx:sometoken,signup_sauces:sometoken"` //nolint:lll // .
+		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"signup_sunwaves:sometoken,signup_sealsend:sometoken,signup_callfluent:sometoken,signup_doctorx:sometoken,signup_sauces:sometoken,signup_tokero:sometoken"` //nolint:lll // .
 		CMCProfileLink   string                   `json:"cmcProfileLink" required:"false" example:"some profile"`
 		TweetURL         string                   `json:"tweetUrl" required:"false" example:"some tweet"`
 		TelegramUsername string                   `json:"telegramUsername" required:"false" example:"some telegram username"`
