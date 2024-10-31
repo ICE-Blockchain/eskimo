@@ -837,6 +837,40 @@ definitions:
         example: 11
         type: integer
     type: object
+  verificationscenarios.Scenario:
+    enum:
+    - join_cmc
+    - join_twitter
+    - join_telegram
+    - signup_tenants
+    type: string
+    x-enum-varnames:
+    - CoinDistributionScenarioCmc
+    - CoinDistributionScenarioTwitter
+    - CoinDistributionScenarioTelegram
+    - CoinDistributionScenarioSignUpTenants
+  verificationscenarios.VerificationMetadata:
+    properties:
+      cmcProfileLink:
+        example: some profile
+        type: string
+      telegramUsername:
+        example: some telegram username
+        type: string
+      tenantTokens:
+        additionalProperties:
+          type: string
+        example:
+          signup_callfluent: sometoken
+          signup_doctorx: sometoken
+          signup_sauces: sometoken
+          signup_sealsend: sometoken
+          signup_sunwaves: sometoken
+        type: object
+      tweetUrl:
+        example: some tweet
+        type: string
+    type: object
 info:
   contact:
     name: ice.io
@@ -846,6 +880,63 @@ info:
   title: User Accounts, User Devices, User Statistics API
   version: latest
 paths:
+  /v1r/kyc/verifyCoinDistributionEligibility/users/{userId}:
+    get:
+      consumes:
+      - application/json
+      description: Returns the non-completed kyc verification scenarios
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - default: <Add metadata token here>
+        description: Insert your metadata token
+        in: header
+        name: X-Account-Metadata
+        type: string
+      - description: ID of the user
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/verificationscenarios.Scenario'
+            type: array
+        "400":
+          description: if validations fail
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "401":
+          description: if not authorized
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "403":
+          description: if not allowed
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "422":
+          description: if syntax fails
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "504":
+          description: if request times out
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+      tags:
+      - KYC
   /v1r/user-statistics/top-countries:
     get:
       consumes:
@@ -1908,6 +1999,71 @@ paths:
             $ref: '#/definitions/server.ErrorResponse'
         "504":
           description: if request times out
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+      tags:
+      - KYC
+  /v1w/kyc/verifyCoinDistributionEligibility/users/{userId}/scenarios/{scenarioEnum}:
+    post:
+      consumes:
+      - application/json
+      description: Verifies if a user is eligible for coin verificationscenarios.
+      parameters:
+      - default: Bearer <Add access token here>
+        description: Insert your access token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - default: <Add metadata token here>
+        description: Insert your metadata token
+        in: header
+        name: X-Account-Metadata
+        type: string
+      - description: ID of the user
+        in: path
+        name: userId
+        required: true
+        type: string
+      - description: the scenario
+        enum:
+        - join_cmc
+        - join_twitter
+        - join_telegram
+        - signup_tenants
+        in: path
+        name: scenarioEnum
+        required: true
+        type: string
+      - description: Request params
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/verificationscenarios.VerificationMetadata'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema: {}
+        "400":
+          description: if validations fail
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "401":
+          description: if not authorized
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "403":
+          description: not allowed due to various reasons
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "422":
+          description: if syntax fails
+          schema:
+            $ref: '#/definitions/server.ErrorResponse'
+        "500":
+          description: Internal Server Error
           schema:
             $ref: '#/definitions/server.ErrorResponse'
       tags:

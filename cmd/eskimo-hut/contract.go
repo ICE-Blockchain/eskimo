@@ -15,6 +15,7 @@ import (
 	linkerkyc "github.com/ice-blockchain/eskimo/kyc/linking"
 	kycquiz "github.com/ice-blockchain/eskimo/kyc/quiz"
 	kycsocial "github.com/ice-blockchain/eskimo/kyc/social"
+	verificationscenarios "github.com/ice-blockchain/eskimo/kyc/verification_scenarios"
 	"github.com/ice-blockchain/eskimo/users"
 )
 
@@ -197,6 +198,10 @@ type (
 	ForwardToFaceKYCResponse struct {
 		KycFaceAvailable bool `json:"kycFaceAvailable" example:"true"`
 	}
+	GetRequiredVerificationEligibilityScenariosArg struct {
+		Authorization string `header:"Authorization" swaggerignore:"true" required:"true" example:"some token"`
+		UserID        string `uri:"userId" required:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"`
+	}
 )
 
 // Private API.
@@ -241,6 +246,10 @@ const (
 	linkingNotOwnedProfile                             = "NOT_OWNER_OF_REMOTE_USER"
 	linkingDuplicate                                   = "DUPLICATE"
 
+	kycVerificationScenariosVadidationFailedErrorCode   = "VALIDATION_FAILED"
+	kycVerificationScenariosNoPendingScenariosErrorCode = "NO_PENDING_SCENARIOS"
+	kycVerificationScenariosNoTenantTokens              = "NO_TENANT_TOKENS" //nolint:gosec // .
+
 	deviceIDTokenClaim = "deviceUniqueID" //nolint:gosec // .
 
 	adminRole = "admin"
@@ -256,14 +265,15 @@ var (
 type (
 	// | service implements server.State and is responsible for managing the state and lifecycle of the package.
 	service struct {
-		usersProcessor      users.Processor
-		quizRepository      kycquiz.Repository
-		authEmailLinkClient emaillink.Client
-		telegramAuthClient  telegramauth.Client
-		tokenRefresher      auth.TokenRefresher
-		socialRepository    kycsocial.Repository
-		faceKycClient       facekyc.Client
-		usersLinker         linkerkyc.Linker
+		usersProcessor                  users.Processor
+		quizRepository                  kycquiz.Repository
+		authEmailLinkClient             emaillink.Client
+		telegramAuthClient              telegramauth.Client
+		tokenRefresher                  auth.TokenRefresher
+		socialRepository                kycsocial.Repository
+		faceKycClient                   facekyc.Client
+		usersLinker                     linkerkyc.Linker
+		verificationScenariosRepository verificationscenarios.Repository
 	}
 	config struct {
 		APIKey           string `yaml:"api-key" mapstructure:"api-key"`                         //nolint:tagliatelle // Nope.

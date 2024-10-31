@@ -10,6 +10,7 @@ import (
 
 	"github.com/pkg/errors"
 
+	verificationscenarios "github.com/ice-blockchain/eskimo/kyc/verification_scenarios"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/server"
 )
@@ -385,4 +386,35 @@ func (s *service) GetUserByUsername( //nolint:gocritic // False negative.
 	}
 
 	return server.OK(&UserProfile{UserProfile: resp}), nil
+}
+
+// GetPendingKYCVerificationScenarios godoc
+//
+//	@Schemes
+//	@Description	Returns the non-completed kyc verification scenarios
+//	@Tags			KYC
+//	@Accept			json
+//	@Produce		json
+//	@Param			Authorization		header		string	true	"Insert your access token"		default(Bearer <Add access token here>)
+//	@Param			X-Account-Metadata	header		string	false	"Insert your metadata token"	default(<Add metadata token here>)
+//	@Param			userId				path		string	true	"ID of the user"
+//	@Success		200					{array}		verificationscenarios.Scenario
+//	@Failure		400					{object}	server.ErrorResponse	"if validations fail"
+//	@Failure		401					{object}	server.ErrorResponse	"if not authorized"
+//	@Failure		403					{object}	server.ErrorResponse	"if not allowed"
+//	@Failure		422					{object}	server.ErrorResponse	"if syntax fails"
+//	@Failure		500					{object}	server.ErrorResponse
+//	@Failure		504					{object}	server.ErrorResponse	"if request times out"
+//	@Router			/v1r/kyc/verifyCoinDistributionEligibility/users/{userId} [GET].
+func (s *service) GetPendingKYCVerificationScenarios( //nolint:gocritic // .
+	ctx context.Context,
+	req *server.Request[GetRequiredVerificationEligibilityScenariosArg, []*verificationscenarios.Scenario],
+) (*server.Response[[]*verificationscenarios.Scenario], *server.Response[server.ErrorResponse]) {
+	ctx = users.ContextWithAuthorization(ctx, req.Data.Authorization) //nolint:revive // .
+	scenarios, err := s.verificationScenariosRepository.GetPendingVerificationScenarios(ctx, req.Data.UserID)
+	if err = errors.Wrapf(err, "failed to GetRequiredVerificationEligibilityScenarios for userID:%v", req.Data.UserID); err != nil {
+		return nil, server.Unexpected(err)
+	}
+
+	return server.OK(&scenarios), nil
 }

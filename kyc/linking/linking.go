@@ -69,14 +69,14 @@ func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, toke
 		}
 	}
 	allProfiles[l.cfg.Tenant] = userID
-	if err = l.storeLinkedAccounts(ctx, now, userID, verified, allProfiles); err != nil {
+	if err = l.StoreLinkedAccounts(ctx, now, userID, verified, allProfiles); err != nil {
 		return nil, "", errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
 	return allProfiles, verified, nil
 }
 
-func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
+func (l *linker) StoreLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
 	params := []any{}
 	values := []string{}
 	idx := 1
@@ -88,7 +88,9 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	}
 	sql := fmt.Sprintf(`INSERT INTO 
    									 linked_user_accounts(linked_at, tenant, user_id, linked_tenant, linked_user_id, has_kyc)
-    							VALUES %v`, strings.Join(values, ",\n"))
+    							VALUES %v 
+									ON CONFLICT(user_id, linked_user_id, tenant, linked_tenant) 
+										DO UPDATE SET has_kyc = EXCLUDED.has_kyc`, strings.Join(values, ",\n"))
 	rows, err := storage.Exec(ctx, l.globalDB, sql, params...)
 	if err != nil {
 		return errors.Wrapf(err, "failed to save linked accounts for usr %v: %#v", userID, res)
@@ -138,30 +140,30 @@ func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles Link
 }
 
 func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) (remoteID UserID, hasFaceResult bool, err error) {
-	usr, err := l.fetchTokenData(ctx, tenant, token)
+	usr, err := FetchTokenData(ctx, tenant, token, l.host, l.cfg.TenantURLs)
 	if err != nil {
-		if errors.Is(err, errRemoteUserNotFound) {
-			return "", false, ErrNotOwnRemoteUser
+		if errors.Is(err, ErrRemoteUserNotFound) {
+			return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "token is not belong to %v", userID)
 		}
 
-		return "", false, errors.Wrapf(err, "failed to fwtch remote user data for %v", userID)
+		return "", false, errors.Wrapf(err, "failed to fetch remote user data for %v", userID)
 	}
 	if usr.CreatedAt == nil || usr.ReferredBy == "" || usr.Username == "" {
-		return "", false, ErrNotOwnRemoteUser
+		return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "token is not belong to %v", userID)
 	}
 
 	return usr.ID, usr.HasFaceKYCResult(), nil
 }
 
 //nolint:funlen // Single http call.
-func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*users.User, error) {
+func FetchTokenData(ctx context.Context, tenant, token, host string, tenantURLs map[Tenant]string) (*users.User, error) {
 	tok, err := server.Auth(ctx).ParseToken(token, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid token passed")
 	}
 	var resp *req.Response
 	var usr users.User
-	getUserURL, err := l.buildGetUserURL(tenant, tok.Subject)
+	getUserURL, err := buildGetUserURL(tenant, tok.Subject, host, tenantURLs)
 	if err != nil {
 		log.Panic(errors.Wrapf(err, "failed to detect tenant url"))
 	}
@@ -197,7 +199,7 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 		return nil, errors.Wrap(err, "failed to link accounts")
 	} else if statusCode := resp.GetStatusCode(); statusCode != http.StatusOK {
 		if statusCode == http.StatusNotFound {
-			return nil, errRemoteUserNotFound
+			return nil, errors.Wrapf(ErrRemoteUserNotFound, "wrong status code for fetch token data for user %v", tok.Subject)
 		}
 
 		return nil, errors.Errorf("[%v]failed to link accounts", statusCode)
@@ -210,15 +212,15 @@ func (l *linker) fetchTokenData(ctx context.Context, tenant, token string) (*use
 	return &usr, nil
 }
 
-func (l *linker) buildGetUserURL(tenant, userID string) (string, error) {
+func buildGetUserURL(tenant, userID, host string, tenantURLs map[Tenant]string) (string, error) {
 	var hasURL bool
 	var baseURL string
-	if len(l.cfg.TenantURLs) > 0 {
-		baseURL, hasURL = l.cfg.TenantURLs[tenant]
+	if len(tenantURLs) > 0 {
+		baseURL, hasURL = tenantURLs[tenant]
 	}
 	if !hasURL {
 		var err error
-		if baseURL, err = url.JoinPath("https://"+l.host, tenant); err != nil {
+		if baseURL, err = url.JoinPath("https://"+host, tenant); err != nil {
 			return "", errors.Wrapf(err, "failed to build user url for tenant %v", tenant)
 		}
 	}

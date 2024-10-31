@@ -24,6 +24,7 @@ type (
 		Verify(ctx context.Context, now *time.Time, userID UserID, tokens map[Tenant]Token) (allLinkedProfiles LinkedProfiles, verified Tenant, err error)
 		Get(ctx context.Context, userID UserID) (allLinkedProfiles LinkedProfiles, verified Tenant, err error)
 		SetTenantVerified(ctx context.Context, userID UserID, tenant Tenant) error
+		StoreLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error
 	}
 )
 
@@ -47,7 +48,7 @@ const (
 var (
 	//go:embed global_ddl.sql
 	ddl                   string
-	errRemoteUserNotFound = errors.New("remote user not found")
+	ErrRemoteUserNotFound = errors.New("remote user not found")
 	ErrNotOwnRemoteUser   = errors.New("not own remote user")
 	ErrDuplicate          = storage.ErrDuplicate
 )

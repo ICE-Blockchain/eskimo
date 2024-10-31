@@ -45,7 +45,7 @@ func TestSocialSave(t *testing.T) {
 		err := repo.saveSocial(ctx, TwitterType, userName, "foo")
 		require.ErrorIs(t, err, storage.ErrDuplicate)
 
-		reason := detectReason(terror.New(err, map[string]any{"user_handle": "foo"}))
+		reason := DetectReason(terror.New(err, map[string]any{"user_handle": "foo"}))
 		require.Equal(t, `duplicate userhandle 'foo'`, reason)
 	})
 

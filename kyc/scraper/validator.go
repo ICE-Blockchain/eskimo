@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: ice License 1.0
 
-package social
+package scraper
 
 import (
 	"net/url"
