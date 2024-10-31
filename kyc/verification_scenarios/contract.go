@@ -84,11 +84,9 @@ type (
 		host            string
 	}
 	config struct {
-		TenantURLs         map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
-		kycConfigJSON1     *atomic.Pointer[social.KycConfigJSON]
-		Tenant             string              `yaml:"tenant" mapstructure:"tenant"`
-		ConfigJSONURL1     string              `yaml:"configJsonUrl1" mapstructure:"configJsonUrl1"` //nolint:tagliatelle // .
-		SessionWindow      stdlibtime.Duration `yaml:"sessionWindow" mapstructure:"sessionWindow"`   //nolint:tagliatelle // .
-		MaxAttemptsAllowed uint8               `yaml:"maxAttemptsAllowed" mapstructure:"maxAttemptsAllowed"`
+		TenantURLs     map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
+		kycConfigJSON1 *atomic.Pointer[social.KycConfigJSON]
+		Tenant         string `yaml:"tenant" mapstructure:"tenant"`
+		ConfigJSONURL1 string `yaml:"configJsonUrl1" mapstructure:"configJsonUrl1"` //nolint:tagliatelle // .
 	}
 )

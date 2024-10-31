@@ -88,15 +88,12 @@ kyc/linking:
   #  doctorx: https://localhost:1445/
 kyc/coinDistributionEligibility:  
   tenant: sunwaves
-  maxAttemptsAllowed: 3
-  sessionWindow: 2m
   configJsonUrl1: https://somewhere.com/something/somebogus.json
   # If urls does not match <cmd/*->hostname>/$tenant/ schema.
   # tenantURLs:
   #   sunwaves: https://localhost:7443/
   #   callfluent: https://localhost:7444/
   #   doctorx: https://localhost:7445/
-  wintr/connectors/storage/v2: *db
 kyc/quiz:
   environment: local
   enable-alerts: false
