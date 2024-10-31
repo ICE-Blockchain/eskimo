@@ -14,7 +14,6 @@ import (
 	stdlibtime "time"
 
 	"github.com/goccy/go-json"
-	"github.com/hashicorp/go-multierror"
 	"github.com/imroc/req/v3"
 	"github.com/pkg/errors"
 
@@ -24,65 +23,54 @@ import (
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/santa/tasks"
 	appcfg "github.com/ice-blockchain/wintr/config"
-	storage "github.com/ice-blockchain/wintr/connectors/storage/v2"
 	"github.com/ice-blockchain/wintr/log"
 	"github.com/ice-blockchain/wintr/time"
 )
 
-func New(ctx context.Context, usrRepo UserRepository, host string) Repository {
+func New(ctx context.Context, usrRepo UserRepository, linker linking.Linker, host string) Repository {
 	var cfg config
 	appcfg.MustLoadFromKey(applicationYamlKey, &cfg)
 	repo := &repository{
 		userRepo:        usrRepo,
 		cfg:             &cfg,
 		host:            host,
-		globalDB:        storage.MustConnect(ctx, "", globalApplicationYamlKey),
-		db:              storage.MustConnect(ctx, ddl, applicationYamlKey),
 		twitterVerifier: scraper.New(scraper.StrategyTwitter),
+		linkerRepo:      linker,
 	}
 	go repo.startKYCConfigJSONSyncer(ctx)
 
 	return repo
 }
 
-func (r *repository) Close() error {
-	return errors.Wrap(multierror.Append(nil,
-		errors.Wrap(r.globalDB.Close(), "closing db connection failed"),
-		errors.Wrap(r.db.Close(), "closing db connection failed"),
-	).ErrorOrNil(), "some of close functions failed")
-}
-
 //nolint:funlen,gocognit,gocyclo,revive,cyclop // .
-func (r *repository) VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) (*social.Verification, error) {
+func (r *repository) VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) error {
+	now := time.Now()
 	userIDScenarioMap := make(map[TenantScenario]users.UserID, 0)
 	usr, err := r.userRepo.GetUserByID(ctx, metadata.UserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get user by id: %v", metadata.UserID)
+		return errors.Wrapf(err, "failed to get user by id: %v", metadata.UserID)
 	}
 	completedSantaTasks, err := r.getCompletedSantaTasks(ctx, usr.ID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to getCompletedSantaTasks for userID: %v", usr.ID)
+		return errors.Wrapf(err, "failed to getCompletedSantaTasks for userID: %v", usr.ID)
 	}
 	pendingScenarios := r.getPendingScenarios(usr.User, completedSantaTasks)
 	if len(pendingScenarios) == 0 || !isScenarioPending(pendingScenarios, string(metadata.ScenarioEnum)) {
-		return nil, errors.Wrapf(ErrNoPendingScenarios, "no pending scenarios for user: %v", metadata.UserID)
+		return errors.Wrapf(ErrNoPendingScenarios, "no pending scenarios for user: %v", metadata.UserID)
 	}
 	switch metadata.ScenarioEnum {
 	case CoinDistributionScenarioCmc:
 		if false {
-			return nil, errors.Wrapf(ErrVerificationNotPassed, "haven't passed the CMC verification for userID:%v", metadata.UserID)
+			return errors.Wrapf(ErrVerificationNotPassed, "haven't passed the CMC verification for userID:%v", metadata.UserID)
 		}
 	case CoinDistributionScenarioTwitter:
-		verification, sErr := r.VerifyTwitterPost(ctx, metadata)
-		if sErr != nil {
-			return verification, errors.Wrapf(sErr, "failed to call VerifyPostForDistibutionVerification for userID:%v", metadata.UserID)
-		}
-		if verification.Result != social.SuccessVerificationResult {
-			return verification, nil
+		if sErr := r.VerifyTwitterPost(ctx, metadata); sErr != nil {
+			return errors.Wrapf(sErr, "failed to call VerifyPostForDistibutionVerification for userID:%v", metadata.UserID)
 		}
 	case CoinDistributionScenarioTelegram:
 	case CoinDistributionScenarioSignUpTenants:
 		skippedTokenCount := 0
+		linkedUserIDs := make(map[linking.Tenant]users.UserID, 0)
 		for tenantScenario, token := range metadata.TenantTokens {
 			if !isScenarioPending(pendingScenarios, string(tenantScenario)) {
 				skippedTokenCount++
@@ -93,25 +81,26 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 			tenantUsr, fErr := linking.FetchTokenData(ctx, splitted[1], string(token), r.host, r.cfg.TenantURLs)
 			if fErr != nil {
 				if errors.Is(fErr, linking.ErrRemoteUserNotFound) {
-					return nil, errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v for the tenant: %v", metadata.UserID, tenantScenario)
+					return errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v for the tenant: %v", metadata.UserID, tenantScenario)
 				}
 
-				return nil, errors.Wrapf(fErr, "failed to fetch remote user data for %v", metadata.UserID)
+				return errors.Wrapf(fErr, "failed to fetch remote user data for %v", metadata.UserID)
 			}
 			if tenantUsr.CreatedAt == nil || tenantUsr.ReferredBy == "" || tenantUsr.Username == "" {
-				return nil, errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v for the tenant: %v", metadata.UserID, tenantScenario)
+				return errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v for the tenant: %v", metadata.UserID, tenantScenario)
 			}
 			userIDScenarioMap[tenantScenario] = tenantUsr.ID
+			linkedUserIDs[splitted[1]] = tenantUsr.ID
 		}
 		if skippedTokenCount == len(metadata.TenantTokens) {
-			return nil, errors.Wrapf(ErrWrongTenantTokens, "all passed tenant tokens don't wait for verification for userID:%v", metadata.UserID)
+			return errors.Wrapf(ErrWrongTenantTokens, "no pending tenant tokens for userID:%v", metadata.UserID)
 		}
-		if sErr := r.storeLinkedAccounts(ctx, usr.ID, userIDScenarioMap); sErr != nil {
-			return nil, errors.Wrap(sErr, "failed to store linked accounts")
+		if sErr := r.linkerRepo.StoreLinkedAccounts(ctx, now, usr.ID, "", linkedUserIDs); sErr != nil {
+			return errors.Wrap(sErr, "failed to store linked accounts")
 		}
 	}
 
-	return nil, errors.Wrapf(r.setCompletedDistributionScenario(ctx, usr.User, metadata.ScenarioEnum, userIDScenarioMap),
+	return errors.Wrapf(r.setCompletedDistributionScenario(ctx, usr.User, metadata.ScenarioEnum, userIDScenarioMap),
 		"failed to setCompletedDistributionScenario for userID:%v", metadata.UserID)
 }
 
@@ -294,30 +283,6 @@ func authorization(ctx context.Context) (authorization string) {
 	return
 }
 
-func (r *repository) storeLinkedAccounts(ctx context.Context, userID string, res map[TenantScenario]string) error {
-	now := time.Now()
-	params := []any{}
-	values := []string{}
-	idx := 1
-	for linkTenant, linkUserID := range res {
-		lingTenantVal := strings.Split(string(linkTenant), "_")[1]
-		params = append(params, now.Time, r.cfg.Tenant, userID, lingTenantVal, linkUserID)
-		//nolint:gomnd // .
-		values = append(values, fmt.Sprintf("($%[1]v,$%[2]v,$%[3]v,$%[4]v,$%[5]v)", idx, idx+1, idx+2, idx+3, idx+4))
-		idx += 5
-	}
-	sql := fmt.Sprintf(`INSERT INTO 
-   									 linked_user_accounts(linked_at, tenant, user_id, linked_tenant, linked_user_id)
-    							VALUES %v 
-								ON CONFLICT(user_id, linked_user_id, tenant, linked_tenant) DO NOTHING`, strings.Join(values, ",\n"))
-	_, err := storage.Exec(ctx, r.globalDB, sql, params...)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save linked accounts for usr %v: %#v", userID, res)
-	}
-
-	return nil
-}
-
 func buildGetCompletedTasksURL(tenant, userID, host string, tenantURLs map[string]string) (string, error) {
 	var hasURL bool
 	var baseURL string
@@ -338,38 +303,10 @@ func buildGetCompletedTasksURL(tenant, userID, host string, tenantURLs map[strin
 	return userURL, nil
 }
 
-//nolint:funlen,gocognit,revive // .
-func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *VerificationMetadata) (*social.Verification, error) {
-	now := time.Now()
+func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *VerificationMetadata) error {
 	user, err := r.userRepo.GetUserByID(ctx, metadata.UserID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to GetUserByID: %v", metadata.UserID)
-	}
-	sql := `SELECT ARRAY_AGG(x.created_at) AS unsuccessful_attempts 
-			FROM (SELECT created_at 
-				  FROM verification_distribution_kyc_unsuccessful_attempts 
-				  WHERE user_id = $1
-				    AND reason != ANY($2)
-				  ORDER BY created_at DESC) x`
-	res, err := storage.Get[struct {
-		UnsuccessfulAttempts *[]time.Time `db:"unsuccessful_attempts"`
-	}](ctx, r.db, sql, metadata.UserID, []string{social.ExhaustedRetriesReason})
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to get unsuccessful_attempts for userID:%v", metadata.UserID)
-	}
-	remainingAttempts := r.cfg.MaxAttemptsAllowed
-	if res.UnsuccessfulAttempts != nil {
-		for _, unsuccessfulAttempt := range *res.UnsuccessfulAttempts {
-			if unsuccessfulAttempt.After(now.Add(-r.cfg.SessionWindow)) {
-				remainingAttempts--
-				if remainingAttempts == 0 {
-					break
-				}
-			}
-		}
-	}
-	if remainingAttempts < 1 {
-		return nil, social.ErrNotAvailable
+		return errors.Wrapf(err, "failed to GetUserByID: %v", metadata.UserID)
 	}
 	pvm := &social.Metadata{
 		PostURL:          metadata.TweetURL,
@@ -377,40 +314,16 @@ func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *Verificati
 		ExpectedPostURL:  r.expectedPostURL(),
 	}
 	userHandle, err := r.twitterVerifier.VerifyPost(ctx, pvm)
-	if err != nil { //nolint:nestif // .
-		log.Error(errors.Wrapf(err, "social verification failed for twitter verifier,Language:%v,userID:%v", metadata.Language, metadata.UserID))
-		reason := social.DetectReason(err)
-		if userHandle != "" {
-			reason = strings.ToLower(userHandle) + ": " + reason
-		}
-		if err = r.saveUnsuccessfulAttempt(ctx, now, reason, metadata); err != nil {
-			return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", reason, metadata)
-		}
-		remainingAttempts--
-		if remainingAttempts == 0 {
-			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), social.ExhaustedRetriesReason, metadata); err != nil {
-				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", social.ExhaustedRetriesReason, metadata)
-			}
-		}
-
-		return &social.Verification{RemainingAttempts: &remainingAttempts, Result: social.FailureVerificationResult}, nil
+	if err != nil {
+		return errors.Wrapf(ErrVerificationNotPassed,
+			"can't verify post for twitter verifier userID:%v,Language:%v,reason:%v", metadata.UserID, metadata.Language, social.DetectReason(err))
+	}
+	if userHandle == "" {
+		return errors.Wrapf(ErrVerificationNotPassed,
+			"user handle is empty after the verifyPost call for twitter verifier,Language:%v,userID:%v", metadata.Language, metadata.UserID)
 	}
 
-	return &social.Verification{Result: social.SuccessVerificationResult}, nil
-}
-
-func (r *repository) saveUnsuccessfulAttempt(ctx context.Context, now *time.Time, reason string, metadata *VerificationMetadata) error {
-	var socialName string
-	switch metadata.ScenarioEnum { //nolint:exhaustive // We know what socials we can use here.
-	case CoinDistributionScenarioTwitter:
-		socialName = "twitter"
-	default:
-		return errors.Errorf("unknown scenario: %v", metadata.ScenarioEnum)
-	}
-	sql := `INSERT INTO verification_distribution_kyc_unsuccessful_attempts(created_at, reason, user_id, social) VALUES ($1,$2,$3,$4)`
-	_, err := storage.Exec(ctx, r.db, sql, now.Time, reason, metadata.UserID, socialName)
-
-	return errors.Wrapf(err, "failed to `%v`; userId:%v,social:%v,reason:%v", sql, metadata.UserID, socialName, reason)
+	return nil
 }
 
 func (r *repository) expectedPostSubtext(user *users.User, metadata *VerificationMetadata) string {

@@ -72,7 +72,8 @@ kyc/face:
     availabilityUrl:
     secretApiToken: bogus-secret
     concurrentUsers: 1
-globalDb:
+kyc/linking:
+  tenant: sunwaves
   wintr/connectors/storage/v2:
     runDDL: true
     primaryURL: postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=40
@@ -81,8 +82,6 @@ globalDb:
       password: pass
     replicaURLs:
       - postgresql://root:pass@localhost:5438/eskimo-global?pool_max_conn_idle_time=1000ms&pool_health_check_period=500ms&pool_max_conns=20
-kyc/linking:
-  tenant: sunwaves
   # If urls does not match <cmd/*->hostname>/$tenant/ schema.
   #tenantURLs:
   #  callfluent: https://localhost:1444/

@@ -34,7 +34,7 @@ func NewAccountLinker(ctx context.Context, host string) Linker {
 	if len(cfg.TenantURLs) == 0 && host == "" {
 		log.Panic("kyc/linking: Must provide tenantURLs or host")
 	}
-	db := storage.MustConnect(ctx, ddl, globalDBYamlKey)
+	db := storage.MustConnect(ctx, ddl, applicationYamlKey)
 
 	return &linker{
 		globalDB: db,
@@ -69,14 +69,14 @@ func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, toke
 		}
 	}
 	allProfiles[l.cfg.Tenant] = userID
-	if err = l.storeLinkedAccounts(ctx, now, userID, verified, allProfiles); err != nil {
+	if err = l.StoreLinkedAccounts(ctx, now, userID, verified, allProfiles); err != nil {
 		return nil, "", errors.Wrapf(err, "failed to save linked accounts for %v", userID)
 	}
 
 	return allProfiles, verified, nil
 }
 
-func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
+func (l *linker) StoreLinkedAccounts(ctx context.Context, now *time.Time, userID, verifiedTenant string, res map[Tenant]UserID) error {
 	params := []any{}
 	values := []string{}
 	idx := 1
@@ -88,16 +88,15 @@ func (l *linker) storeLinkedAccounts(ctx context.Context, now *time.Time, userID
 	}
 	sql := fmt.Sprintf(`INSERT INTO 
    									 linked_user_accounts(linked_at, tenant, user_id, linked_tenant, linked_user_id, has_kyc)
-    							VALUES %v`, strings.Join(values, ",\n"))
+    							VALUES %v 
+									ON CONFLICT(user_id, linked_user_id, tenant, linked_tenant) 
+										DO UPDATE SET has_kyc = EXCLUDED.has_kyc`, strings.Join(values, ",\n"))
 	rows, err := storage.Exec(ctx, l.globalDB, sql, params...)
-	if err != nil {
-		return errors.Wrapf(err, "failed to save linked accounts for usr %v: %#v", userID, res)
-	}
 	if rows != uint64(len(res)) {
 		return errors.Errorf("failed unexpected rows on saving linked accounts for usr %v %v instead of %v", userID, rows, len(res))
 	}
 
-	return nil
+	return errors.Wrapf(err, "failed to save linked accounts for usr %v: %#v", userID, res)
 }
 
 //nolint:funlen // .

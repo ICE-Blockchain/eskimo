@@ -1745,9 +1745,7 @@ const docTemplate = `{
                 "responses": {
                     "200": {
                         "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/social.Verification"
-                        }
+                        "schema": {}
                     },
                     "400": {
                         "description": "if validations fail",
@@ -3765,8 +3763,11 @@ const docTemplate = `{
                         "type": "string"
                     },
                     "example": {
-                        "sealsend": "sometoken",
-                        "sunwaves": "sometoken"
+                        "signup_callfluent": "sometoken",
+                        "signup_doctorx": "sometoken",
+                        "signup_sauces": "sometoken",
+                        "signup_sealsend": "sometoken",
+                        "signup_sunwaves": "sometoken"
                     }
                 },
                 "tweetUrl": {

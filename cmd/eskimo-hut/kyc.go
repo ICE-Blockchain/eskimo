@@ -381,23 +381,22 @@ func (s *service) ForwardToFaceKYC(
 //	@Param			userId				path		string										true	"ID of the user"
 //	@Param			scenarioEnum		path		string										true	"the scenario"	enums(join_cmc,join_twitter,join_telegram,signup_tenants)
 //	@Param			request				body		verificationscenarios.VerificationMetadata	false	"Request params"
-//	@Success		200					{object}	kycsocial.Verification
+//	@Success		200					{object}	any
 //	@Failure		400					{object}	server.ErrorResponse	"if validations fail"
 //	@Failure		401					{object}	server.ErrorResponse	"if not authorized"
 //	@Failure		403					{object}	server.ErrorResponse	"not allowed due to various reasons"
 //	@Failure		422					{object}	server.ErrorResponse	"if syntax fails"
 //	@Failure		500					{object}	server.ErrorResponse
 //	@Router			/v1w/kyc/verifyCoinDistributionEligibility/users/{userId}/scenarios/{scenarioEnum} [POST].
-func (s *service) VerifyKYCScenarios( //nolint:gocritic,funlen // .
+func (s *service) VerifyKYCScenarios( //nolint:gocritic // .
 	ctx context.Context,
-	req *server.Request[verificationscenarios.VerificationMetadata, kycsocial.Verification],
-) (*server.Response[kycsocial.Verification], *server.Response[server.ErrorResponse]) {
+	req *server.Request[verificationscenarios.VerificationMetadata, any],
+) (*server.Response[any], *server.Response[server.ErrorResponse]) {
 	if err := validateScenariosData(req.Data); err != nil {
 		return nil, server.UnprocessableEntity(errors.Wrapf(err, "validations failed for %#v", req.Data), invalidPropertiesErrorCode)
 	}
 	ctx = users.ContextWithAuthorization(ctx, req.Data.Authorization) //nolint:revive // .
-	result, err := s.verificationScenariosRepository.VerifyScenarios(ctx, req.Data)
-	if err = errors.Wrapf(err, "failed to VerifyCoinDistributionEligibility for userID:%v", req.Data.UserID); err != nil {
+	if err := s.verificationScenariosRepository.VerifyScenarios(ctx, req.Data); err != nil {
 		switch {
 		case errors.Is(err, verificationscenarios.ErrVerificationNotPassed):
 			return nil, server.BadRequest(err, kycVerificationScenariosVadidationFailedErrorCode)
@@ -405,10 +404,6 @@ func (s *service) VerifyKYCScenarios( //nolint:gocritic,funlen // .
 			return nil, server.NotFound(err, userNotFoundErrorCode)
 		case errors.Is(err, users.ErrNotFound):
 			return nil, server.NotFound(err, userNotFoundErrorCode)
-		case errors.Is(err, kycsocial.ErrDuplicate):
-			return nil, server.Conflict(err, socialKYCStepAlreadyCompletedSuccessfullyErrorCode)
-		case errors.Is(err, kycsocial.ErrNotAvailable):
-			return nil, server.ForbiddenWithCode(err, socialKYCStepNotAvailableErrorCode)
 		case errors.Is(err, linking.ErrNotOwnRemoteUser):
 			return nil, server.BadRequest(err, linkingNotOwnedProfile)
 		case errors.Is(err, verificationscenarios.ErrNoPendingScenarios):
@@ -419,11 +414,8 @@ func (s *service) VerifyKYCScenarios( //nolint:gocritic,funlen // .
 			return nil, server.Unexpected(err)
 		}
 	}
-	if result != nil {
-		return server.OK(result), nil
-	}
 
-	return server.OK[kycsocial.Verification](nil), nil
+	return server.OK[any](nil), nil
 }
 
 //nolint:funlen,gocognit,revive // .

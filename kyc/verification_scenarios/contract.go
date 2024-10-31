@@ -4,17 +4,16 @@ package verificationscenarios
 
 import (
 	"context"
-	_ "embed"
 	"errors"
 	"io"
 	"mime/multipart"
 	"sync/atomic"
 	stdlibtime "time"
 
+	"github.com/ice-blockchain/eskimo/kyc/linking"
 	"github.com/ice-blockchain/eskimo/kyc/scraper"
 	"github.com/ice-blockchain/eskimo/kyc/social"
 	"github.com/ice-blockchain/eskimo/users"
-	storage "github.com/ice-blockchain/wintr/connectors/storage/v2"
 )
 
 // Public API.
@@ -47,8 +46,7 @@ type (
 	Scenario       string
 	TenantScenario string
 	Repository     interface {
-		io.Closer
-		VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) (*social.Verification, error)
+		VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) error
 		GetPendingVerificationScenarios(ctx context.Context, userID string) ([]*Scenario, error)
 	}
 	UserRepository interface {
@@ -61,7 +59,7 @@ type (
 		UserID           string                   `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
 		ScenarioEnum     Scenario                 `uri:"scenarioEnum" example:"join_cmc" swaggerignore:"true" required:"true" enums:"join_cmc,join_twitter,join_telegram,signup_tenants"`               //nolint:lll // .
 		Language         string                   `json:"language" required:"false" swaggerignore:"true" example:"en"`
-		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"sunwaves:sometoken,sealsend:sometoken"`
+		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"signup_sunwaves:sometoken,signup_sealsend:sometoken,signup_callfluent:sometoken,signup_doctorx:sometoken,signup_sauces:sometoken"` //nolint:lll // .
 		CMCProfileLink   string                   `json:"cmcProfileLink" required:"false" example:"some profile"`
 		TweetURL         string                   `json:"tweetUrl" required:"false" example:"some tweet"`
 		TelegramUsername string                   `json:"telegramUsername" required:"false" example:"some telegram username"`
@@ -72,26 +70,17 @@ type (
 
 const (
 	applicationYamlKey       = "kyc/coinDistributionEligibility"
-	globalApplicationYamlKey = "globalDb"
 	authorizationCtxValueKey = "authorizationCtxValueKey"
 
-	verificationTwitterScenarioKYCStep int8 = 120
-	requestDeadline                         = 25 * stdlibtime.Second
-)
-
-// .
-var (
-	//go:embed DDL.sql
-	ddl string
+	requestDeadline = 25 * stdlibtime.Second
 )
 
 type (
 	repository struct {
 		cfg             *config
-		globalDB        *storage.DB
-		db              *storage.DB
 		userRepo        UserRepository
 		twitterVerifier scraper.Verifier
+		linkerRepo      linking.Linker
 		host            string
 	}
 	config struct {
