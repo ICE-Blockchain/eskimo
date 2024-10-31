@@ -130,7 +130,7 @@ func (r *repository) verifySkipped(ctx context.Context, metadata *VerificationMe
 	res, err := storage.Get[struct {
 		LatestCreatedAt *time.Time `db:"latest_created_at"`
 		SkippedCount    int        `db:"skipped"`
-	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, ExhaustedRetriesReason})
+	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, exhaustedRetriesReason})
 	if err != nil {
 		return 0, errors.Wrapf(err, "failed to get skipped attempt count for kycStep:%v,userID:%v", metadata.KYCStep, metadata.UserID)
 	}
@@ -169,7 +169,7 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 				  ORDER BY created_at DESC) x`
 	res, err := storage.Get[struct {
 		UnsuccessfulAttempts *[]time.Time `db:"unsuccessful_attempts"`
-	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, ExhaustedRetriesReason})
+	}](ctx, r.db, sql, metadata.UserID, metadata.KYCStep, []string{skippedReason, exhaustedRetriesReason})
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get unsuccessful_attempts for kycStep:%v,userID:%v", metadata.KYCStep, metadata.UserID)
 	}
@@ -206,8 +206,8 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 		}
 		remainingAttempts--
 		if remainingAttempts == 0 {
-			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), ExhaustedRetriesReason, metadata); err != nil {
-				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", ExhaustedRetriesReason, metadata)
+			if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), exhaustedRetriesReason, metadata); err != nil {
+				return nil, errors.Wrapf(err, "[1]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", exhaustedRetriesReason, metadata)
 			}
 			end := skippedCount+1 == r.cfg.MaxSessionsAllowed
 
@@ -230,8 +230,8 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 				}
 				remainingAttempts--
 				if remainingAttempts == 0 {
-					if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), ExhaustedRetriesReason, metadata); err != nil {
-						return nil, errors.Wrapf(err, "[2]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", ExhaustedRetriesReason, metadata)
+					if err = r.saveUnsuccessfulAttempt(ctx, time.New(now.Add(stdlibtime.Microsecond)), exhaustedRetriesReason, metadata); err != nil {
+						return nil, errors.Wrapf(err, "[2]failed to saveUnsuccessfulAttempt reason:%v,metadata:%#v", exhaustedRetriesReason, metadata)
 					}
 					end := skippedCount+1 == r.cfg.MaxSessionsAllowed
 					if err = r.modifyUser(ctx, end, end, metadata.KYCStep, now, user.User); err != nil {

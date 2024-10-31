@@ -148,7 +148,7 @@ func (r *repository) sendSlackMessage(ctx context.Context, kycStep users.KYCStep
 	rows := make([]string, 0, len(stats))
 	var hasExhaustedRetries bool
 	for _, stat := range stats {
-		if stat.Reason == ExhaustedRetriesReason && stat.Counter > 0 {
+		if stat.Reason == exhaustedRetriesReason && stat.Counter > 0 {
 			hasExhaustedRetries = true
 		}
 		rows = append(rows, fmt.Sprintf("`%v`: `%v`", stat.Reason, stat.Counter))

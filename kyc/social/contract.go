@@ -97,7 +97,7 @@ const (
 
 const (
 	skippedReason          = "skipped"
-	ExhaustedRetriesReason = "exhausted_retries"
+	exhaustedRetriesReason = "exhausted_retries"
 )
 
 var (
