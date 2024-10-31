@@ -92,11 +92,14 @@ func (l *linker) StoreLinkedAccounts(ctx context.Context, now *time.Time, userID
 									ON CONFLICT(user_id, linked_user_id, tenant, linked_tenant) 
 										DO UPDATE SET has_kyc = EXCLUDED.has_kyc`, strings.Join(values, ",\n"))
 	rows, err := storage.Exec(ctx, l.globalDB, sql, params...)
+	if err != nil {
+		return errors.Wrapf(err, "failed to save linked accounts for usr %v: %#v", userID, res)
+	}
 	if rows != uint64(len(res)) {
 		return errors.Errorf("failed unexpected rows on saving linked accounts for usr %v %v instead of %v", userID, rows, len(res))
 	}
 
-	return errors.Wrapf(err, "failed to save linked accounts for usr %v: %#v", userID, res)
+	return nil
 }
 
 //nolint:funlen // .
