@@ -3767,7 +3767,8 @@ const docTemplate = `{
                         "signup_doctorx": "sometoken",
                         "signup_sauces": "sometoken",
                         "signup_sealsend": "sometoken",
-                        "signup_sunwaves": "sometoken"
+                        "signup_sunwaves": "sometoken",
+                        "signup_tokero": "sometoken"
                     }
                 },
                 "tweetUrl": {

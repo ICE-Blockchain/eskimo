@@ -21,11 +21,11 @@ func TestGetPendingKYCVerificationScenarios(t *testing.T) {
 		{
 			name: "All tasks and scenarios completed",
 			completedSantaTasks: []string{
-				"signup_sunwaves", "signup_sealsend", "signup_callfluent", "signup_sauces", "signup_doctorx",
+				"signup_sunwaves", "signup_sealsend", "signup_callfluent", "signup_sauces", "signup_doctorx", "signup_tokero",
 				"join_twitter", "join_telegram", "join_bullish_cmc", "join_ion_cmc", "join_watchlist_cmc",
 			},
 			distributionScenariosCompleted: []string{
-				"signup_sunwaves", "signup_sealsend", "signup_callfluent", "signup_sauces", "signup_doctorx",
+				"signup_sunwaves", "signup_sealsend", "signup_callfluent", "signup_sauces", "signup_doctorx", "signup_tokero",
 				"join_twitter", "join_telegram", "join_cmc",
 			},
 			expectedPendingScenarios: nil,
