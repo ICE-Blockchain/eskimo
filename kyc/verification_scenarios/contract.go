@@ -59,7 +59,7 @@ type (
 		Authorization    string                   `header:"Authorization" swaggerignore:"true" required:"true" example:"some token"`
 		UserID           string                   `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
 		ScenarioEnum     Scenario                 `uri:"scenarioEnum" example:"join_cmc" swaggerignore:"true" required:"true" enums:"join_cmc,join_twitter,join_telegram,signup_tenants"`               //nolint:lll // .
-		Language         string                   `json:"language" required:"false" swaggerignore:"true" example:"en"`
+		Language         string                   `json:"language" required:"false" example:"en"`
 		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"signup_sunwaves:sometoken,signup_sealsend:sometoken,signup_callfluent:sometoken,signup_doctorx:sometoken,signup_sauces:sometoken,signup_tokero:sometoken"` //nolint:lll // .
 		CMCProfileLink   string                   `json:"cmcProfileLink" required:"false" example:"some profile"`
 		TweetURL         string                   `json:"tweetUrl" required:"false" example:"some tweet"`
@@ -88,6 +88,6 @@ type (
 		TenantURLs     map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
 		kycConfigJSON1 *atomic.Pointer[social.KycConfigJSON]
 		Tenant         string `yaml:"tenant" mapstructure:"tenant"`
-		ConfigJSONURL1 string `yaml:"configJsonUrl1" mapstructure:"configJsonUrl1"` //nolint:tagliatelle // .
+		ConfigJSONURL1 string `yaml:"config-json-url1" mapstructure:"config-json-url1"` //nolint:tagliatelle // .
 	}
 )

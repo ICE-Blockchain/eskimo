@@ -3753,6 +3753,10 @@ const docTemplate = `{
                     "type": "string",
                     "example": "some profile"
                 },
+                "language": {
+                    "type": "string",
+                    "example": "en"
+                },
                 "telegramUsername": {
                     "type": "string",
                     "example": "some telegram username"

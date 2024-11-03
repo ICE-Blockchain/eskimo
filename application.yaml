@@ -88,7 +88,7 @@ kyc/linking:
   #  doctorx: https://localhost:1445/
 kyc/coinDistributionEligibility:  
   tenant: sunwaves
-  configJsonUrl1: https://somewhere.com/something/somebogus.json
+  config-json-url1: https://somewhere.com/something/somebogus.json
   # If urls does not match <cmd/*->hostname>/$tenant/ schema.
   # tenantURLs:
   #   sunwaves: https://localhost:7443/

@@ -854,6 +854,9 @@ definitions:
       cmcProfileLink:
         example: some profile
         type: string
+      language:
+        example: en
+        type: string
       telegramUsername:
         example: some telegram username
         type: string
