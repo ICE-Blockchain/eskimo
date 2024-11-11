@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"sync/atomic"
 	"text/template"
@@ -113,8 +114,12 @@ func (r *repository) GetPendingVerificationScenarios(ctx context.Context, userID
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to getCompletedSantaTasks for userID: %v", usr.ID)
 	}
+	pendingScenarios := r.getPendingScenarios(usr.User, completedSantaTasks)
+	sort.SliceStable(pendingScenarios, func(i, j int) bool {
+		return scenarioOrder[*pendingScenarios[i]] < scenarioOrder[*pendingScenarios[j]]
+	})
 
-	return r.getPendingScenarios(usr.User, completedSantaTasks), nil
+	return pendingScenarios, nil
 }
 
 //nolint:funlen,gocognit,gocyclo,revive,cyclop // .

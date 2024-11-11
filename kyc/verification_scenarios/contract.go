@@ -76,6 +76,22 @@ const (
 	requestDeadline = 25 * stdlibtime.Second
 )
 
+// .
+var (
+	//nolint:gochecknoglobals,gomnd // We need it to sort scenarios.
+	scenarioOrder = map[Scenario]int{
+		CoinDistributionScenarioCmc:                        0,
+		CoinDistributionScenarioTwitter:                    1,
+		CoinDistributionScenarioTelegram:                   2,
+		Scenario(CoinDistributionScenarioSignUpSunwaves):   3,
+		Scenario(CoinDistributionScenarioSignUpCallfluent): 4,
+		Scenario(CoinDistributionScenarioSignUpDoctorx):    5,
+		Scenario(CoinDistributionScenarioSignUpSauces):     6,
+		Scenario(CoinDistributionScenarioSignUpSealsend):   7,
+		Scenario(CoinDistributionScenarioSignUpTokero):     8,
+	}
+)
+
 type (
 	repository struct {
 		cfg             *config

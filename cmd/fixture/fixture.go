@@ -238,5 +238,5 @@ func (*TestConnectorsBridge) GetAllTestingAuthorizations() (userIDs, tokens []st
 
 func (*TestConnectorsBridge) AssertResponseBody(tb testing.TB, expectedRespBody, actualRespBody string) {
 	tb.Helper()
-	assert.Regexp(tb, regexp.MustCompile(strings.ReplaceAll(strings.ReplaceAll(expectedRespBody, "\t", ""), "\n", "")), actualRespBody)
+	assert.Regexp(tb, regexp.MustCompile(strings.ReplaceAll(strings.ReplaceAll(expectedRespBody, "\t", ""), "\n", "")), actualRespBody) //nolint:testifylint // .
 }

@@ -151,7 +151,7 @@ func (c *client) finishAuthProcess(
 	}
 	if _, hasRegisteredWith := (*md)[wintrauth.RegisteredWithProviderClaim]; !hasRegisteredWith {
 		if firebaseID, hasFirebaseID := (*md)[wintrauth.FirebaseIDClaim]; hasFirebaseID {
-			if !strings.HasPrefix(firebaseID.(string), iceIDPrefix) && !strings.HasPrefix(userID, iceIDPrefix) { //nolint:forcetypeassert // .
+			if !strings.HasPrefix(firebaseID.(string), iceIDPrefix) && !strings.HasPrefix(userID, iceIDPrefix) { //nolint:forcetypeassert,errcheck // .
 				mdToUpdate[wintrauth.RegisteredWithProviderClaim] = wintrauth.ProviderFirebase
 			}
 		}
