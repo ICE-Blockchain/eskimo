@@ -288,7 +288,7 @@ func (*service) handleFirebaseEmailMismatch(ctx context.Context, loggedInUser *s
 
 	fbClaimInterface, hasFBClaim := loggedInUser.Claims["firebase"]
 	if hasFBClaim {
-		signInWithInterface, hasSignInProvider := fbClaimInterface.(map[string]any)["sign_in_provider"]
+		signInWithInterface, hasSignInProvider := fbClaimInterface.(map[string]any)["sign_in_provider"] //nolint:errcheck // .
 		if hasSignInProvider {
 			if signInProvider := signInWithInterface.(string); signInProvider != "password" { //nolint:forcetypeassert,errcheck // .
 				return nil

@@ -35,7 +35,7 @@ func (r *repository) startUnsuccessfulKYCStepsAlerter(ctx context.Context, kycSt
 	if !found {
 		log.Panic(fmt.Sprintf("failed to get alertFrequency for %v", kycStep))
 	}
-	ticker := stdlibtime.NewTicker(alertFrequencyDuration.(stdlibtime.Duration)) //nolint:forcetypeassert // .
+	ticker := stdlibtime.NewTicker(alertFrequencyDuration.(stdlibtime.Duration)) //nolint:forcetypeassert,errcheck // .
 	defer ticker.Stop()
 
 	for {
@@ -78,10 +78,10 @@ func (r *repository) sendUnsuccessfulKYCStepsAlertToSlack(ctx context.Context, t
 		if !found {
 			log.Panic(fmt.Sprintf("failed to get alertFrequency for %v", kycStep))
 		}
-		if time.Now().Sub(*alert.LastAlertAt.Time) < stdlibtime.Duration(float64(freq.(stdlibtime.Duration).Nanoseconds())*0.8) { //nolint:gomnd,forcetypeassert,lll // .
+		if time.Now().Sub(*alert.LastAlertAt.Time) < stdlibtime.Duration(float64(freq.(stdlibtime.Duration).Nanoseconds())*0.8) { //nolint:gomnd,forcetypeassert,lll,errcheck // .
 			return errRaceCondition
 		}
-		if newFrequency := stdlibtime.Duration(alert.FrequencyInSeconds) * stdlibtime.Second; newFrequency != freq.(stdlibtime.Duration) { //nolint:forcetypeassert,gosec,lll // .
+		if newFrequency := stdlibtime.Duration(alert.FrequencyInSeconds) * stdlibtime.Second; newFrequency != freq.(stdlibtime.Duration) { //nolint:forcetypeassert,gosec,lll,errcheck // .
 			r.cfg.alertFrequency.Store(kycStep, newFrequency)
 			ticker.Reset(newFrequency)
 		}

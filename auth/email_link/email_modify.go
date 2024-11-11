@@ -28,7 +28,7 @@ func (c *client) handleEmailModification(ctx context.Context, els *emailLinkSign
 	}
 	if els.Metadata != nil {
 		if firebaseID, hasFirebaseID := (*els.Metadata)[auth.FirebaseIDClaim]; hasFirebaseID {
-			if fErr := server.Auth(ctx).UpdateEmail(ctx, firebaseID.(string), newEmail); fErr != nil { //nolint:forcetypeassert // .
+			if fErr := server.Auth(ctx).UpdateEmail(ctx, firebaseID.(string), newEmail); fErr != nil { //nolint:forcetypeassert,errcheck // .
 				oldEmailVal := oldEmail
 				if els.PhoneNumberToEmailMigrationUserID != nil && *els.PhoneNumberToEmailMigrationUserID != "" {
 					oldEmailVal = usr.ID
@@ -95,7 +95,7 @@ func (*client) resetFirebaseEmailModification(ctx context.Context, md *users.JSO
 	if md != nil {
 		if firebaseID, hasFirebaseID := (*md)[auth.FirebaseIDClaim]; hasFirebaseID {
 			return errors.Wrapf(
-				server.Auth(ctx).UpdateEmail(ctx, firebaseID.(string), oldEmail), //nolint:forcetypeassert // .
+				server.Auth(ctx).UpdateEmail(ctx, firebaseID.(string), oldEmail), //nolint:forcetypeassert,errcheck // .
 				"failed to change email in firebase to:%v fbUserID:%v", oldEmail, firebaseID,
 			)
 		}

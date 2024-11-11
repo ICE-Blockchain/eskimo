@@ -250,14 +250,14 @@ func (c *client) dequeueNextEmails(ctx context.Context) (emailsBatch []string, s
 			return nil, nil, "", errors.Wrapf(rateErr, "failed to fetch %v email sending rate", pipeRes[1].String())
 		}
 	}
-	batch := pipeRes[0].(*redis.ZSliceCmd).Val() //nolint:forcetypeassert // .
+	batch := pipeRes[0].(*redis.ZSliceCmd).Val() //nolint:forcetypeassert,errcheck // .
 	emailsBatch = make([]string, 0, len(batch))
 	scores = make(map[string]int64, 0)
 	for _, itemInBatch := range batch {
-		emailsBatch = append(emailsBatch, itemInBatch.Member.(string)) //nolint:forcetypeassert // .
+		emailsBatch = append(emailsBatch, itemInBatch.Member.(string)) //nolint:forcetypeassert,errcheck // .
 		scores[emailsBatch[len(emailsBatch)-1]] = int64(itemInBatch.Score)
 	}
-	rate := pipeRes[1].(*redis.StringCmd).Val() //nolint:forcetypeassert // .
+	rate := pipeRes[1].(*redis.StringCmd).Val() //nolint:forcetypeassert,errcheck // .
 
 	return emailsBatch, scores, rate, nil
 }
@@ -290,7 +290,7 @@ func (c *client) filterEmailsWithAliveTTL(ctx context.Context, now *time.Time, e
 			return nil, errors.Wrapf(remErr, "failed to del ttl %v email ttl", pipeRes[1].String())
 		}
 	}
-	ttlBatch := pipeRes[0].(*redis.FloatSliceCmd).Val() //nolint:forcetypeassert // .
+	ttlBatch := pipeRes[0].(*redis.FloatSliceCmd).Val() //nolint:forcetypeassert,errcheck // .
 	if len(ttlBatch) == 0 {
 		return ttls, nil
 	}

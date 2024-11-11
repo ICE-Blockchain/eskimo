@@ -239,7 +239,7 @@ func (r *repository) incrementOrDecrementTotalUsers(ctx context.Context, date *t
 	}
 	keys := make([]string, 0, len(params))
 	for _, v := range params {
-		keys = append(keys, v.(string)) //nolint:forcetypeassert // We know for sure.
+		keys = append(keys, v.(string)) //nolint:forcetypeassert,errcheck // We know for sure.
 	}
 
 	return errors.Wrapf(r.notifyGlobalValueUpdateMessage(ctx, keys...), "failed to notifyGlobalValueUpdateMessage, keys:%#v", keys)
