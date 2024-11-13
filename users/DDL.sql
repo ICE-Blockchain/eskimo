@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS users  (
                     random_referred_by BOOLEAN NOT NULL DEFAULT FALSE,
                     verified BOOLEAN NOT NULL DEFAULT FALSE,
                     t1_referrals_sharing_enabled BOOLEAN,
+                    distribution_scenarios_verified BOOLEAN NOT NULL DEFAULT FALSE,
                     claimed_by_third_party text,
                     client_data text,
                     hidden_profile_elements text[],
@@ -121,6 +122,7 @@ ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_steps_last_updated_at timestamp[]
 ALTER TABLE users ADD COLUMN IF NOT EXISTS kyc_steps_created_at timestamp[];
 ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_user_id text;
 ALTER TABLE users ADD COLUMN IF NOT EXISTS distribution_scenarios_completed text[];
+ALTER TABLE users ADD COLUMN IF NOT EXISTS distribution_scenarios_verified BOOLEAN NOT NULL DEFAULT FALSE;
 DO $$ BEGIN
     if NOT exists (select constraint_name from information_schema.table_constraints where table_name = 'users' and constraint_name = 'users_telegram_user_id_key') then
         ALTER TABLE users ADD CONSTRAINT users_telegram_user_id_key UNIQUE (telegram_user_id);

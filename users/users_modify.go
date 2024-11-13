@@ -339,6 +339,11 @@ func (u *User) genSQLUpdate(ctx context.Context, agendaUserIDs []UserID) (sql st
 		sql += fmt.Sprintf(", DISTRIBUTION_SCENARIOS_COMPLETED = $%v", nextIndex)
 		nextIndex++
 	}
+	if u.DistributionScenariosVerified != nil {
+		params = append(params, u.DistributionScenariosVerified)
+		sql += fmt.Sprintf(", DISTRIBUTION_SCENARIOS_VERIFIED = $%v", nextIndex)
+		nextIndex++
+	}
 
 	sql += " WHERE ID = $1"
 

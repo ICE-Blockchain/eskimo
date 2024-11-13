@@ -140,7 +140,7 @@ func (l *linker) Get(ctx context.Context, userID UserID) (allLinkedProfiles Link
 }
 
 func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) (remoteID UserID, hasFaceResult bool, err error) {
-	usr, err := FetchTokenData(ctx, tenant, token, l.host, l.cfg.TenantURLs)
+	usr, err := fetchTokenData(ctx, tenant, token, l.host, l.cfg.TenantURLs)
 	if err != nil {
 		if errors.Is(err, ErrRemoteUserNotFound) {
 			return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "token is not belong to %v", userID)
@@ -156,7 +156,7 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 }
 
 //nolint:funlen // Single http call.
-func FetchTokenData(ctx context.Context, tenant, token, host string, tenantURLs map[Tenant]string) (*users.User, error) {
+func fetchTokenData(ctx context.Context, tenant, token, host string, tenantURLs map[Tenant]string) (*users.User, error) {
 	tok, err := server.Auth(ctx).ParseToken(token, false)
 	if err != nil {
 		return nil, errors.Wrapf(err, "invalid token passed")

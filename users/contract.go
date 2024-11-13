@@ -113,6 +113,7 @@ type (
 		HiddenProfileElements          *Enum[HiddenProfileElement] `json:"hiddenProfileElements,omitempty" swaggertype:"array,string" example:"level" enums:"globalRank,referralCount,level,role,badges" db:"hidden_profile_elements"`                                                                                   //nolint:lll // .
 		DistributionScenariosCompleted *Enum[string]               `json:"distributionScenariosCompleted,omitempty" swaggerignore:"true" db:"distribution_scenarios_completed" enums:"join_cmc,join_twitter,join_telegram,signup_sunwaves,signup_doctorx,signup_callfluent,signup_sealsend,signup_sauces,signup_tokero"` //nolint:lll // .
 		RandomReferredBy               *bool                       `json:"randomReferredBy,omitempty" example:"true" swaggerignore:"true" db:"random_referred_by"`
+		DistributionScenariosVerified  *bool                       `json:"distributionScenariosVerified,omitempty" example:"true" swaggerignore:"true" db:"distribution_scenarios_verified"` //nolint:lll // .
 		Verified                       *bool                       `json:"verified" example:"true" db:"verified"`
 		QuizCompleted                  *bool                       `json:"-" db:"quiz_completed"`
 		T1ReferralsSharingEnabled      *bool                       `json:"t1ReferralsSharingEnabled" example:"true" db:"t1_referrals_sharing_enabled"`
