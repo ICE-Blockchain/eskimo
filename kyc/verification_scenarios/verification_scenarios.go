@@ -51,11 +51,10 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 	if err != nil {
 		return errors.Wrapf(err, "failed to get user by id: %v", metadata.UserID)
 	}
-	completedSantaTasks, err := r.getCompletedSantaTasks(ctx, usr.ID)
+	pendingScenarios, err := r.getPendingScenarios(ctx, usr.User)
 	if err != nil {
-		return errors.Wrapf(err, "failed to getCompletedSantaTasks for userID: %v", usr.ID)
+		return errors.Wrapf(err, "can't call getPendingScenarios for %v", usr.ID)
 	}
-	pendingScenarios := r.getPendingScenarios(usr.User, completedSantaTasks)
 	if len(pendingScenarios) == 0 || !isScenarioPending(pendingScenarios, string(metadata.ScenarioEnum)) {
 		return errors.Wrapf(ErrNoPendingScenarios, "no pending scenarios for user: %v", metadata.UserID)
 	}
@@ -71,59 +70,101 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 	case CoinDistributionScenarioTelegram:
 	case CoinDistributionScenarioSignUpTenants:
 		skippedTokenCount := 0
-		linkedUserIDs := make(map[linking.Tenant]users.UserID, 0)
+		tenantTokens := make(map[linking.Tenant]linking.Token, len(metadata.TenantTokens))
 		for tenantScenario, token := range metadata.TenantTokens {
-			if !isScenarioPending(pendingScenarios, string(tenantScenario)) {
+			if !isScenarioPending(pendingScenarios, tenantScenario) {
 				skippedTokenCount++
 
 				continue
 			}
-			splitted := strings.Split(string(tenantScenario), "_")
-			tenantUsr, fErr := linking.FetchTokenData(ctx, splitted[1], string(token), r.host, r.cfg.TenantURLs)
-			if fErr != nil {
-				if errors.Is(fErr, linking.ErrRemoteUserNotFound) {
-					return errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v for the tenant: %v", metadata.UserID, tenantScenario)
-				}
-
-				return errors.Wrapf(fErr, "failed to fetch remote user data for %v", metadata.UserID)
-			}
-			if tenantUsr.CreatedAt == nil || tenantUsr.ReferredBy == "" || tenantUsr.Username == "" {
-				return errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v for the tenant: %v", metadata.UserID, tenantScenario)
-			}
-			userIDScenarioMap[tenantScenario] = tenantUsr.ID
-			linkedUserIDs[splitted[1]] = tenantUsr.ID
+			splitted := strings.Split(tenantScenario, "_") // Here we have: signup_<tenant>.
+			tenantTokens[splitted[1]] = token
 		}
 		if skippedTokenCount == len(metadata.TenantTokens) {
 			return errors.Wrapf(ErrWrongTenantTokens, "no pending tenant tokens for userID:%v", metadata.UserID)
 		}
-		if sErr := r.linkerRepo.StoreLinkedAccounts(ctx, now, usr.ID, "", linkedUserIDs); sErr != nil {
-			return errors.Wrap(sErr, "failed to store linked accounts")
+		var links linking.LinkedProfiles
+		links, _, err = r.linkerRepo.Verify(ctx, now, usr.ID, tenantTokens)
+		if err != nil {
+			if errors.Is(err, linking.ErrRemoteUserNotFound) {
+				return errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v", metadata.UserID)
+			}
+
+			return errors.Wrapf(err, "failed to verify linking user for userID:%v", metadata.UserID)
+		}
+		for tenant, linkedUser := range links {
+			for inputTenant := range tenantTokens {
+				if inputTenant == tenant {
+					userIDScenarioMap[singUpPrefix+"_"+tenant] = linkedUser
+				}
+			}
 		}
 	}
 
-	return errors.Wrapf(r.setCompletedDistributionScenario(ctx, usr.User, metadata.ScenarioEnum, userIDScenarioMap),
+	return errors.Wrapf(r.setCompletedDistributionScenario(ctx, usr.User, metadata.ScenarioEnum, userIDScenarioMap, pendingScenarios),
 		"failed to setCompletedDistributionScenario for userID:%v", metadata.UserID)
 }
 
-func (r *repository) GetPendingVerificationScenarios(ctx context.Context, userID string) ([]*Scenario, error) {
+func (r *repository) GetPendingVerificationScenarios(ctx context.Context, userID string) ([]Scenario, error) {
 	usr, err := r.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to get user by id: %v", userID)
 	}
-	completedSantaTasks, err := r.getCompletedSantaTasks(ctx, usr.ID)
+	pendingScenarios, err := r.getPendingScenarios(ctx, usr.User)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to getCompletedSantaTasks for userID: %v", usr.ID)
+		return nil, errors.Wrapf(err, "can't call getPendingScenarios for %v", usr.ID)
 	}
-	pendingScenarios := r.getPendingScenarios(usr.User, completedSantaTasks)
 	sort.SliceStable(pendingScenarios, func(i, j int) bool {
-		return scenarioOrder[*pendingScenarios[i]] < scenarioOrder[*pendingScenarios[j]]
+		return scenarioOrder[pendingScenarios[i]] < scenarioOrder[pendingScenarios[j]]
 	})
 
 	return pendingScenarios, nil
 }
 
+func (r *repository) getPendingScenarios(ctx context.Context, usr *users.User) (scenarios []Scenario, err error) {
+	if r.isMandatoryScenariosEnabled() {
+		if isDistributionScenariosVerified(usr) {
+			return []Scenario{}, nil
+		}
+
+		return r.getMandatoryScenarios(usr), nil
+	}
+	completedSantaTasks, err := r.getCompletedSantaTasks(ctx, usr.ID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to getCompletedSantaTasks for userID: %v", usr.ID)
+	}
+
+	return r.getUsualPendingScenarios(usr, completedSantaTasks), nil
+}
+
+func isDistributionScenariosVerified(usr *users.User) bool {
+	return usr.DistributionScenariosVerified != nil && *usr.DistributionScenariosVerified
+}
+
+func (r *repository) getMandatoryScenarios(usr *users.User) []Scenario {
+	if usr.DistributionScenariosCompleted == nil {
+		return r.cfg.MandatoryScenarios
+	}
+	scenarios := make([]Scenario, 0)
+	for _, mandatoryScenario := range r.cfg.MandatoryScenarios {
+		found := false
+		for _, completedScenario := range *usr.DistributionScenariosCompleted {
+			if completedScenario == string(mandatoryScenario) {
+				found = true
+
+				break
+			}
+		}
+		if !found {
+			scenarios = append(scenarios, mandatoryScenario)
+		}
+	}
+
+	return scenarios
+}
+
 //nolint:funlen,gocognit,gocyclo,revive,cyclop // .
-func (r *repository) getPendingScenarios(usr *users.User, completedSantaTasks []*tasks.Task) []*Scenario {
+func (r *repository) getUsualPendingScenarios(usr *users.User, completedSantaTasks []*tasks.Task) []Scenario {
 	var (
 		joinBulllishCMCTaskCompleted, joinIONCMCTaskCompleted, joinWatchlistCMCTaskCompleted, cmcScenarioCompleted = false, false, false, false
 		joinTwitterTaskCompleted, twitterScenarioCompleted                                                         = false, false
@@ -149,12 +190,12 @@ func (r *repository) getPendingScenarios(usr *users.User, completedSantaTasks []
 			default:
 				splitted := strings.Split(completedScenario, "_")
 				if splitted[0] == singUpPrefix {
-					tenantsScenariosCompleted[TenantScenario(completedScenario)] = true
+					tenantsScenariosCompleted[completedScenario] = true
 				}
 			}
 		}
 	}
-	scenarios := make([]*Scenario, 0)
+	scenarios := make([]Scenario, 0)
 	for _, task := range completedSantaTasks {
 		switch task.Type { //nolint:exhaustive // We handle only tasks related to distribution verification.
 		case tasks.JoinBullishCMCType:
@@ -171,33 +212,33 @@ func (r *repository) getPendingScenarios(usr *users.User, completedSantaTasks []
 			if splitted := strings.Split(string(task.Type), "_"); len(splitted) > 1 && splitted[0] == singUpPrefix {
 				if completed, ok := tenantsScenariosCompleted[TenantScenario(task.Type)]; !ok || !completed {
 					scenario := Scenario(task.Type)
-					scenarios = append(scenarios, &scenario)
+					scenarios = append(scenarios, scenario)
 				}
 			}
 		}
 	}
 	if joinBulllishCMCTaskCompleted && joinIONCMCTaskCompleted && joinWatchlistCMCTaskCompleted && !cmcScenarioCompleted {
 		val := CoinDistributionScenarioCmc
-		scenarios = append(scenarios, &val)
+		scenarios = append(scenarios, val)
 	}
 	if joinTwitterTaskCompleted && !twitterScenarioCompleted {
 		val := CoinDistributionScenarioTwitter
-		scenarios = append(scenarios, &val)
+		scenarios = append(scenarios, val)
 	}
 	if joinTelegramTaskCompleted && !telegramScenarioCompleted {
 		val := CoinDistributionScenarioTelegram
-		scenarios = append(scenarios, &val)
+		scenarios = append(scenarios, val)
 	}
 
 	return scenarios
 }
 
-func isScenarioPending(pendingScenarios []*Scenario, scenario string) bool {
+func isScenarioPending(pendingScenarios []Scenario, scenario string) bool {
 	if scenario == string(CoinDistributionScenarioSignUpTenants) {
 		return true
 	}
 	for _, pending := range pendingScenarios {
-		if string(*pending) == scenario {
+		if string(pending) == scenario {
 			return true
 		}
 	}
@@ -205,8 +246,9 @@ func isScenarioPending(pendingScenarios []*Scenario, scenario string) bool {
 	return false
 }
 
+//nolint:funlen // .
 func (r *repository) setCompletedDistributionScenario(
-	ctx context.Context, usr *users.User, scenario Scenario, userIDMap map[TenantScenario]users.UserID,
+	ctx context.Context, usr *users.User, scenario Scenario, userIDMap map[TenantScenario]users.UserID, pendingTasks []Scenario,
 ) error {
 	var lenScenarios int
 	if usr.DistributionScenariosCompleted != nil {
@@ -220,12 +262,24 @@ func (r *repository) setCompletedDistributionScenario(
 		scenarios = append(scenarios, string(scenario))
 	} else {
 		for tenant := range userIDMap {
-			scenarios = append(scenarios, string(tenant))
+			scenarios = append(scenarios, tenant)
 		}
 	}
 	updUsr := new(users.User)
 	updUsr.ID = usr.ID
 	updUsr.DistributionScenariosCompleted = &scenarios
+	completedCount := 0
+	for _, completed := range scenarios {
+		for _, pending := range pendingTasks {
+			if completed == string(pending) {
+				completedCount++
+			}
+		}
+	}
+	if completedCount == len(pendingTasks) {
+		trueVal := true
+		updUsr.DistributionScenariosVerified = &trueVal
+	}
 	_, err := r.userRepo.ModifyUser(ctx, updUsr, nil)
 
 	return errors.Wrapf(err, "failed to set completed distribution scenarios:%v", scenarios)
@@ -422,4 +476,8 @@ func (r *repository) syncKYCConfigJSON1(ctx context.Context) error {
 
 		return nil
 	}
+}
+
+func (r *repository) isMandatoryScenariosEnabled() bool {
+	return len(r.cfg.MandatoryScenarios) > 0
 }

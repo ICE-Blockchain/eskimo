@@ -408,8 +408,8 @@ func (s *service) GetUserByUsername( //nolint:gocritic // False negative.
 //	@Router			/v1r/kyc/verifyCoinDistributionEligibility/users/{userId} [GET].
 func (s *service) GetPendingKYCVerificationScenarios( //nolint:gocritic // .
 	ctx context.Context,
-	req *server.Request[GetRequiredVerificationEligibilityScenariosArg, []*verificationscenarios.Scenario],
-) (*server.Response[[]*verificationscenarios.Scenario], *server.Response[server.ErrorResponse]) {
+	req *server.Request[GetRequiredVerificationEligibilityScenariosArg, []verificationscenarios.Scenario],
+) (*server.Response[[]verificationscenarios.Scenario], *server.Response[server.ErrorResponse]) {
 	ctx = users.ContextWithAuthorization(ctx, req.Data.Authorization) //nolint:revive // .
 	scenarios, err := s.verificationScenariosRepository.GetPendingVerificationScenarios(ctx, req.Data.UserID)
 	if err = errors.Wrapf(err, "failed to GetRequiredVerificationEligibilityScenarios for userID:%v", req.Data.UserID); err != nil {

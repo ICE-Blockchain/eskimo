@@ -89,11 +89,13 @@ kyc/linking:
 kyc/coinDistributionEligibility:  
   tenant: sunwaves
   config-json-url1: https://somewhere.com/something/somebogus.json
-  # If urls does not match <cmd/*->hostname>/$tenant/ schema.
-  # tenantURLs:
-  #   sunwaves: https://localhost:7443/
-  #   callfluent: https://localhost:7444/
-  #   doctorx: https://localhost:7445/
+  # Comment if don't need in mandarody scenarios.
+  mandatoryScenarios:
+    - join_twitter
+    - join_telegram
+    - join_cmc
+    - signup_callfluent
+    - signup_doctorx
 kyc/quiz:
   environment: local
   enable-alerts: false

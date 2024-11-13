@@ -32,6 +32,8 @@ const (
 	CoinDistributionScenarioSignUpSauces     TenantScenario = "signup_sauces"
 	CoinDistributionScenarioSignUpDoctorx    TenantScenario = "signup_doctorx"
 	CoinDistributionScenarioSignUpTokero     TenantScenario = "signup_tokero"
+
+	singUpPrefix = "signup"
 )
 
 // .
@@ -43,12 +45,12 @@ var (
 
 type (
 	Tenant         string
-	Token          string
 	Scenario       string
-	TenantScenario string
+	Token          = string
+	TenantScenario = string
 	Repository     interface {
 		VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) error
-		GetPendingVerificationScenarios(ctx context.Context, userID string) ([]*Scenario, error)
+		GetPendingVerificationScenarios(ctx context.Context, userID string) ([]Scenario, error)
 	}
 	UserRepository interface {
 		io.Closer
@@ -101,9 +103,10 @@ type (
 		host            string
 	}
 	config struct {
-		TenantURLs     map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
-		kycConfigJSON1 *atomic.Pointer[social.KycConfigJSON]
-		Tenant         string `yaml:"tenant" mapstructure:"tenant"`
-		ConfigJSONURL1 string `yaml:"config-json-url1" mapstructure:"config-json-url1"` //nolint:tagliatelle // .
+		TenantURLs         map[string]string `yaml:"tenantURLs" mapstructure:"tenantURLs"` //nolint:tagliatelle // .
+		kycConfigJSON1     *atomic.Pointer[social.KycConfigJSON]
+		Tenant             string     `yaml:"tenant" mapstructure:"tenant"`
+		ConfigJSONURL1     string     `yaml:"config-json-url1" mapstructure:"config-json-url1"`     //nolint:tagliatelle // .
+		MandatoryScenarios []Scenario `yaml:"mandatoryScenarios" mapstructure:"mandatoryScenarios"` //nolint:tagliatelle // .
 	}
 )

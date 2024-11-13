@@ -3,6 +3,7 @@
 package verificationscenarios
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -104,7 +105,8 @@ func TestGetPendingKYCVerificationScenarios(t *testing.T) {
 				}
 			}
 			repo := &repository{}
-			pendingScenarios := repo.getPendingScenarios(usr, tsks)
+			pendingScenarios, err := repo.getPendingScenarios(context.TODO(), usr)
+			require.NoError(t, err)
 			require.NotNil(t, pendingScenarios)
 			require.Len(t, pendingScenarios, len(tt.expectedPendingScenarios))
 			for _, expectedScenario := range tt.expectedPendingScenarios {
@@ -115,35 +117,33 @@ func TestGetPendingKYCVerificationScenarios(t *testing.T) {
 }
 
 func TestIsScenarioPending(t *testing.T) {
-	cmcScenario := CoinDistributionScenarioCmc
-	signUpTenantsScenario := CoinDistributionScenarioSignUpTenants
 	tests := []struct {
 		name              string
-		pendingScenarios  []*Scenario
+		pendingScenarios  []Scenario
 		scenario          Scenario
 		expectedIsPending bool
 	}{
 		{
 			name:              "Scenario is pending",
-			pendingScenarios:  []*Scenario{&cmcScenario, &signUpTenantsScenario},
+			pendingScenarios:  []Scenario{CoinDistributionScenarioCmc, CoinDistributionScenarioSignUpTenants},
 			scenario:          CoinDistributionScenarioCmc,
 			expectedIsPending: true,
 		},
 		{
 			name:              "Scenario is not pending",
-			pendingScenarios:  []*Scenario{&cmcScenario},
+			pendingScenarios:  []Scenario{CoinDistributionScenarioCmc},
 			scenario:          CoinDistributionScenarioTelegram,
 			expectedIsPending: false,
 		},
 		{
 			name:              "Scenario is CoinDistributionScenarioSignUpTenants, we return true to check tenants tokens later",
-			pendingScenarios:  []*Scenario{&cmcScenario},
+			pendingScenarios:  []Scenario{CoinDistributionScenarioCmc},
 			scenario:          CoinDistributionScenarioSignUpTenants,
 			expectedIsPending: true,
 		},
 		{
 			name:              "No pending scenarios",
-			pendingScenarios:  []*Scenario{},
+			pendingScenarios:  []Scenario{},
 			scenario:          CoinDistributionScenarioCmc,
 			expectedIsPending: false,
 		},
