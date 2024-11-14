@@ -122,7 +122,7 @@ func (t *threeDivi) Available(_ context.Context, userWasPreviouslyForwardedToFac
 
 //nolint:revive // .
 func (t *threeDivi) isAvailable(userWasPreviouslyForwardedToFaceKYC bool) error {
-	if uint64(t.cfg.ThreeDiVi.ConcurrentUsers)-(t.activeUsersCount.Load()+t.loadBalancedUsersCount.Load()) >= 1 { //nolint:gosec // .
+	if int64(t.cfg.ThreeDiVi.ConcurrentUsers)-int64(t.activeUsersCount.Load()+t.loadBalancedUsersCount.Load()) >= 1 { //nolint:gosec // .
 		if !userWasPreviouslyForwardedToFaceKYC {
 			t.loadBalancedUsersCount.Add(1)
 		}
