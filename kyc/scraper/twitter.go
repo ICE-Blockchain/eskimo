@@ -153,7 +153,7 @@ func (t *twitterVerifierImpl) Scrape(ctx context.Context, target string) (result
 		if result, err = t.Scraper.Scrape(ctx, target,
 			webScraperOptions{
 				Retry: twitterRetryFn,
-				ProxyOptions: func(m map[string]string) map[string]string {
+				Options: func(m map[string]string) map[string]string {
 					m["country"] = country
 
 					return m

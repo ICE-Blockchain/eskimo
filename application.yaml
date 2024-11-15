@@ -62,6 +62,11 @@ kyc/social:
         - US
     facebook:
       allow-long-live-tokens: true
+    cmc:
+      countries:
+        - MX
+        - CA
+        - US
   tenant-name: sunwaves
   referralInviteUrlPrefix: https://bogus.com/@
 kyc/face:
@@ -96,6 +101,13 @@ kyc/coinDistributionEligibility:
     - join_cmc
     - signup_callfluent
     - signup_doctorx
+    - signup_sunwaves
+    - signup_sealsend
+    - signup_sauces
+    - signup_tokero
+  # tenantURLs:
+  #   callfluent: https://localhost:7443/
+  #   doctorx: https://localhost:7444/
 kyc/quiz:
   environment: local
   enable-alerts: false

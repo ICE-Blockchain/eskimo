@@ -36,6 +36,7 @@ func New(ctx context.Context, usrRepo UserRepository, linker linking.Linker, hos
 		cfg:             &cfg,
 		host:            host,
 		twitterVerifier: scraper.New(scraper.StrategyTwitter),
+		cmcVerifier:     scraper.New(scraper.StrategyCMC),
 		linkerRepo:      linker,
 	}
 	go repo.startKYCConfigJSONSyncer(ctx)
@@ -60,8 +61,8 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 	}
 	switch metadata.ScenarioEnum {
 	case CoinDistributionScenarioCmc:
-		if false {
-			return errors.Wrapf(ErrVerificationNotPassed, "haven't passed the CMC verification for userID:%v", metadata.UserID)
+		if vErr := r.VerifyCMCProfile(ctx, metadata); vErr != nil {
+			return errors.Wrapf(vErr, "haven't passed the CMC verification for userID:%v", metadata.UserID)
 		}
 	case CoinDistributionScenarioTwitter:
 		if sErr := r.VerifyTwitterPost(ctx, metadata); sErr != nil {
@@ -380,6 +381,20 @@ func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *Verificati
 	if userHandle == "" {
 		return errors.Wrapf(ErrVerificationNotPassed,
 			"user handle is empty after the verifyPost call for twitter verifier,Language:%v,userID:%v", metadata.Language, metadata.UserID)
+	}
+
+	return nil
+}
+
+func (r *repository) VerifyCMCProfile(ctx context.Context, metadata *VerificationMetadata) error {
+	pvm := &social.Metadata{
+		PostURL:          metadata.CMCProfileLink,
+		ExpectedPostText: iceOpenNetworkHandle,
+	}
+	_, err := r.cmcVerifier.VerifyPost(ctx, pvm)
+	if err != nil {
+		return errors.Wrapf(ErrVerificationNotPassed,
+			"can't verify post for cmc verifier userID:%v,reason:%v", metadata.UserID, social.DetectReason(err))
 	}
 
 	return nil

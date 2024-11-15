@@ -33,7 +33,8 @@ const (
 	CoinDistributionScenarioSignUpDoctorx    TenantScenario = "signup_doctorx"
 	CoinDistributionScenarioSignUpTokero     TenantScenario = "signup_tokero"
 
-	singUpPrefix = "signup"
+	singUpPrefix         = "signup"
+	iceOpenNetworkHandle = "IceOpenNetwork"
 )
 
 // .
@@ -99,6 +100,7 @@ type (
 		cfg             *config
 		userRepo        UserRepository
 		twitterVerifier scraper.Verifier
+		cmcVerifier     scraper.Verifier
 		linkerRepo      linking.Linker
 		host            string
 	}

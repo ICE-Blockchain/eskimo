@@ -32,8 +32,9 @@ type (
 
 type (
 	webScraperOptions struct {
-		Retry        req.RetryConditionFunc
-		ProxyOptions func(map[string]string) map[string]string
+		Retry   req.RetryConditionFunc
+		Options func(map[string]string) map[string]string
+		Headers map[string]string
 	}
 
 	webScraperResult struct {
@@ -47,7 +48,7 @@ type (
 	}
 
 	dataFetcher interface {
-		Fetch(ctx context.Context, url string, retry req.RetryConditionFunc) (content []byte, httpCode int, err error)
+		Fetch(ctx context.Context, url string, retry req.RetryConditionFunc, headers map[string]string) (content []byte, httpCode int, err error)
 		Head(ctx context.Context, url string) (location string, err error)
 	}
 
@@ -76,6 +77,11 @@ type (
 		Countries []string
 	}
 
+	cmcVerifierImpl struct {
+		Scraper   webScraper
+		Domains   []string
+		Countries []string
+	}
 	twitterOE struct {
 		HTML string `json:"html"`
 	}
@@ -90,6 +96,9 @@ type (
 
 	configTwitter struct {
 		Domains   []string `yaml:"domains"  mapstructure:"domains"`
+		Countries []string `yaml:"countries"  mapstructure:"countries"`
+	}
+	configCMC struct {
 		Countries []string `yaml:"countries"  mapstructure:"countries"`
 	}
 
@@ -108,6 +117,7 @@ type (
 		SocialLinks struct {
 			Facebook configFacebook `yaml:"facebook" mapstructure:"facebook"`
 			Twitter  configTwitter  `yaml:"twitter"  mapstructure:"twitter"`
+			CMC      configCMC      `yaml:"cmc"  mapstructure:"cmc"`
 		} `yaml:"social-links" mapstructure:"social-links"` //nolint:tagliatelle // Nope.
 	}
 
@@ -142,6 +152,7 @@ type (
 const (
 	StrategyFacebook StrategyType = "facebook"
 	StrategyTwitter  StrategyType = "twitter"
+	StrategyCMC      StrategyType = "cmc"
 )
 
 var (

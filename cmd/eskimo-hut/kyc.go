@@ -239,6 +239,8 @@ func validateVerifySocialKYCStep(req *server.Request[kycsocial.VerificationMetad
 		if req.Data.Facebook.AccessToken != "" {
 			return errors.Errorf("unsupported facebook.accessToken `%v`", req.Data.Facebook.AccessToken)
 		}
+	case kycsocial.CMCType:
+		return errors.Errorf("unsupported social type: %v", kycsocial.CMCType)
 	}
 
 	return nil

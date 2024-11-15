@@ -47,6 +47,10 @@ func New(st StrategyType) Verifier {
 			conf.SocialLinks.Facebook.AllowLongLiveTokens,
 		)
 
+	case StrategyCMC:
+		sc := newMustWebScraper(conf.WebScrapingAPI.URL, conf.WebScrapingAPI.APIKey)
+
+		return newCMCVerifier(sc, conf.SocialLinks.CMC.Countries)
 	default:
 		log.Panic("invalid social verifier: " + st)
 	}

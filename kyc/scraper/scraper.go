@@ -57,9 +57,12 @@ func (d *dataFetcherImpl) Head(ctx context.Context, target string) (location str
 	return u.String(), nil
 }
 
-func (d *dataFetcherImpl) Fetch(ctx context.Context, target string, retry req.RetryConditionFunc) (data []byte, code int, err error) {
+//nolint:funlen // .
+func (d *dataFetcherImpl) Fetch(
+	ctx context.Context, target string, retry req.RetryConditionFunc, headers map[string]string,
+) (data []byte, code int, err error) {
 	censoredURL := d.Censorer.CensorString(target)
-	resp, err := req.DefaultClient().
+	request := req.DefaultClient().
 		R().
 		SetContext(ctx).
 		SetRetryBackoffInterval(0, 0).
@@ -77,8 +80,12 @@ func (d *dataFetcherImpl) Fetch(ctx context.Context, target string, retry req.Re
 			}
 
 			return !(err == nil && resp.GetStatusCode() == http.StatusOK)
-		}).
-		Get(target)
+		})
+	for key, val := range headers {
+		request.SetHeader(key, val)
+	}
+
+	resp, err := request.Get(target)
 	if err != nil {
 		return nil, 0, multierror.Append(errors.Wrap(ErrFetchFailed, censoredURL), d.Censorer.CensorError(err))
 	}
@@ -95,7 +102,7 @@ func (s *webScraperImpl) Fetcher() dataFetcher {
 }
 
 func (s *webScraperImpl) Scrape(ctx context.Context, target string, opts webScraperOptions) (*webScraperResult, error) {
-	data, code, err := s.DataFetcher.Fetch(ctx, s.BuildQuery(target, opts.ProxyOptions), opts.Retry)
+	data, code, err := s.DataFetcher.Fetch(ctx, s.BuildQuery(target, opts.Options), opts.Retry, opts.Headers)
 	if err != nil {
 		return nil, err //nolint:wrapcheck // False-Positive.
 	}

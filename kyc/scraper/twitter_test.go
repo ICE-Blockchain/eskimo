@@ -36,7 +36,7 @@ func (*mockScraper) Scrape(context.Context, string, webScraperOptions) (*webScra
 	return nil, multierror.Append(ErrScrapeFailed, ErrFetchFailed)
 }
 
-func (*mockScraper) Fetch(context.Context, string, req.RetryConditionFunc) ([]byte, int, error) {
+func (*mockScraper) Fetch(context.Context, string, req.RetryConditionFunc, map[string]string) ([]byte, int, error) {
 	return []byte{}, 0, multierror.Append(ErrScrapeFailed, ErrFetchFailed)
 }
 

@@ -24,6 +24,7 @@ import (
 const (
 	FacebookType = scraper.StrategyFacebook
 	TwitterType  = scraper.StrategyTwitter
+	CMCType      = scraper.StrategyCMC
 )
 
 const (
