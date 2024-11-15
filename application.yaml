@@ -21,6 +21,7 @@ cmd/eskimo-hut:
   host: localhost:1443
   version: local
   defaultEndpointTimeout: 120s
+  third-party-api-key: bogus
   #tenant: sunwaves
   httpServer:
     port: 1443
@@ -50,6 +51,10 @@ kyc/social:
   max-attempts-allowed: 3
   wintr/connectors/storage/v2: *db
   web-scraping-api:
+    url-v1: https://bogus/v1
+    api-key-v1: bogus
+    url-v2: https://bogus/v2
+    api-key-v2: bogus
   social-links:
     twitter:
       domains:

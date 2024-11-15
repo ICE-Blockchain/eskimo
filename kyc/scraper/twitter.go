@@ -149,7 +149,7 @@ func twitterRetryFn(resp *req.Response, err error) bool {
 }
 
 func (t *twitterVerifierImpl) Scrape(ctx context.Context, target string) (result *webScraperResult, err error) { //nolint:funlen // .
-	for _, country := range t.countries() {
+	for _, country := range countries(t.Countries) {
 		if result, err = t.Scraper.Scrape(ctx, target,
 			webScraperOptions{
 				Retry: twitterRetryFn,
@@ -248,8 +248,8 @@ func (t *twitterVerifierImpl) VerifyPost(ctx context.Context, meta *Metadata) (u
 	return username, t.VerifyContent(ctx, oe, meta)
 }
 
-func (t *twitterVerifierImpl) countries() []string {
-	countries := slices.Clone(t.Countries)
+func countries(countryList []string) []string {
+	countries := slices.Clone(countryList)
 	rand.New(rand.NewSource(time.Now().UnixNano())).Shuffle(len(countries), func(ii, jj int) { //nolint:gosec // .
 		countries[ii], countries[jj] = countries[jj], countries[ii]
 	})

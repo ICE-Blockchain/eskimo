@@ -5,11 +5,8 @@ package scraper
 import (
 	"bytes"
 	"context"
-	"math/rand"
 	"net/http"
-	"slices"
 	"strings"
-	"time"
 
 	"github.com/PuerkitoBio/goquery"
 	"github.com/hashicorp/go-multierror"
@@ -73,7 +70,7 @@ func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *we
 		falseVal = "false"
 	)
 
-	for _, country := range c.countries() {
+	for _, country := range countries(c.Countries) {
 		if result, err = c.Scraper.Scrape(ctx, target,
 			webScraperOptions{
 				Retry: twitterRetryFn,
@@ -107,13 +104,4 @@ func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *we
 	default:
 		return nil, errors.Wrapf(ErrFetchFailed, "%q: unexpected status code: `%v`, response: `%v`", target, result.Code, string(result.Content))
 	}
-}
-
-func (c *cmcVerifierImpl) countries() []string {
-	countries := slices.Clone(c.Countries)
-	rand.New(rand.NewSource(time.Now().UnixNano())).Shuffle(len(countries), func(ii, jj int) { //nolint:gosec // .
-		countries[ii], countries[jj] = countries[jj], countries[ii]
-	})
-
-	return removeDuplicates(countries)
 }
