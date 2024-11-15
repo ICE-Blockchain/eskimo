@@ -111,9 +111,9 @@ type (
 	config struct {
 		WebScrapingAPI struct {
 			APIKeyV1 string `yaml:"api-key-v1" mapstructure:"api-key-v1"` //nolint:tagliatelle // Nope.
-			URLV1    string `yaml:"url-v1"     mapstructure:"url-v1"`
+			URLV1    string `yaml:"url-v1"     mapstructure:"url-v1"`     //nolint:tagliatelle // Nope.
 			APIKeyV2 string `yaml:"api-key-v2" mapstructure:"api-key-v2"` //nolint:tagliatelle // Nope.
-			URLV2    string `yaml:"url-v2"     mapstructure:"url-v2"`
+			URLV2    string `yaml:"url-v2"     mapstructure:"url-v2"`     //nolint:tagliatelle // Nope.
 		} `yaml:"web-scraping-api" mapstructure:"web-scraping-api"` //nolint:tagliatelle // Nope.
 
 		SocialLinks struct {
