@@ -21,6 +21,7 @@ cmd/eskimo-hut:
   host: localhost:1443
   version: local
   defaultEndpointTimeout: 120s
+  third-party-api-key: bogus
   #tenant: sunwaves
   httpServer:
     port: 1443
@@ -50,16 +51,19 @@ kyc/social:
   max-attempts-allowed: 3
   wintr/connectors/storage/v2: *db
   web-scraping-api:
+    base-url: https://scrape.shifter.io/
+    api-key-v1: bogus
+    api-key-v2: bogus
+    countries:
+      - MX
+      - CA
+      - US
   social-links:
     twitter:
       domains:
         - twitter.com
         - x.com
         - t.co
-      countries:
-        - MX
-        - CA
-        - US
     facebook:
       allow-long-live-tokens: true
   tenant-name: sunwaves
@@ -96,6 +100,13 @@ kyc/coinDistributionEligibility:
     - join_cmc
     - signup_callfluent
     - signup_doctorx
+    - signup_sunwaves
+    - signup_sealsend
+    - signup_sauces
+    - signup_tokero
+  # tenantURLs:
+  #   callfluent: https://localhost:7443/
+  #   doctorx: https://localhost:7444/
 kyc/quiz:
   environment: local
   enable-alerts: false

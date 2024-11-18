@@ -10,14 +10,14 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ice-blockchain/go-tarantool-client v0.0.0-20230327200757-4fc71fa3f7bb
-	github.com/ice-blockchain/santa v1.174.0
+	github.com/ice-blockchain/santa v1.175.0
 	github.com/ice-blockchain/wintr v1.154.0
 	github.com/imroc/req/v3 v3.48.0
 	github.com/ip2location/ip2location-go/v9 v9.7.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/common v0.60.1
-	github.com/prometheus/prometheus v0.55.1
+	github.com/prometheus/prometheus v0.300.0
 	github.com/redis/go-redis/v9 v9.7.0
 	github.com/stretchr/testify v1.9.0
 	github.com/swaggo/swag v1.16.4
@@ -38,7 +38,7 @@ require (
 	cloud.google.com/go/iam v1.2.2 // indirect
 	cloud.google.com/go/longrunning v0.6.2 // indirect
 	cloud.google.com/go/monitoring v1.21.2 // indirect
-	cloud.google.com/go/storage v1.46.0 // indirect
+	cloud.google.com/go/storage v1.47.0 // indirect
 	firebase.google.com/go/v4 v4.15.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.25.0 // indirect
@@ -81,8 +81,6 @@ require (
 	github.com/georgysavva/scany/v2 v2.1.3 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/gin-gonic/gin v1.10.0 // indirect
-	github.com/go-kit/log v0.2.1 // indirect
-	github.com/go-logfmt/logfmt v0.6.0 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.21.0 // indirect
@@ -91,7 +89,7 @@ require (
 	github.com/go-openapi/swag v0.23.0 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
-	github.com/go-playground/validator/v10 v10.22.1 // indirect
+	github.com/go-playground/validator/v10 v10.23.0 // indirect
 	github.com/go-task/slim-sprig/v3 v3.0.0 // indirect
 	github.com/goccy/go-reflect v1.2.0 // indirect
 	github.com/gofrs/flock v0.12.1 // indirect
@@ -132,7 +130,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.21.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.0 // indirect
-	github.com/opencontainers/runc v1.2.1 // indirect
+	github.com/opencontainers/runc v1.2.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/planetscale/vtprotobuf v0.6.1-0.20240917153116-6f2963f01587 // indirect
@@ -186,7 +184,7 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.27.0 // indirect
-	google.golang.org/api v0.205.0 // indirect
+	google.golang.org/api v0.206.0 // indirect
 	google.golang.org/appengine/v2 v2.0.6 // indirect
 	google.golang.org/genproto v0.0.0-20241113202542-65e8d215514f // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241113202542-65e8d215514f // indirect

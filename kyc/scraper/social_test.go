@@ -4,6 +4,7 @@ package scraper
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -23,7 +24,7 @@ func TestTwitterKYC(t *testing.T) {
 	conf := loadConfig()
 	require.NotNil(t, conf)
 
-	sc := newMustWebScraper(conf.WebScrapingAPI.URL, conf.WebScrapingAPI.APIKey)
+	sc := newMustWebScraper(fmt.Sprintf("%v/%v", conf.WebScrapingAPI.BaseURL, scraperV2Suffix), conf.WebScrapingAPI.APIKeyV2)
 	require.NotNil(t, sc)
 
 	verifier := newTwitterVerifier(sc, []string{"twitter.com"}, []string{"US", "MX", "CA"})
@@ -53,7 +54,7 @@ func TestTwitterLinkInPostKYC(t *testing.T) {
 	conf := loadConfig()
 	require.NotNil(t, conf)
 
-	sc := newMustWebScraper(conf.WebScrapingAPI.URL, conf.WebScrapingAPI.APIKey)
+	sc := newMustWebScraper(fmt.Sprintf("%v/%v", conf.WebScrapingAPI.BaseURL, scraperV2Suffix), conf.WebScrapingAPI.APIKeyV2)
 	require.NotNil(t, sc)
 
 	verifier := newTwitterVerifier(sc, []string{"x.com"}, []string{"US", "MX", "CA"})
@@ -78,7 +79,7 @@ func TestTwitterKYCNoRepost(t *testing.T) {
 	conf := loadConfig()
 	require.NotNil(t, conf)
 
-	sc := newMustWebScraper(conf.WebScrapingAPI.URL, conf.WebScrapingAPI.APIKey)
+	sc := newMustWebScraper(fmt.Sprintf("%v/%v", conf.WebScrapingAPI.BaseURL, scraperV2Suffix), conf.WebScrapingAPI.APIKeyV2)
 	require.NotNil(t, sc)
 
 	verifier := newTwitterVerifier(sc, []string{"twitter.com"}, []string{"US", "MX", "CA"})
@@ -99,7 +100,7 @@ func TestTwitterPrivate(t *testing.T) {
 	conf := loadConfig()
 	require.NotNil(t, conf)
 
-	sc := newMustWebScraper(conf.WebScrapingAPI.URL, conf.WebScrapingAPI.APIKey)
+	sc := newMustWebScraper(fmt.Sprintf("%v/%v", conf.WebScrapingAPI.BaseURL, scraperV2Suffix), conf.WebScrapingAPI.APIKeyV2)
 	require.NotNil(t, sc)
 
 	verifier := newTwitterVerifier(sc, []string{"twitter.com"}, []string{"US", "MX", "CA"})
@@ -146,5 +147,8 @@ func TestStrategyNew(t *testing.T) {
 	require.NotNil(t, impl)
 
 	impl = New(StrategyFacebook)
+	require.NotNil(t, impl)
+
+	impl = New(StrategyCMC)
 	require.NotNil(t, impl)
 }

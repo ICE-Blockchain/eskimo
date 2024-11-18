@@ -13,6 +13,8 @@ import (
 
 const (
 	applicationYAMLKey = "kyc/social"
+	scraperV1Suffix    = "v1"
+	scraperV2Suffix    = "v2"
 )
 
 type (
@@ -32,8 +34,9 @@ type (
 
 type (
 	webScraperOptions struct {
-		Retry        req.RetryConditionFunc
-		ProxyOptions func(map[string]string) map[string]string
+		Retry   req.RetryConditionFunc
+		Options func(map[string]string) map[string]string
+		Headers map[string]string
 	}
 
 	webScraperResult struct {
@@ -47,7 +50,7 @@ type (
 	}
 
 	dataFetcher interface {
-		Fetch(ctx context.Context, url string, retry req.RetryConditionFunc) (content []byte, httpCode int, err error)
+		Fetch(ctx context.Context, url string, retry req.RetryConditionFunc, headers map[string]string) (content []byte, httpCode int, err error)
 		Head(ctx context.Context, url string) (location string, err error)
 	}
 
@@ -76,6 +79,11 @@ type (
 		Countries []string
 	}
 
+	cmcVerifierImpl struct {
+		Scraper   webScraper
+		Domains   []string
+		Countries []string
+	}
 	twitterOE struct {
 		HTML string `json:"html"`
 	}
@@ -89,8 +97,7 @@ type (
 	}
 
 	configTwitter struct {
-		Domains   []string `yaml:"domains"  mapstructure:"domains"`
-		Countries []string `yaml:"countries"  mapstructure:"countries"`
+		Domains []string `yaml:"domains"  mapstructure:"domains"`
 	}
 
 	configFacebook struct {
@@ -101,8 +108,10 @@ type (
 
 	config struct {
 		WebScrapingAPI struct {
-			APIKey string `yaml:"api-key" mapstructure:"api-key"` //nolint:tagliatelle // Nope.
-			URL    string `yaml:"url"     mapstructure:"url"`
+			APIKeyV1  string   `yaml:"api-key-v1" mapstructure:"api-key-v1"` //nolint:tagliatelle // Nope.
+			APIKeyV2  string   `yaml:"api-key-v2" mapstructure:"api-key-v2"` //nolint:tagliatelle // Nope.
+			BaseURL   string   `yaml:"base-url"   mapstructure:"base-url"`   //nolint:tagliatelle // Nope.
+			Countries []string `yaml:"countries"  mapstructure:"countries"`
 		} `yaml:"web-scraping-api" mapstructure:"web-scraping-api"` //nolint:tagliatelle // Nope.
 
 		SocialLinks struct {
@@ -142,6 +151,7 @@ type (
 const (
 	StrategyFacebook StrategyType = "facebook"
 	StrategyTwitter  StrategyType = "twitter"
+	StrategyCMC      StrategyType = "cmc"
 )
 
 var (
