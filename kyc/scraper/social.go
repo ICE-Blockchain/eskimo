@@ -3,7 +3,9 @@
 package scraper
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	appcfg "github.com/ice-blockchain/wintr/config"
 	"github.com/ice-blockchain/wintr/log"
@@ -16,9 +18,8 @@ func loadConfig() *config {
 
 	for ptr, env := range map[*string]string{
 		&cfg.WebScrapingAPI.APIKeyV1:        os.Getenv("WEB_SCRAPING_API_KEY_V1"),
-		&cfg.WebScrapingAPI.URLV1:           os.Getenv("WEB_SCRAPING_API_URL_V1"),
 		&cfg.WebScrapingAPI.APIKeyV2:        os.Getenv("WEB_SCRAPING_API_KEY_V2"),
-		&cfg.WebScrapingAPI.URLV2:           os.Getenv("WEB_SCRAPING_API_URL_V2"),
+		&cfg.WebScrapingAPI.BaseURL:         os.Getenv("WEB_SCRAPING_API_BASE_URL"),
 		&cfg.SocialLinks.Facebook.AppID:     os.Getenv("FACEBOOK_APP_ID"),
 		&cfg.SocialLinks.Facebook.AppSecret: os.Getenv("FACEBOOK_APP_SECRET"),
 	} {
@@ -32,12 +33,13 @@ func loadConfig() *config {
 
 func New(st StrategyType) Verifier {
 	conf := loadConfig()
+	conf.WebScrapingAPI.BaseURL = strings.TrimSuffix(conf.WebScrapingAPI.BaseURL, "/")
 
 	switch st {
 	case StrategyTwitter:
-		sc := newMustWebScraper(conf.WebScrapingAPI.URLV2, conf.WebScrapingAPI.APIKeyV2)
+		sc := newMustWebScraper(fmt.Sprintf("%v/%v", conf.WebScrapingAPI.BaseURL, scraperV2Suffix), conf.WebScrapingAPI.APIKeyV2)
 
-		return newTwitterVerifier(sc, conf.SocialLinks.Twitter.Domains, conf.SocialLinks.Twitter.Countries)
+		return newTwitterVerifier(sc, conf.SocialLinks.Twitter.Domains, conf.WebScrapingAPI.Countries)
 
 	case StrategyFacebook:
 		sc := new(dataFetcherImpl)
@@ -50,9 +52,9 @@ func New(st StrategyType) Verifier {
 		)
 
 	case StrategyCMC:
-		sc := newMustWebScraper(conf.WebScrapingAPI.URLV1, conf.WebScrapingAPI.APIKeyV1)
+		sc := newMustWebScraper(fmt.Sprintf("%v/%v", conf.WebScrapingAPI.BaseURL, scraperV1Suffix), conf.WebScrapingAPI.APIKeyV1)
 
-		return newCMCVerifier(sc, conf.SocialLinks.CMC.Countries)
+		return newCMCVerifier(sc, conf.WebScrapingAPI.Countries)
 	default:
 		log.Panic("invalid social verifier: " + st)
 	}

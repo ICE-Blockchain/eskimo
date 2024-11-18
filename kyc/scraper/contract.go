@@ -13,6 +13,8 @@ import (
 
 const (
 	applicationYAMLKey = "kyc/social"
+	scraperV1Suffix    = "v1"
+	scraperV2Suffix    = "v2"
 )
 
 type (
@@ -95,11 +97,7 @@ type (
 	}
 
 	configTwitter struct {
-		Domains   []string `yaml:"domains"  mapstructure:"domains"`
-		Countries []string `yaml:"countries"  mapstructure:"countries"`
-	}
-	configCMC struct {
-		Countries []string `yaml:"countries"  mapstructure:"countries"`
+		Domains []string `yaml:"domains"  mapstructure:"domains"`
 	}
 
 	configFacebook struct {
@@ -110,16 +108,15 @@ type (
 
 	config struct {
 		WebScrapingAPI struct {
-			APIKeyV1 string `yaml:"api-key-v1" mapstructure:"api-key-v1"` //nolint:tagliatelle // Nope.
-			URLV1    string `yaml:"url-v1"     mapstructure:"url-v1"`     //nolint:tagliatelle // Nope.
-			APIKeyV2 string `yaml:"api-key-v2" mapstructure:"api-key-v2"` //nolint:tagliatelle // Nope.
-			URLV2    string `yaml:"url-v2"     mapstructure:"url-v2"`     //nolint:tagliatelle // Nope.
+			APIKeyV1  string   `yaml:"api-key-v1" mapstructure:"api-key-v1"` //nolint:tagliatelle // Nope.
+			APIKeyV2  string   `yaml:"api-key-v2" mapstructure:"api-key-v2"` //nolint:tagliatelle // Nope.
+			BaseURL   string   `yaml:"base-url"   mapstructure:"base-url"`   //nolint:tagliatelle // Nope.
+			Countries []string `yaml:"countries"  mapstructure:"countries"`
 		} `yaml:"web-scraping-api" mapstructure:"web-scraping-api"` //nolint:tagliatelle // Nope.
 
 		SocialLinks struct {
 			Facebook configFacebook `yaml:"facebook" mapstructure:"facebook"`
 			Twitter  configTwitter  `yaml:"twitter"  mapstructure:"twitter"`
-			CMC      configCMC      `yaml:"cmc"  mapstructure:"cmc"`
 		} `yaml:"social-links" mapstructure:"social-links"` //nolint:tagliatelle // Nope.
 	}
 

@@ -51,27 +51,21 @@ kyc/social:
   max-attempts-allowed: 3
   wintr/connectors/storage/v2: *db
   web-scraping-api:
-    url-v1: https://bogus/v1
+    base-url: https://scrape.shifter.io/
     api-key-v1: bogus
-    url-v2: https://bogus/v2
     api-key-v2: bogus
+    countries:
+      - MX
+      - CA
+      - US
   social-links:
     twitter:
       domains:
         - twitter.com
         - x.com
         - t.co
-      countries:
-        - MX
-        - CA
-        - US
     facebook:
       allow-long-live-tokens: true
-    cmc:
-      countries:
-        - MX
-        - CA
-        - US
   tenant-name: sunwaves
   referralInviteUrlPrefix: https://bogus.com/@
 kyc/face:
