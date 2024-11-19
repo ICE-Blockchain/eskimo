@@ -77,6 +77,7 @@ type (
 		io.Closer
 		VerifyPost(ctx context.Context, metadata *VerificationMetadata) (*Verification, error)
 		SkipVerification(ctx context.Context, kycStep users.KYCStep, userID string) error
+		ExpectedPostTemplateText(user *users.User, vm *VerificationMetadata) string
 	}
 	UserRepository interface {
 		GetUserByID(ctx context.Context, userID string) (*users.UserProfile, error)
