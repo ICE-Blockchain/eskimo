@@ -392,13 +392,14 @@ func (s *service) ForwardToFaceKYC(
 //	@Router			/v1w/kyc/verifyCoinDistributionEligibility/users/{userId}/scenarios/{scenarioEnum} [POST].
 func (s *service) VerifyKYCScenarios( //nolint:gocritic // .
 	ctx context.Context,
-	req *server.Request[verificationscenarios.VerificationMetadata, any],
-) (*server.Response[any], *server.Response[server.ErrorResponse]) {
+	req *server.Request[verificationscenarios.VerificationMetadata, verificationscenarios.Verification],
+) (*server.Response[verificationscenarios.Verification], *server.Response[server.ErrorResponse]) {
 	if err := validateScenariosData(req.Data); err != nil {
 		return nil, server.UnprocessableEntity(errors.Wrapf(err, "validations failed for %#v", req.Data), invalidPropertiesErrorCode)
 	}
 	ctx = users.ContextWithAuthorization(ctx, req.Data.Authorization) //nolint:revive // .
-	if err := s.verificationScenariosRepository.VerifyScenarios(ctx, req.Data); err != nil {
+	res, err := s.verificationScenariosRepository.VerifyScenarios(ctx, req.Data)
+	if err != nil {
 		switch {
 		case errors.Is(err, verificationscenarios.ErrVerificationNotPassed):
 			return nil, server.BadRequest(err, kycVerificationScenariosVadidationFailedErrorCode)
@@ -417,7 +418,7 @@ func (s *service) VerifyKYCScenarios( //nolint:gocritic // .
 		}
 	}
 
-	return server.OK[any](nil), nil
+	return server.OK[verificationscenarios.Verification](res), nil
 }
 
 //nolint:funlen,gocognit,revive // .
@@ -428,9 +429,6 @@ func validateScenariosData(data *verificationscenarios.VerificationMetadata) err
 			return errors.Errorf("empty cmc profile link `%v`", data.CMCProfileLink)
 		}
 	case verificationscenarios.CoinDistributionScenarioTwitter:
-		if data.TweetURL == "" {
-			return errors.Errorf("empty tweet url `%v`", data.TweetURL)
-		}
 		if data.Language == "" {
 			return errors.Errorf("empty language `%v`", data.Language)
 		}

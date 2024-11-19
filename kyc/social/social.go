@@ -386,6 +386,11 @@ func (r *repository) expectedPostText(user *users.User, vm *VerificationMetadata
 	if r.expectedPostTextIsExactMatch(vm) {
 		return r.expectedPostSubtext(user, vm)
 	}
+
+	return r.ExpectedPostTemplateText(user, vm)
+}
+
+func (r *repository) ExpectedPostTemplateText(user *users.User, vm *VerificationMetadata) string {
 	var (
 		templ *languageTemplate
 		tname = tenantName(r.cfg.TenantName)

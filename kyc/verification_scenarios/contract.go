@@ -50,7 +50,7 @@ type (
 	Token          = string
 	TenantScenario = string
 	Repository     interface {
-		VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) error
+		VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) (res *Verification, err error)
 		GetPendingVerificationScenarios(ctx context.Context, userID string) ([]Scenario, error)
 	}
 	UserRepository interface {
@@ -68,6 +68,9 @@ type (
 		TweetURL         string                   `json:"tweetUrl" required:"false" example:"some tweet"`
 		TelegramUsername string                   `json:"telegramUsername" required:"false" example:"some telegram username"`
 	}
+	Verification struct {
+		ExpectedPostText string `json:"expectedPostText,omitempty" example:"This is a verification post!"`
+	}
 )
 
 // Private API.
@@ -84,14 +87,14 @@ var (
 	//nolint:gochecknoglobals,gomnd // We need it to sort scenarios.
 	scenarioOrder = map[Scenario]int{
 		CoinDistributionScenarioCmc:                        0,
-		CoinDistributionScenarioTwitter:                    1,
-		CoinDistributionScenarioTelegram:                   2,
-		Scenario(CoinDistributionScenarioSignUpSunwaves):   3,
-		Scenario(CoinDistributionScenarioSignUpCallfluent): 4,
-		Scenario(CoinDistributionScenarioSignUpDoctorx):    5,
-		Scenario(CoinDistributionScenarioSignUpSauces):     6,
-		Scenario(CoinDistributionScenarioSignUpSealsend):   7,
-		Scenario(CoinDistributionScenarioSignUpTokero):     8,
+		Scenario(CoinDistributionScenarioSignUpSunwaves):   1,
+		Scenario(CoinDistributionScenarioSignUpCallfluent): 2,
+		Scenario(CoinDistributionScenarioSignUpDoctorx):    3,
+		Scenario(CoinDistributionScenarioSignUpSauces):     4,
+		Scenario(CoinDistributionScenarioSignUpSealsend):   5,
+		Scenario(CoinDistributionScenarioSignUpTokero):     6,
+		CoinDistributionScenarioTwitter:                    7,
+		CoinDistributionScenarioTelegram:                   8,
 	}
 )
 
@@ -102,6 +105,7 @@ type (
 		twitterVerifier scraper.Verifier
 		cmcVerifier     scraper.Verifier
 		linkerRepo      linking.Linker
+		socialRepo      social.Repository
 		host            string
 	}
 	config struct {

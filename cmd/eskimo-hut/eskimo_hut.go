@@ -72,7 +72,7 @@ func (s *service) Init(ctx context.Context, cancel context.CancelFunc) {
 	s.quizRepository = kycquiz.NewRepository(ctx, s.usersProcessor)
 	s.usersLinker = linkerkyc.NewAccountLinker(ctx, cfg.Host)
 	s.faceKycClient = facekyc.New(ctx, s.usersProcessor, s.usersLinker)
-	s.verificationScenariosRepository = verificationscenarios.New(ctx, s.usersProcessor, s.usersLinker, cfg.Host)
+	s.verificationScenariosRepository = verificationscenarios.New(ctx, s.usersProcessor, s.usersLinker, s.socialRepository, cfg.Host)
 }
 
 func (s *service) Close(ctx context.Context) error {

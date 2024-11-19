@@ -28,7 +28,7 @@ import (
 	"github.com/ice-blockchain/wintr/time"
 )
 
-func New(ctx context.Context, usrRepo UserRepository, linker linking.Linker, host string) Repository {
+func New(ctx context.Context, usrRepo UserRepository, linker linking.Linker, socialRepo social.Repository, host string) Repository {
 	var cfg config
 	appcfg.MustLoadFromKey(applicationYamlKey, &cfg)
 	repo := &repository{
@@ -38,6 +38,7 @@ func New(ctx context.Context, usrRepo UserRepository, linker linking.Linker, hos
 		twitterVerifier: scraper.New(scraper.StrategyTwitter),
 		cmcVerifier:     scraper.New(scraper.StrategyCMC),
 		linkerRepo:      linker,
+		socialRepo:      socialRepo,
 	}
 	go repo.startKYCConfigJSONSyncer(ctx)
 
@@ -45,28 +46,34 @@ func New(ctx context.Context, usrRepo UserRepository, linker linking.Linker, hos
 }
 
 //nolint:funlen,gocognit,gocyclo,revive,cyclop // .
-func (r *repository) VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) error {
+func (r *repository) VerifyScenarios(ctx context.Context, metadata *VerificationMetadata) (res *Verification, err error) {
 	now := time.Now()
 	userIDScenarioMap := make(map[TenantScenario]users.UserID, 0)
 	usr, err := r.userRepo.GetUserByID(ctx, metadata.UserID)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get user by id: %v", metadata.UserID)
+		return nil, errors.Wrapf(err, "failed to get user by id: %v", metadata.UserID)
 	}
 	pendingScenarios, err := r.getPendingScenarios(ctx, usr.User)
 	if err != nil {
-		return errors.Wrapf(err, "can't call getPendingScenarios for %v", usr.ID)
+		return nil, errors.Wrapf(err, "can't call getPendingScenarios for %v", usr.ID)
 	}
 	if len(pendingScenarios) == 0 || !isScenarioPending(pendingScenarios, string(metadata.ScenarioEnum)) {
-		return errors.Wrapf(ErrNoPendingScenarios, "no pending scenarios for user: %v", metadata.UserID)
+		return nil, errors.Wrapf(ErrNoPendingScenarios, "no pending scenarios for user: %v", metadata.UserID)
 	}
 	switch metadata.ScenarioEnum {
 	case CoinDistributionScenarioCmc:
 		if vErr := r.VerifyCMCProfile(ctx, metadata); vErr != nil {
-			return errors.Wrapf(vErr, "haven't passed the CMC verification for userID:%v", metadata.UserID)
+			return nil, errors.Wrapf(vErr, "haven't passed the CMC verification for userID:%v", metadata.UserID)
 		}
 	case CoinDistributionScenarioTwitter:
-		if sErr := r.VerifyTwitterPost(ctx, metadata); sErr != nil {
-			return errors.Wrapf(sErr, "failed to call VerifyPostForDistibutionVerification for userID:%v", metadata.UserID)
+		if metadata.TweetURL == "" {
+			return &Verification{
+				ExpectedPostText: r.socialRepo.ExpectedPostTemplateText(usr.User, &social.VerificationMetadata{
+					Language: metadata.Language,
+					KYCStep:  users.Social1KYCStep,
+					Social:   social.TwitterType,
+				}),
+			}, nil
 		}
 	case CoinDistributionScenarioTelegram:
 	case CoinDistributionScenarioSignUpTenants:
@@ -82,16 +89,16 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 			tenantTokens[splitted[1]] = token
 		}
 		if skippedTokenCount == len(metadata.TenantTokens) {
-			return errors.Wrapf(ErrWrongTenantTokens, "no pending tenant tokens for userID:%v", metadata.UserID)
+			return nil, errors.Wrapf(ErrWrongTenantTokens, "no pending tenant tokens for userID:%v", metadata.UserID)
 		}
 		var links linking.LinkedProfiles
 		links, _, err = r.linkerRepo.Verify(ctx, now, usr.ID, tenantTokens)
 		if err != nil {
 			if errors.Is(err, linking.ErrRemoteUserNotFound) {
-				return errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v", metadata.UserID)
+				return nil, errors.Wrapf(linking.ErrNotOwnRemoteUser, "foreign token of userID:%v", metadata.UserID)
 			}
 
-			return errors.Wrapf(err, "failed to verify linking user for userID:%v", metadata.UserID)
+			return nil, errors.Wrapf(err, "failed to verify linking user for userID:%v", metadata.UserID)
 		}
 		for tenant, linkedUser := range links {
 			for inputTenant := range tenantTokens {
@@ -102,7 +109,7 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 		}
 	}
 
-	return errors.Wrapf(r.setCompletedDistributionScenario(ctx, usr.User, metadata.ScenarioEnum, userIDScenarioMap, pendingScenarios),
+	return res, errors.Wrapf(r.setCompletedDistributionScenario(ctx, usr.User, metadata.ScenarioEnum, userIDScenarioMap, pendingScenarios),
 		"failed to setCompletedDistributionScenario for userID:%v", metadata.UserID)
 }
 
