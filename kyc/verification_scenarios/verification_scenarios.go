@@ -395,8 +395,7 @@ func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *Verificati
 
 func (r *repository) VerifyCMC(ctx context.Context, metadata *VerificationMetadata) error {
 	pvm := &social.Metadata{
-		PostURL:          metadata.CMCProfileLink,
-		ExpectedPostText: iceOpenNetworkHandle,
+		PostURL: metadata.CMCProfileLink,
 	}
 	_, err := r.cmcVerifier.VerifyPost(ctx, pvm)
 	if err != nil {
