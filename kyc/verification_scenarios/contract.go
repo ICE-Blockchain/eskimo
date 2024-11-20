@@ -33,8 +33,7 @@ const (
 	CoinDistributionScenarioSignUpDoctorx    TenantScenario = "signup_doctorx"
 	CoinDistributionScenarioSignUpTokero     TenantScenario = "signup_tokero"
 
-	singUpPrefix         = "signup"
-	iceOpenNetworkHandle = "IceOpenNetwork"
+	singUpPrefix = "signup"
 )
 
 // .

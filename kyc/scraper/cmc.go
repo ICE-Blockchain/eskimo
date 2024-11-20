@@ -21,47 +21,57 @@ func newCMCVerifier(sc webScraper, countries []string) *cmcVerifierImpl {
 }
 
 func (c *cmcVerifierImpl) VerifyPost(ctx context.Context, meta *Metadata) (username string, err error) {
-	if !validateProfileURL(meta.PostURL) {
+	if !validatePostURL(meta.PostURL) {
 		return "", errors.Wrapf(ErrInvalidURL, "invalid url: %v", meta.PostURL)
 	}
-	postURL := normalizeProfileURL(meta.PostURL)
-	oe, err := c.Scrape(ctx, postURL)
+	oe, err := c.Scrape(ctx, meta.PostURL)
 	if err != nil {
-		return "", errors.Wrapf(err, "can't scrape: %v", postURL)
+		return "", errors.Wrapf(err, "can't scrape: %v", meta.PostURL)
 	}
 
-	return "", errors.Wrapf(verifyFollowing(oe.Content, meta), "can't verify following: %v", postURL)
+	return "", errors.Wrapf(verifyPost(oe.Content), "can't verify cmc link: %v", meta.PostURL)
 }
 
-func verifyFollowing(html []byte, meta *Metadata) (err error) {
+//nolint:funlen // .
+func verifyPost(html []byte) (err error) {
 	doc, err := goquery.NewDocumentFromReader(bytes.NewReader(html))
 	if err != nil {
 		return multierror.Append(ErrInvalidPageContent, err)
 	}
-	found := false
-	doc.Find("div.name div.nickName").EachWithBreak(func(_ int, s *goquery.Selection) bool {
-		found = strings.EqualFold(s.Find("span").Text(), meta.ExpectedPostText)
+	var (
+		foundIceCoin    = false
+		foundPairedCoin = false
+	)
+	doc.Find("#post-detail a.coin-link").EachWithBreak(func(_ int, s *goquery.Selection) bool {
+		const coinPrefix = "$"
+		txt := s.Find("span.real-text").Text()
+		txt, foundPrefix := strings.CutPrefix(txt, coinPrefix)
+		if !foundPrefix {
+			return false
+		}
+		if foundIce := strings.EqualFold(txt, iceCoinName); foundIce {
+			foundIceCoin = true
+		} else {
+			for _, coinName := range supportedCMCCoinNameList {
+				if foundPaired := strings.EqualFold(txt, coinName); foundPaired {
+					foundPairedCoin = true
 
-		return !found
+					break
+				}
+			}
+		}
+
+		return !foundIceCoin || !foundPairedCoin
 	})
-	if !found {
-		return errors.Wrapf(ErrTextNotFound, "text %v not found", meta.ExpectedPostText)
+	if !foundIceCoin || !foundPairedCoin {
+		return errors.Wrap(ErrTextNotFound, "ice coin or paired coin not found")
 	}
 
 	return nil
 }
 
-func validateProfileURL(url string) bool {
-	return strings.HasPrefix(url, "https://coinmarketcap.com/community/profile")
-}
-
-func normalizeProfileURL(url string) string {
-	res := strings.TrimSuffix(url, "/")
-	if !strings.HasSuffix(res, "following") {
-		res += "/following"
-	}
-
-	return res
+func validatePostURL(url string) bool {
+	return strings.HasPrefix(url, "https://coinmarketcap.com/community/post")
 }
 
 func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *webScraperResult, err error) { //nolint:funlen // .
@@ -76,8 +86,6 @@ func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *we
 				Retry: twitterRetryFn,
 				Options: func(options map[string]string) map[string]string {
 					options["country"] = country
-					options["wait_for_css"] = ".user-card__container"
-					options["auto_solve"] = trueVal
 					options["block_resources"] = falseVal
 					options["load_iframes"] = trueVal
 					options["load_shadowroots"] = falseVal

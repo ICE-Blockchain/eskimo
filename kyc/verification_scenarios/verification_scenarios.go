@@ -62,7 +62,7 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 	}
 	switch metadata.ScenarioEnum {
 	case CoinDistributionScenarioCmc:
-		if vErr := r.VerifyCMCProfile(ctx, metadata); vErr != nil {
+		if vErr := r.VerifyCMC(ctx, metadata); vErr != nil {
 			return nil, errors.Wrapf(vErr, "haven't passed the CMC verification for userID:%v", metadata.UserID)
 		}
 	case CoinDistributionScenarioTwitter:
@@ -393,15 +393,14 @@ func (r *repository) VerifyTwitterPost(ctx context.Context, metadata *Verificati
 	return nil
 }
 
-func (r *repository) VerifyCMCProfile(ctx context.Context, metadata *VerificationMetadata) error {
+func (r *repository) VerifyCMC(ctx context.Context, metadata *VerificationMetadata) error {
 	pvm := &social.Metadata{
-		PostURL:          metadata.CMCProfileLink,
-		ExpectedPostText: iceOpenNetworkHandle,
+		PostURL: metadata.CMCProfileLink,
 	}
 	_, err := r.cmcVerifier.VerifyPost(ctx, pvm)
 	if err != nil {
 		return errors.Wrapf(ErrVerificationNotPassed,
-			"can't verify post for cmc verifier userID:%v,reason:%v", metadata.UserID, social.DetectReason(err))
+			"can't verify post for cmc verifier userID:%v,reason:%v", metadata.UserID, err.Error())
 	}
 
 	return nil

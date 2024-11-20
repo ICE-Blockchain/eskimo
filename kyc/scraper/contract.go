@@ -15,6 +15,7 @@ const (
 	applicationYAMLKey = "kyc/social"
 	scraperV1Suffix    = "v1"
 	scraperV2Suffix    = "v2"
+	iceCoinName        = "ICE"
 )
 
 type (
@@ -154,6 +155,7 @@ const (
 	StrategyCMC      StrategyType = "cmc"
 )
 
+//nolint:gochecknoglobals // .
 var (
 	ErrInvalidPageContent = errors.New("invalid page content")
 	ErrTextNotFound       = errors.New("expected text not found")
@@ -165,4 +167,8 @@ var (
 	ErrScrapeFailed       = errors.New("cannot scrape target")
 	ErrInvalidToken       = errors.New("invalid token")
 	ErrTweetPrivate       = errors.New("tweet is private or does not exist")
+
+	supportedCMCCoinNameList = []string{
+		"BTC", "ETH", "USDT", "SOL", "BNB", "XRP", "DOGE", "USDC", "ADA", "TRX", "SHIB", "AVAX", "TON", "SUI", "LINK", "DOT", "BCH", "PEPE", "LEO", "XLM", "NEAR", "LTC", "APT", "UNI", "DAI", "CRO", "HBAR", "ICP", "RENDER", "BONK", "KAS", "ETC", "OM", "TAO", "POL", "WIF", "FET", "XMR", "ARB", "STX", "OKB", "VET", "FIL", "ATOM", "MNT", "AAVE", "FDUSD", "INJ", "FLOKI", "IMX", //nolint:lll // .
+	}
 )
