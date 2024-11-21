@@ -71,7 +71,7 @@ func verifyPost(html []byte) (err error) {
 }
 
 func validatePostURL(url string) bool {
-	return strings.HasPrefix(url, "https://coinmarketcap.com/community/post")
+	return strings.Contains(url, "https://coinmarketcap.com")
 }
 
 func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *webScraperResult, err error) { //nolint:funlen // .
