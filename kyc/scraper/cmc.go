@@ -89,6 +89,7 @@ func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *we
 					options["block_resources"] = falseVal
 					options["load_iframes"] = trueVal
 					options["load_shadowroots"] = falseVal
+					options["wait_for_css"] = ".post-with-reply"
 
 					return options
 				},
