@@ -5,7 +5,6 @@ package scraper
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -47,7 +46,6 @@ func verifyPost(html []byte) (err error) {
 		const coinPrefix = "$"
 		txt := s.Find("span.real-text").Text()
 		txt, foundPrefix := strings.CutPrefix(txt, coinPrefix)
-		fmt.Printf("txt: %v\n", txt)
 		if !foundPrefix {
 			return false
 		}
