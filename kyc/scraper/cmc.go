@@ -5,6 +5,7 @@ package scraper
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -46,6 +47,7 @@ func verifyPost(html []byte) (err error) {
 		const coinPrefix = "$"
 		txt := s.Find("span.real-text").Text()
 		txt, foundPrefix := strings.CutPrefix(txt, coinPrefix)
+		fmt.Printf("txt: %v\n", txt)
 		if !foundPrefix {
 			return false
 		}
@@ -89,7 +91,7 @@ func (c *cmcVerifierImpl) Scrape(ctx context.Context, target string) (result *we
 					options["block_resources"] = falseVal
 					options["load_iframes"] = trueVal
 					options["load_shadowroots"] = falseVal
-					options["wait_for_css"] = ".post-with-reply"
+					options["wait_for_css"] = "#post-detail"
 
 					return options
 				},
