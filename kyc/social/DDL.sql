@@ -42,6 +42,11 @@ CREATE TABLE IF NOT EXISTS socials (
                     social                    text      NOT NULL CHECK (social = 'twitter' OR social = 'facebook'),
                     user_handle               text      NOT NULL,
                     PRIMARY KEY (social, user_handle));
+ALTER TABLE socials
+DROP CONSTRAINT socials_social_check;
+ALTER TABLE socials
+ADD CONSTRAINT socials_social_check
+CHECK (social = 'twitter' OR social = 'facebook' OR social = 'cmc');
 
 ALTER TABLE socials DROP CONSTRAINT socials_pkey, ADD PRIMARY KEY (social, user_handle);
 ALTER TABLE socials DROP CONSTRAINT IF EXISTS socials_social_user_handle_key;

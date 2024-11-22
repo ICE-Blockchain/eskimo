@@ -402,6 +402,10 @@ func (r *repository) VerifyCMC(ctx context.Context, metadata *VerificationMetada
 		return errors.Wrapf(ErrVerificationNotPassed,
 			"can't verify post for cmc verifier userID:%v,reason:%v", metadata.UserID, err.Error())
 	}
+	if sErr := r.socialRepo.SaveSocial(ctx, social.CMCType, metadata.UserID, metadata.CMCProfileLink); sErr != nil {
+		return errors.Wrapf(ErrVerificationNotPassed,
+			"can't save social for userID:%v for post link: %v, reason: %v", metadata.UserID, metadata.CMCProfileLink, social.DetectReason(sErr))
+	}
 
 	return nil
 }
