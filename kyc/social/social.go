@@ -220,7 +220,7 @@ func (r *repository) VerifyPost(ctx context.Context, metadata *VerificationMetad
 	}
 	if userHandle != "" { //nolint:nestif // .
 		userHandle = strings.ToLower(userHandle)
-		if err = r.saveSocial(ctx, metadata.Social, metadata.UserID, userHandle); err != nil {
+		if err = r.SaveSocial(ctx, metadata.Social, metadata.UserID, userHandle); err != nil {
 			if storage.IsErr(err, storage.ErrDuplicate) {
 				log.Error(errors.Wrapf(err, "[duplicate]social verification failed for KYCStep:%v,Social:%v,Language:%v,userID:%v,userHandle:%v",
 					metadata.KYCStep, metadata.Social, metadata.Language, metadata.UserID, userHandle))
@@ -335,16 +335,18 @@ func (r *repository) saveUnsuccessfulAttempt(ctx context.Context, now *time.Time
 	return errors.Wrapf(err, "failed to `%v`; kycStep:%v,userId:%v,social:%v,reason:%v", sql, metadata.KYCStep, metadata.UserID, metadata.Social, reason)
 }
 
-func (r *repository) saveSocial(ctx context.Context, socialType Type, userID, userHandle string) error {
+func (r *repository) SaveSocial(ctx context.Context, socialType Type, userID, userHandle string) error {
 	sql := `INSERT INTO socials(user_id,social,user_handle) VALUES ($1,$2,$3)`
 	_, err := storage.Exec(ctx, r.db, sql, userID, socialType, userHandle)
-	if err != nil && storage.IsErr(err, storage.ErrDuplicate, "pk") {
-		sql = `SELECT true AS bogus WHERE EXISTS (SELECT 1 FROM socials WHERE user_id = $1 AND social = $2 AND lower(user_handle) = $3)`
-		if _, err2 := storage.ExecOne[struct{ Bogus bool }](ctx, r.db, sql, userID, socialType, userHandle); err2 == nil {
-			return nil
-		} else if !storage.IsErr(err2, storage.ErrNotFound) {
-			err = errors.Wrapf(err2, "failed to check if user used the same userhandle previously; userID:%v, social:%v, userHandle:%v",
-				userID, socialType, userHandle)
+	if socialType != CMCType {
+		if err != nil && storage.IsErr(err, storage.ErrDuplicate, "pk") {
+			sql = `SELECT true AS bogus WHERE EXISTS (SELECT 1 FROM socials WHERE user_id = $1 AND social = $2 AND lower(user_handle) = $3)`
+			if _, err2 := storage.ExecOne[struct{ Bogus bool }](ctx, r.db, sql, userID, socialType, userHandle); err2 == nil {
+				return nil
+			} else if !storage.IsErr(err2, storage.ErrNotFound) {
+				err = errors.Wrapf(err2, "failed to check if user used the same userhandle previously; userID:%v, social:%v, userHandle:%v",
+					userID, socialType, userHandle)
+			}
 		}
 	}
 

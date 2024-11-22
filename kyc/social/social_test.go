@@ -34,15 +34,15 @@ func TestSocialSave(t *testing.T) {
 	helperRemoveSocials(t, db, userName)
 
 	t.Run("OK", func(t *testing.T) {
-		err := repo.saveSocial(ctx, TwitterType, userName, "foo")
+		err := repo.SaveSocial(ctx, TwitterType, userName, "foo")
 		require.NoError(t, err)
 
-		err = repo.saveSocial(ctx, TwitterType, userName, "bar")
+		err = repo.SaveSocial(ctx, TwitterType, userName, "bar")
 		require.NoError(t, err)
 	})
 
 	t.Run("Duplicate", func(t *testing.T) {
-		err := repo.saveSocial(ctx, TwitterType, userName, "foo")
+		err := repo.SaveSocial(ctx, TwitterType, userName, "foo")
 		require.ErrorIs(t, err, storage.ErrDuplicate)
 
 		reason := DetectReason(terror.New(err, map[string]any{"user_handle": "foo"}))

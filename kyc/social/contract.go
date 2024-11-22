@@ -78,6 +78,7 @@ type (
 		VerifyPost(ctx context.Context, metadata *VerificationMetadata) (*Verification, error)
 		SkipVerification(ctx context.Context, kycStep users.KYCStep, userID string) error
 		ExpectedPostTemplateText(user *users.User, vm *VerificationMetadata) string
+		SaveSocial(ctx context.Context, socialType Type, userID, userHandle string) error
 	}
 	UserRepository interface {
 		GetUserByID(ctx context.Context, userID string) (*users.UserProfile, error)
