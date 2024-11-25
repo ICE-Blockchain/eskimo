@@ -103,7 +103,7 @@ kyc/coinDistributionEligibility:
     - signup_sunwaves
     - signup_sealsend
     - signup_sauces
-    - signup_tokero
+    - signup_cryptomayors
   # tenantURLs:
   #   callfluent: https://localhost:7443/
   #   doctorx: https://localhost:7444/
