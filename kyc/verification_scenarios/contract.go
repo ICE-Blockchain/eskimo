@@ -26,12 +26,12 @@ const (
 	CoinDistributionScenarioSignUpTenants Scenario = "signup_tenants"
 
 	// Tenant scenarios.
-	CoinDistributionScenarioSignUpSunwaves   TenantScenario = "signup_sunwaves"
-	CoinDistributionScenarioSignUpSealsend   TenantScenario = "signup_sealsend"
-	CoinDistributionScenarioSignUpCallfluent TenantScenario = "signup_callfluent"
-	CoinDistributionScenarioSignUpSauces     TenantScenario = "signup_sauces"
-	CoinDistributionScenarioSignUpDoctorx    TenantScenario = "signup_doctorx"
-	CoinDistributionScenarioSignUpTokero     TenantScenario = "signup_tokero"
+	CoinDistributionScenarioSignUpSunwaves     TenantScenario = "signup_sunwaves"
+	CoinDistributionScenarioSignUpSealsend     TenantScenario = "signup_sealsend"
+	CoinDistributionScenarioSignUpCallfluent   TenantScenario = "signup_callfluent"
+	CoinDistributionScenarioSignUpSauces       TenantScenario = "signup_sauces"
+	CoinDistributionScenarioSignUpDoctorx      TenantScenario = "signup_doctorx"
+	CoinDistributionScenarioSignUpCryptomayors TenantScenario = "signup_cryptomayors"
 
 	singUpPrefix = "signup"
 )
@@ -62,7 +62,7 @@ type (
 		UserID           string                   `uri:"userId" required:"true" allowForbiddenWriteOperation:"true" swaggerignore:"true" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2"` //nolint:lll // .
 		ScenarioEnum     Scenario                 `uri:"scenarioEnum" example:"join_cmc" swaggerignore:"true" required:"true" enums:"join_cmc,join_twitter,join_telegram,signup_tenants"`               //nolint:lll // .
 		Language         string                   `json:"language" required:"false" example:"en"`
-		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"signup_sunwaves:sometoken,signup_sealsend:sometoken,signup_callfluent:sometoken,signup_doctorx:sometoken,signup_sauces:sometoken,signup_tokero:sometoken"` //nolint:lll // .
+		TenantTokens     map[TenantScenario]Token `json:"tenantTokens" required:"false" example:"signup_sunwaves:sometoken,signup_sealsend:sometoken,signup_callfluent:sometoken,signup_doctorx:sometoken,signup_sauces:sometoken,signup_cryptomayors:sometoken"` //nolint:lll // .
 		CMCProfileLink   string                   `json:"cmcProfileLink" required:"false" example:"some profile"`
 		TweetURL         string                   `json:"tweetUrl" required:"false" example:"some tweet"`
 		TelegramUsername string                   `json:"telegramUsername" required:"false" example:"some telegram username"`
@@ -85,15 +85,15 @@ const (
 var (
 	//nolint:gochecknoglobals,gomnd // We need it to sort scenarios.
 	scenarioOrder = map[Scenario]int{
-		CoinDistributionScenarioCmc:                        0,
-		Scenario(CoinDistributionScenarioSignUpSunwaves):   1,
-		Scenario(CoinDistributionScenarioSignUpCallfluent): 2,
-		Scenario(CoinDistributionScenarioSignUpDoctorx):    3,
-		Scenario(CoinDistributionScenarioSignUpSauces):     4,
-		Scenario(CoinDistributionScenarioSignUpSealsend):   5,
-		Scenario(CoinDistributionScenarioSignUpTokero):     6,
-		CoinDistributionScenarioTwitter:                    7,
-		CoinDistributionScenarioTelegram:                   8,
+		CoinDistributionScenarioCmc:                          0,
+		Scenario(CoinDistributionScenarioSignUpSunwaves):     1,
+		Scenario(CoinDistributionScenarioSignUpCallfluent):   2,
+		Scenario(CoinDistributionScenarioSignUpDoctorx):      3,
+		Scenario(CoinDistributionScenarioSignUpSauces):       4,
+		Scenario(CoinDistributionScenarioSignUpSealsend):     5,
+		Scenario(CoinDistributionScenarioSignUpCryptomayors): 6,
+		CoinDistributionScenarioTwitter:                      7,
+		CoinDistributionScenarioTelegram:                     8,
 	}
 )
 

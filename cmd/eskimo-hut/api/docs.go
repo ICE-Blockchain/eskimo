@@ -3768,11 +3768,11 @@ const docTemplate = `{
                     },
                     "example": {
                         "signup_callfluent": "sometoken",
+                        "signup_cryptomayors": "sometoken",
                         "signup_doctorx": "sometoken",
                         "signup_sauces": "sometoken",
                         "signup_sealsend": "sometoken",
-                        "signup_sunwaves": "sometoken",
-                        "signup_tokero": "sometoken"
+                        "signup_sunwaves": "sometoken"
                     }
                 },
                 "tweetUrl": {

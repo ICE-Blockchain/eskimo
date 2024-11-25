@@ -69,7 +69,7 @@ kyc/social:
   tenant-name: sunwaves
   referralInviteUrlPrefix: https://bogus.com/@
 kyc/face:
-  config-json-url: https://somewhere.com/something/somebogus.json
+  config-json-url: https://cdn.ice.io/sunwaves/staging/assets/auth-config.json
   threeDiVi:
     bafToken: bogus
     bafHost: http://bogus.com/
@@ -92,7 +92,7 @@ kyc/linking:
   #  doctorx: https://localhost:1445/
 kyc/coinDistributionEligibility:  
   tenant: sunwaves
-  config-json-url1: https://somewhere.com/something/somebogus.json
+  config-json-url1: https://cdn.ice.io/doctorx/staging/assets/kyc1.json
   # Comment if don't need in mandarody scenarios.
   mandatoryScenarios:
     - join_twitter
@@ -103,7 +103,7 @@ kyc/coinDistributionEligibility:
     - signup_sunwaves
     - signup_sealsend
     - signup_sauces
-    - signup_tokero
+    - signup_cryptomayors
   # tenantURLs:
   #   callfluent: https://localhost:7443/
   #   doctorx: https://localhost:7444/
