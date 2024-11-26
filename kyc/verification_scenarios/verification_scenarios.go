@@ -62,8 +62,10 @@ func (r *repository) VerifyScenarios(ctx context.Context, metadata *Verification
 	}
 	switch metadata.ScenarioEnum {
 	case CoinDistributionScenarioCmc:
-		if vErr := r.VerifyCMC(ctx, metadata); vErr != nil {
-			return nil, errors.Wrapf(vErr, "haven't passed the CMC verification for userID:%v", metadata.UserID)
+		if false {
+			if vErr := r.VerifyCMC(ctx, metadata); vErr != nil {
+				return nil, errors.Wrapf(vErr, "haven't passed the CMC verification for userID:%v", metadata.UserID)
+			}
 		}
 	case CoinDistributionScenarioTwitter:
 		if metadata.TweetURL == "" {

@@ -425,8 +425,8 @@ func (s *service) VerifyKYCScenarios( //nolint:gocritic // .
 func validateScenariosData(data *verificationscenarios.VerificationMetadata) error {
 	switch data.ScenarioEnum {
 	case verificationscenarios.CoinDistributionScenarioCmc:
-		if data.CMCProfileLink == "" {
-			return errors.Errorf("empty cmc profile link `%v`", data.CMCProfileLink)
+		if data.CMCProfileLink == "" || !strings.HasPrefix(data.CMCProfileLink, "https://coinmarketcap.com") {
+			return errors.Errorf("wrong cmc profile link `%v`", data.CMCProfileLink)
 		}
 	case verificationscenarios.CoinDistributionScenarioTwitter:
 		if data.Language == "" {

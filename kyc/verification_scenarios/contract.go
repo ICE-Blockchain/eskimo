@@ -85,15 +85,15 @@ const (
 var (
 	//nolint:gochecknoglobals,gomnd // We need it to sort scenarios.
 	scenarioOrder = map[Scenario]int{
-		CoinDistributionScenarioCmc:                          0,
-		Scenario(CoinDistributionScenarioSignUpSunwaves):     1,
-		Scenario(CoinDistributionScenarioSignUpCallfluent):   2,
-		Scenario(CoinDistributionScenarioSignUpDoctorx):      3,
-		Scenario(CoinDistributionScenarioSignUpSauces):       4,
-		Scenario(CoinDistributionScenarioSignUpSealsend):     5,
-		Scenario(CoinDistributionScenarioSignUpCryptomayors): 6,
-		CoinDistributionScenarioTwitter:                      7,
-		CoinDistributionScenarioTelegram:                     8,
+		Scenario(CoinDistributionScenarioSignUpSunwaves):     0,
+		Scenario(CoinDistributionScenarioSignUpCallfluent):   1,
+		Scenario(CoinDistributionScenarioSignUpDoctorx):      2,
+		Scenario(CoinDistributionScenarioSignUpSauces):       3,
+		Scenario(CoinDistributionScenarioSignUpSealsend):     4,
+		Scenario(CoinDistributionScenarioSignUpCryptomayors): 5,
+		CoinDistributionScenarioTwitter:                      6,
+		CoinDistributionScenarioTelegram:                     7,
+		CoinDistributionScenarioCmc:                          8,
 	}
 )
 
