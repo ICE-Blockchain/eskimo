@@ -13,6 +13,7 @@ import (
 	verificationscenarios "github.com/ice-blockchain/eskimo/kyc/verification_scenarios"
 	"github.com/ice-blockchain/eskimo/users"
 	"github.com/ice-blockchain/wintr/server"
+	"github.com/ice-blockchain/wintr/time"
 )
 
 // Public API.
@@ -343,6 +344,10 @@ func (s *service) GetUserByID( //nolint:gocritic // False negative.
 		}
 
 		return nil, server.Unexpected(errors.Wrapf(err, "failed to get user by id: %v", req.Data.UserID))
+	}
+	const doctorxTenant = "doctorx"
+	if cfg.Tenant == doctorxTenant {
+		usr.CreatedAt = time.Now()
 	}
 
 	return server.OK(&UserProfile{UserProfile: usr, Checksum: usr.Checksum()}), nil
