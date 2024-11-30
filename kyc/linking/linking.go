@@ -53,12 +53,12 @@ func (l *linker) Verify(ctx context.Context, now *time.Time, userID UserID, toke
 		var hasKYCResult bool
 		remoteID, hasKYCResult, err = l.verifyToken(ctx, userID, tenant, token)
 		if err != nil {
-			return allProfiles, verified, errors.Wrap(err, "failed to verify token")
+			return allProfiles, verified, errors.Wrapf(err, "failed to verify token: %v for tenant: %v", token, tenant)
 		}
 		var remoteProfiles LinkedProfiles
 		remoteProfiles, verified, err = l.Get(ctx, remoteID)
 		if err != nil {
-			return allProfiles, verified, errors.Wrapf(err, "failed to get remote profiles for remote %v %v", tenant, remoteID)
+			return allProfiles, verified, errors.Wrapf(err, "failed to get remote profiles for remote tenant:%v, remoteID:%v, token: %v", tenant, remoteID, token)
 		}
 		for remTenant, rem := range remoteProfiles {
 			allProfiles[remTenant] = rem
@@ -143,13 +143,13 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 	usr, err := fetchTokenData(ctx, tenant, token, l.host, l.cfg.TenantURLs)
 	if err != nil {
 		if errors.Is(err, ErrRemoteUserNotFound) {
-			return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "token is not belong to %v", userID)
+			return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "tenant:%v, token:%v is not belong to %v", tenant, token, userID)
 		}
 
-		return "", false, errors.Wrapf(err, "failed to fetch remote user data for %v", userID)
+		return "", false, errors.Wrapf(err, "failed to fetch remote user data for %v, tenant:%v with token:%v", userID, tenant, token)
 	}
 	if usr.CreatedAt == nil || usr.ReferredBy == "" || usr.Username == "" {
-		return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "token is not belong to %v", userID)
+		return "", false, errors.Wrapf(ErrNotOwnRemoteUser, "tenant:%v, token:%v is not belong to %v", tenant, token, userID)
 	}
 
 	return usr.ID, usr.HasFaceKYCResult(), nil
@@ -159,7 +159,7 @@ func (l *linker) verifyToken(ctx context.Context, userID, tenant, token string) 
 func fetchTokenData(ctx context.Context, tenant, token, host string, tenantURLs map[Tenant]string) (*users.User, error) {
 	tok, err := server.Auth(ctx).ParseToken(token, false)
 	if err != nil {
-		return nil, errors.Wrapf(err, "invalid token passed")
+		return nil, errors.Wrapf(err, "invalid token passed for tenant:%v, token:%v", tenant, token)
 	}
 	var resp *req.Response
 	var usr users.User
@@ -185,7 +185,7 @@ func fetchTokenData(ctx context.Context, tenant, token, host string, tenantURLs 
 				log.Error(errors.Wrap(err, "failed to check accounts linking, retrying... "))
 			} else {
 				body, bErr := resp.ToString()
-				log.Error(errors.Wrapf(bErr, "failed to parse negative response body for account linking"))
+				log.Error(errors.Wrapf(bErr, "failed to parse negative response body for account linking, tenant: %v, token: %v", tenant, token))
 				log.Error(errors.Errorf("failed check link accounts with status code:%v, body:%v, retrying... ", resp.GetStatusCode(), body))
 			}
 		}).
@@ -196,13 +196,13 @@ func fetchTokenData(ctx context.Context, tenant, token, host string, tenantURLs 
 		SetHeader("Authorization", token).
 		AddQueryParam("caller", "eskimo-hut").
 		Get(getUserURL); err != nil {
-		return nil, errors.Wrap(err, "failed to link accounts")
+		return nil, errors.Wrapf(err, "failed to link accounts for tenant:%v, token:%v", tenant, token)
 	} else if statusCode := resp.GetStatusCode(); statusCode != http.StatusOK {
 		if statusCode == http.StatusNotFound {
-			return nil, errors.Wrapf(ErrRemoteUserNotFound, "wrong status code for fetch token data for user %v", tok.Subject)
+			return nil, errors.Wrapf(ErrRemoteUserNotFound, "wrong status code for fetch token data for user %v, tenant:%v, token:%v", tok.Subject, tenant, token)
 		}
 
-		return nil, errors.Errorf("[%v]failed to link accounts", statusCode)
+		return nil, errors.Errorf("[%v]failed to link accounts, tenant:%v, token:%v", statusCode, tenant, token)
 	} else if data, err2 := resp.ToBytes(); err2 != nil {
 		return nil, errors.Wrapf(err2, "failed to read body of linking users: %v", getUserURL)
 	} else if jErr := json.UnmarshalContext(ctx, data, &usr); jErr != nil {
