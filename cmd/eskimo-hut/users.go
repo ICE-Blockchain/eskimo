@@ -52,6 +52,9 @@ func (s *service) CreateUser( //nolint:funlen,gocritic // .
 	ctx context.Context,
 	req *server.Request[CreateUserRequestBody, User],
 ) (*server.Response[User], *server.Response[server.ErrorResponse]) {
+	if cfg.Tenant == doctorxTenant {
+		return nil, server.Forbidden(errors.New("not allowed"))
+	}
 	if err := validateCreateUser(req); err != nil {
 		return nil, err
 	}
@@ -393,6 +396,9 @@ func (s *service) DeleteUser( //nolint:gocritic // False negative.
 	ctx context.Context,
 	req *server.Request[DeleteUserArg, any],
 ) (*server.Response[any], *server.Response[server.ErrorResponse]) {
+	if cfg.Tenant == "doctorx" {
+		return nil, server.Forbidden(errors.New("not allowed"))
+	}
 	if req.Data.UserID != req.AuthenticatedUser.UserID {
 		if req.AuthenticatedUser.Role != adminRole {
 			return nil, server.Forbidden(errors.New("not allowed"))
