@@ -345,11 +345,8 @@ func (s *service) GetUserByID( //nolint:gocritic // False negative.
 
 		return nil, server.Unexpected(errors.Wrapf(err, "failed to get user by id: %v", req.Data.UserID))
 	}
-	if false {
-		const doctorxTenant = "doctorx"
-		if cfg.Tenant == doctorxTenant {
-			usr.CreatedAt = time.Now()
-		}
+	if cfg.Tenant == doctorxTenant {
+		usr.CreatedAt = time.Now()
 	}
 
 	return server.OK(&UserProfile{UserProfile: usr, Checksum: usr.Checksum()}), nil

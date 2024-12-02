@@ -210,6 +210,7 @@ const (
 	applicationYamlKey = "cmd/eskimo-hut"
 	swaggerRootSuffix  = "/users/w"
 	tenantCtxKey       = "tenantCtxKey"
+	doctorxTenant      = "doctorx"
 )
 
 // Values for server.ErrorResponse#Code.
