@@ -149,6 +149,13 @@ type (
 		devicemetadata.DeviceLocation
 		ReferralType ReferralType `json:"referralType,omitempty" example:"T1" enums:"CONTACTS,T0,T1,T2"`
 	}
+	MandatoryForDistributionFieldsProfile struct {
+		DistributionScenariosVerified *bool `json:"distributionScenariosVerified,omitempty" example:"true" swaggerignore:"true" db:"distribution_scenarios_verified"`
+		SensitiveUserInformation
+		ID             UserID `json:"id,omitempty" example:"did:ethr:0x4B73C58370AEfcEf86A6021afCDe5673511376B2" db:"id"`
+		TelegramUserID string `json:"telegramUserId,omitempty" example:"1234" db:"telegram_user_id"`
+		TelegramBotID  string `json:"telegramBotId,omitempty" example:"5678" db:"telegram_bot_id"`
+	}
 	UserProfile struct {
 		*User
 		T1ReferralCount *uint64 `json:"t1ReferralCount,omitempty" example:"100"`
@@ -197,6 +204,7 @@ type (
 		GetUserByUsername(ctx context.Context, username string) (*UserProfile, error)
 		GetUserByPhoneNumber(ctx context.Context, phoneNumber string) (*User, error)
 		GetUserByID(ctx context.Context, userID string) (*UserProfile, error)
+		GetMandatoryForDistributionUserFieldsByIDList(ctx context.Context, userIDList []string) (result map[string]*MandatoryForDistributionFieldsProfile, err error)
 
 		GetTopCountries(ctx context.Context, keyword string, limit, offset uint64) ([]*CountryStatistics, error)
 		GetUserGrowth(ctx context.Context, days uint64, tz *stdlibtime.Location) (*UserGrowthStatistics, error)

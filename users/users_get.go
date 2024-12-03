@@ -275,3 +275,34 @@ func (r *repository) GetUsers(ctx context.Context, keyword string, limit, offset
 
 	return result, errors.Wrapf(err, "failed to select for users by %#v", params...)
 }
+
+func (r *repository) GetMandatoryForDistributionUserFieldsByIDList(ctx context.Context, userIDList []string) (
+	result map[string]*MandatoryForDistributionFieldsProfile, err error,
+) {
+	if ctx.Err() != nil {
+		return nil, errors.Wrap(ctx.Err(), "get users by id list failed because context failed")
+	}
+	if len(userIDList) == 0 {
+		return map[string]*MandatoryForDistributionFieldsProfile{}, nil
+	}
+	sql := `SELECT 
+			    id,
+			    phone_number,
+			    email,
+				telegram_user_id,
+				telegram_bot_id,
+				distribution_scenarios_verified
+			FROM users
+			WHERE id = ANY($1)`
+	params := []any{userIDList}
+	res, err := storage.Select[MandatoryForDistributionFieldsProfile](ctx, r.db, sql, params...)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to select mandatody for distribution fields list for users by %#v", params...)
+	}
+	result = make(map[string]*MandatoryForDistributionFieldsProfile, len(res))
+	for _, profile := range res {
+		result[profile.ID] = profile
+	}
+
+	return result, nil
+}
