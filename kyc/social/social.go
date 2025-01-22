@@ -30,7 +30,7 @@ func init() {
 	loadTranslations()
 }
 
-func loadTranslations() { //nolint:funlen,gocognit,revive // .
+func loadTranslations() { //nolint:gocognit,revive // .
 	tenantDirs, err := translations.ReadDir("translations")
 	log.Panic(err) //nolint:revive // Nope.
 

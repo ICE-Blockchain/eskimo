@@ -215,6 +215,7 @@ func validateModifyUser(ctx context.Context, req *server.Request[ModifyUserReque
 	return validateHiddenProfileElements(req)
 }
 
+//nolint:funlen // .
 func (s *service) emailUpdateRequested(
 	ctx context.Context,
 	loggedInUser *server.AuthenticatedUser,
@@ -236,9 +237,14 @@ func (s *service) emailUpdateRequested(
 		}
 		language = oldUser.Language
 	}
-
+	oldEmail := loggedInUser.Email
+	isTelegramLogin := loggedInUser.Claims["loginType"] == "telegram"
+	if isTelegramLogin {
+		telegramUserID := loggedInUser.Claims["telegramUserID"].(string) //nolint:errcheck,forcetypeassert // .
+		oldEmail = emaillink.TelegramUserSettingUpEmailPrefix + telegramUserID
+	}
 	if _, _, loginSession, err = s.authEmailLinkClient.SendSignInLinkToEmail(
-		users.ConfirmedEmailContext(ctx, loggedInUser.Email),
+		users.ConfirmedEmailContext(ctx, oldEmail),
 		newEmail, deviceID, language, "",
 	); err != nil {
 		return "", "", errors.Wrapf(err, "can't send sign in link to email:%v", newEmail)

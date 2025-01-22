@@ -30,11 +30,18 @@ func (c *client) getEmailLinkSignInByPk(ctx context.Context, id *loginID, oldEma
 }
 
 func (c *client) findOrGenerateUserID(ctx context.Context, email, oldEmail string) (userID string, err error) {
-	searchEmail := email
+	search := email
+	searchField := "email"
+	table := "email_link_sign_ins"
 	if oldEmail != "" {
-		searchEmail = oldEmail
+		search = oldEmail
+		if strings.HasPrefix(oldEmail, TelegramUserSettingUpEmailPrefix) {
+			search = strings.TrimPrefix(oldEmail, TelegramUserSettingUpEmailPrefix)
+			searchField = "telegram_user_id"
+			table = "telegram_sign_ins"
+		}
 	}
-	if userID, err = auth.FindOrGenerateUserID(ctx, c.db, "email_link_sign_ins", "email", searchEmail); err != nil {
+	if userID, err = auth.FindOrGenerateUserID(ctx, c.db, table, searchField, search); err != nil {
 		return "", errors.Wrapf(err, "failed to match userID with email %v,%v", email, oldEmail)
 	}
 

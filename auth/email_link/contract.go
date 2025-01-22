@@ -65,6 +65,10 @@ var (
 	ErrTooManyAttempts                  = errors.New("too many attempts")
 )
 
+const (
+	TelegramUserSettingUpEmailPrefix = "telegram@@"
+)
+
 // Private API.
 
 const (

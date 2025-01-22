@@ -34,7 +34,7 @@ func NewBridge(read, write serverfixture.TestConnector) *TestConnectorsBridge {
 	}
 }
 
-//nolint:revive,funlen // It's more descriptive this way.
+//nolint:revive // It's more descriptive this way.
 func (b *TestConnectorsBridge) CreateUser(ctx context.Context, tb testing.TB, userID, token, reqBody string, clientIPs ...string) (body string, status int) {
 	tb.Helper()
 
