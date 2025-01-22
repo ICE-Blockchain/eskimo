@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strings"
 	"sync/atomic"
 	stdlibtime "time"
 
@@ -90,8 +91,7 @@ func (c *client) SendSignInLinkToEmail(ctx context.Context, emailValue, deviceUn
 		if sendModEmailErr := c.sendEmailWithType(ctx, modifyEmailType, language, []string{id.Email}, []string{confirmationCode}); sendModEmailErr != nil {
 			return 0, "", loginSession, errors.Wrapf(sendModEmailErr, "failed to send validation email for id:%#v", id)
 		}
-	}
-	if !c.cfg.QueueProcessing {
+	} else if !c.cfg.QueueProcessing {
 		if sErr := c.sendEmailWithType(ctx, signInEmailType, language, []string{id.Email}, []string{confirmationCode}); sErr != nil {
 			return 0, "", "", multierror.Append( //nolint:wrapcheck // .
 				errors.Wrapf(c.decrementIPLoginAttempts(ctx, clientIP, loginSessionNumber), "[rollback] failed to rollback login attempts for ip"),
@@ -315,7 +315,7 @@ func (c *client) generateMagicLinkPayload(id *loginID, oldEmail string, now *tim
 
 func (c *client) generateLoginSession(id *loginID, clientIP, oldEmail string, loginSessionNumber int64) (string, error) {
 	now := time.Now()
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, loginFlowToken{
+	loginToken := loginFlowToken{
 		RegisteredClaims: &jwt.RegisteredClaims{
 			Issuer:    jwtIssuer,
 			Subject:   id.Email,
@@ -327,9 +327,12 @@ func (c *client) generateLoginSession(id *loginID, clientIP, oldEmail string, lo
 		DeviceUniqueID:     id.DeviceUniqueID,
 		LoginSessionNumber: loginSessionNumber,
 		OldEmail:           oldEmail,
-		NotifyEmail:        oldEmail,
 		ClientIP:           clientIP,
-	})
+	}
+	if !strings.HasPrefix(oldEmail, TelegramUserSettingUpEmailPrefix) {
+		loginToken.NotifyEmail = oldEmail
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, loginToken)
 	payload, err := token.SignedString([]byte(c.cfg.LoginSession.JwtSecret))
 	if err != nil {
 		return "", errors.Wrapf(err, "can't generate login flow for id:%#v,now:%v", id, now)
