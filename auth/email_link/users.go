@@ -79,7 +79,7 @@ func (c *client) getUserByIDOrPk(ctx context.Context, userID string, id *loginID
 					device_unique_id,
 					language,
 		    		hash_code,
-		    		metadata
+		    		COALESCE(metadata,'{}'::JSONB) as metadata
 		FROM (
 			WITH emails AS (
 				SELECT
