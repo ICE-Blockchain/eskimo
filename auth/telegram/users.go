@@ -25,7 +25,7 @@ func (c *client) getUserByIDOrTelegram(ctx context.Context, userID, telegramID s
 					telegram_bot_id,
 					email,
 		    		hash_code,
-		    		metadata
+		    		COALESCE(metadata,'{}'::JSONB) as metadata
 		FROM (
 			WITH telegrams AS (
 				SELECT
