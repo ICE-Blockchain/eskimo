@@ -245,7 +245,7 @@ func (s *service) emailUpdateRequested(
 	}
 	if _, _, loginSession, err = s.authEmailLinkClient.SendSignInLinkToEmail(
 		users.ConfirmedEmailContext(ctx, oldEmail),
-		newEmail, deviceID, language, "",
+		strings.ToLower(newEmail), deviceID, language, "",
 	); err != nil {
 		return "", "", errors.Wrapf(err, "can't send sign in link to email:%v", newEmail)
 	}

@@ -25,7 +25,7 @@ require (
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/zeebo/xxh3 v1.0.2
 	golang.org/x/mod v0.23.0
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.35.0
 )
 
 require (
@@ -175,13 +175,13 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.14.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/oauth2 v0.26.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
 	google.golang.org/api v0.220.0 // indirect
 	google.golang.org/appengine/v2 v2.0.6 // indirect
 	google.golang.org/genproto v0.0.0-20250207221924-e9438ea467c6 // indirect
