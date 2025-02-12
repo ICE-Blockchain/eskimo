@@ -270,7 +270,7 @@ func (r *repository) incrementTotalActiveUsersCount(ctx context.Context, ms *min
 		return r.incrementTotalActiveUsersCount(ctx, ms)
 	}
 	if err != nil && !storage.IsErr(err, storage.ErrNotFound) {
-		return errors.Wrapf(err, "failed to update global.value to global.value+1 for keys:%#v", keys) //nolint:asasalint // Wrong.
+		return errors.Wrapf(err, "failed to update global.value to global.value+1 for keys:%#v", keys)
 	}
 
 	return nil
