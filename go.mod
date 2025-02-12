@@ -1,6 +1,6 @@
 module github.com/ice-blockchain/eskimo
 
-go 1.23
+go 1.24
 
 require (
 	dario.cat/mergo v1.0.1
