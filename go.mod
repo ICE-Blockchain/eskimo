@@ -1,6 +1,6 @@
 module github.com/ice-blockchain/eskimo
 
-go 1.23
+go 1.24
 
 require (
 	dario.cat/mergo v1.0.1
@@ -25,17 +25,17 @@ require (
 	github.com/testcontainers/testcontainers-go v0.34.0
 	github.com/zeebo/xxh3 v1.0.2
 	golang.org/x/mod v0.23.0
-	golang.org/x/net v0.34.0
+	golang.org/x/net v0.35.0
 )
 
 require (
-	cel.dev/expr v0.19.2 // indirect
+	cel.dev/expr v0.20.0 // indirect
 	cloud.google.com/go v0.118.2 // indirect
 	cloud.google.com/go/auth v0.14.1 // indirect
 	cloud.google.com/go/auth/oauth2adapt v0.2.7 // indirect
 	cloud.google.com/go/compute/metadata v0.6.0 // indirect
 	cloud.google.com/go/firestore v1.18.0 // indirect
-	cloud.google.com/go/iam v1.3.1 // indirect
+	cloud.google.com/go/iam v1.4.0 // indirect
 	cloud.google.com/go/longrunning v0.6.4 // indirect
 	cloud.google.com/go/monitoring v1.24.0 // indirect
 	cloud.google.com/go/storage v1.50.0 // indirect
@@ -175,18 +175,18 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.14.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/exp v0.0.0-20250207012021-f9890c6ad9f3 // indirect
+	golang.org/x/exp v0.0.0-20250210185358-939b2ce775ac // indirect
 	golang.org/x/oauth2 v0.26.0 // indirect
 	golang.org/x/sync v0.11.0 // indirect
 	golang.org/x/sys v0.30.0 // indirect
 	golang.org/x/text v0.22.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
-	golang.org/x/tools v0.29.0 // indirect
-	google.golang.org/api v0.220.0 // indirect
+	golang.org/x/tools v0.30.0 // indirect
+	google.golang.org/api v0.221.0 // indirect
 	google.golang.org/appengine/v2 v2.0.6 // indirect
-	google.golang.org/genproto v0.0.0-20250207221924-e9438ea467c6 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250207221924-e9438ea467c6 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250207221924-e9438ea467c6 // indirect
+	google.golang.org/genproto v0.0.0-20250212204824-5a70512c5d8b // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250212204824-5a70512c5d8b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b // indirect
 	google.golang.org/grpc v1.70.0 // indirect
 	google.golang.org/protobuf v1.36.5 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
