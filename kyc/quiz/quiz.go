@@ -152,7 +152,6 @@ func (r *repositoryImpl) validateKycStep(user *users.User) error {
 	return nil
 }
 
-//nolint:revive // .
 func (r *repositoryImpl) addFailedAttempt(ctx context.Context, userID UserID, now *time.Time, tx storage.QueryExecer, skipped bool) (bool, error) {
 	// $1: user_id.
 	// $2: now.
