@@ -355,7 +355,7 @@ func (s *service) ForwardToFaceKYC(
 	req *server.Request[ForwardToFaceKYCRequestBody, ForwardToFaceKYCResponse],
 ) (*server.Response[ForwardToFaceKYCResponse], *server.Response[server.ErrorResponse]) {
 	ctx = facekyc.ContextWithClientType(ctx, req.Data.XClientType) //nolint:revive // .
-	kycFaceAvailable, err := s.faceKycClient.ForwardToKYC(ctx, req.Data.UserID, req.Data.Tokens)
+	kycFaceAvailable, err := s.faceKycClient.ForwardToKYC(ctx, req.Data.UserID)
 	if err != nil {
 		switch {
 		case errors.Is(err, linking.ErrNotOwnRemoteUser):
