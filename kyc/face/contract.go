@@ -35,7 +35,7 @@ type (
 		io.Closer
 		Reset(ctx context.Context, user *users.User, fetchState bool) error
 		CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (available bool, err error)
-		ForwardToKYC(ctx context.Context, userID string, tokens map[Tenant]Token) (available bool, err error)
+		ForwardToKYC(ctx context.Context, userID string) (available bool, err error)
 	}
 )
 

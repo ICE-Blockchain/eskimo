@@ -37,7 +37,7 @@ func New(ctx context.Context, usersRep UserRepository, linker Linker) Client {
 	return cl
 }
 
-//nolint:funlen,gocognit,gocyclo,cyclop,revive // .
+//nolint:funlen,gocognit,revive // .
 func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep users.KYCStep) (bool, error) {
 	kycFaceAvailable := false
 	if errs := c.unexpectedErrors.Load(); errs >= c.cfg.UnexpectedErrorsAllowed {
@@ -52,19 +52,8 @@ func (c *client) CheckStatus(ctx context.Context, user *users.User, nextKYCStep 
 	hasResult := false
 	now := time.Now()
 	var faceID, verifiedTenantFrom3rdParty, verifiedTenant string
-	var linkedTenants map[Tenant]string
-	linkedTenants, verifiedTenant, err = c.accountsLinker.Get(ctx, user.ID)
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to get linked tenants for user id %v", user.ID)
-	}
-	var remoteUserID string
-	if verifiedTenant == "" {
-		remoteUserID = user.ID
-	} else {
-		remoteUserID = linkedTenants[verifiedTenant]
-	}
-	if userWasPreviouslyForwardedToFaceKYC || remoteUserID != user.ID {
-		if hasResult, faceID, verifiedTenantFrom3rdParty, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, user); err != nil {
+	if userWasPreviouslyForwardedToFaceKYC {
+		if hasResult, faceID, verifiedTenantFrom3rdParty, err = c.client.CheckAndUpdateStatus(ctx, user.ID, user); err != nil {
 			c.unexpectedErrors.Add(1)
 			log.Error(errors.Wrapf(err, "[unexpected]failed to update face auth status for user ID %s", user.ID))
 
@@ -154,8 +143,8 @@ func (c *client) Close() error {
 	return c.db.Close() //nolint:wrapcheck // .
 }
 
-//nolint:funlen,gocognit // .
-func (c *client) ForwardToKYC(ctx context.Context, userID string, tokens map[Tenant]Token) (kycFaceAvailable bool, err error) {
+//nolint:funlen // .
+func (c *client) ForwardToKYC(ctx context.Context, userID string) (kycFaceAvailable bool, err error) {
 	if !c.isKYCEnabled(ctx) {
 		return false, nil
 	}
@@ -167,27 +156,11 @@ func (c *client) ForwardToKYC(ctx context.Context, userID string, tokens map[Ten
 	if usr.HasFaceKYCResult() {
 		return false, nil
 	}
-	var linkedTenants map[Tenant]string
-	var verifiedTenant string
-	if len(tokens) > 0 {
-		linkedTenants, verifiedTenant, err = c.accountsLinker.Verify(ctx, now, usr.ID, tokens)
-	} else {
-		linkedTenants, verifiedTenant, err = c.accountsLinker.Get(ctx, usr.ID)
-	}
-	if err != nil {
-		return false, errors.Wrapf(err, "failed to get linked tenants for user ID %v", userID)
-	}
-	var remoteUserID string
-	if verifiedTenant == "" {
-		remoteUserID = usr.ID
-	} else {
-		remoteUserID = linkedTenants[verifiedTenant]
-	}
 	var passed bool
 	var faceID string
-	passed, faceID, verifiedTenant, err = c.client.CheckAndUpdateStatus(ctx, remoteUserID, usr.User)
+	passed, faceID, verifiedTenant, err := c.client.CheckAndUpdateStatus(ctx, usr.ID, usr.User)
 	if err != nil {
-		return false, errors.Wrapf(err, "failed to sync face kyc status back for user %v", remoteUserID)
+		return false, errors.Wrapf(err, "failed to sync face kyc status back for user %v", usr.ID)
 	}
 	if passed {
 		if err = c.accountsLinker.SetTenantVerified(ctx, usr.ID, verifiedTenant); err != nil {
