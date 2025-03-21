@@ -6,7 +6,7 @@ require (
 	dario.cat/mergo v1.0.1
 	github.com/PuerkitoBio/goquery v1.10.2
 	github.com/goccy/go-json v0.10.5
-	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/ice-blockchain/go-tarantool-client v0.0.0-20230327200757-4fc71fa3f7bb
